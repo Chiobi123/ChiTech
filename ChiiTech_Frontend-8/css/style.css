@@ -1,0 +1,746 @@
+:root{
+  /* ============================================================
+     CHIITECH STYLESHEET
+     ------------------------------------------------------------
+     Organised top to bottom as: design tokens (this :root block) →
+     base/layout → dashboard cards/stats → buttons & forms → tables
+     → charts & legends → auth screen → department/role UI → mobile
+     responsive overrides (bottom of file, @media max-width:900px).
+     Every colour used anywhere in the app is one of the variables
+     below — change a value here to re-theme the whole app at once.
+     ============================================================ */
+  --bg:#0A0F0D;
+  --surface:#141B18;
+  --surface-2:#182019;
+  --surface-3:#1E2721;
+  --border:#22302A;
+  --neon:#39FF88;
+  --neon-deep:#12A64C;
+  --neon-dim:rgba(57,255,136,0.12);
+  --text:#F3F6F4;
+  --muted:#9AA69F;
+  --danger:#FF5C5C;
+  --danger-dim:rgba(255,92,92,0.12);
+  --warn:#FFD166;
+  --radius:14px;
+  --radius-sm:10px;
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter','Segoe UI',Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  position:relative;
+}
+
+/* ---------- Decorative background ----------
+   A quiet, textured backdrop instead of flat black: a faint grid (like
+   graph paper) plus a few soft glows in the brand green. Pure CSS
+   gradients only (no images, no network request) — and, importantly,
+   fully STATIC. An earlier version animated this layer continuously,
+   which forces the browser to repaint a full-viewport gradient every
+   frame for as long as the page is open — that was the direct cause of
+   the typing/general lag reported. A background should cost nothing at
+   idle; it's painted once and left alone. */
+body::before{
+  content:"";
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(57,255,136,0.09), transparent 38%),
+    radial-gradient(circle at 88% 12%, rgba(18,166,72,0.10), transparent 40%),
+    radial-gradient(circle at 75% 85%, rgba(57,255,136,0.07), transparent 42%),
+    radial-gradient(circle at 10% 90%, rgba(18,166,72,0.06), transparent 38%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 56px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 56px);
+}
+/* Everything else renders above the decorative layer. */
+.app, .login-wrap, .about-wrap{ position:relative; z-index:1; }
+
+a{color:var(--neon);text-decoration:none;}
+
+/* ---------- Motion & liveliness ----------
+   Small, cheap, mostly one-shot motion — NOT the earlier full-viewport
+   continuous-repaint mistake (see the note on body::before above). Rules
+   here only animate small elements (a badge, a stat, a button) or run
+   once per interaction (a section switching in), so none of this costs
+   anything at idle. Respects prefers-reduced-motion at the bottom. */
+@keyframes sectionIn{
+  from{ opacity:0; transform:translateY(10px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+@keyframes livePulse{
+  0%{ box-shadow:0 0 0 0 rgba(57,255,136,0.45); }
+  70%{ box-shadow:0 0 0 7px rgba(57,255,136,0); }
+  100%{ box-shadow:0 0 0 0 rgba(57,255,136,0); }
+}
+@keyframes popIn{
+  from{ opacity:0; transform:translateY(6px) scale(0.98); }
+  to{ opacity:1; transform:translateY(0) scale(1); }
+}
+
+.section.active{ animation:sectionIn .38s cubic-bezier(.16,1,.3,1) both; }
+
+/* A small "this is live data" indicator — 7px, animates only itself. */
+.live-dot{
+  display:inline-block; width:7px; height:7px; border-radius:50%;
+  background:var(--neon); margin-right:9px; vertical-align:middle;
+  animation:livePulse 2.2s ease-in-out infinite;
+}
+
+.card, .stat{ transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+.card:hover, .stat:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 26px -16px rgba(0,0,0,0.55);
+  border-color:rgba(57,255,136,0.22);
+}
+.stat .value{ transition:color .2s ease; }
+
+.btn{ transition:transform .12s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease; }
+.btn:hover{ transform:translateY(-1px); }
+.btn:active{ transform:translateY(0) scale(0.97); }
+.btn-primary:hover{ box-shadow:0 6px 18px -6px rgba(57,255,136,0.5); }
+
+.nav-link{ transition:background .15s ease, color .15s ease, transform .15s ease, border-color .15s ease; }
+.nav-link:hover{ transform:translateX(2px); }
+
+.chip-opt{ transition:background .15s ease, color .15s ease, transform .12s ease; }
+.chip-opt:hover{ transform:translateY(-1px); }
+.chip-opt.active{ animation:popIn .2s ease both; }
+
+input,select,textarea{ transition:border-color .15s ease, box-shadow .15s ease; }
+input:focus,select:focus,textarea:focus{ box-shadow:0 0 0 3px var(--neon-dim); }
+
+.badge{ transition:transform .12s ease; }
+tr:hover .badge{ transform:translateY(-1px); }
+
+#toast{ transition:opacity .3s cubic-bezier(.16,1,.3,1), transform .3s cubic-bezier(.16,1,.3,1); }
+
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.001ms !important;
+  }
+}
+
+/* ---------- Layout shell ---------- */
+.app{
+  display:flex;
+  min-height:100vh;
+}
+
+.sidebar{
+  width:220px;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  padding:24px 16px;
+  display:flex;
+  flex-direction:column;
+  position:fixed;
+  top:0;bottom:0;left:0;
+}
+.brand{
+  font-weight:700;
+  font-size:19px;
+  letter-spacing:0.5px;
+  color:var(--neon);
+  margin-bottom:2px;
+}
+.brand-sub{
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:28px;
+}
+/* Collapsed "CT" logo that expands to "ChiiTech" on hover — only used
+   post-login (sidebar/mobile topbar); the login screen keeps the full
+   wordmark since a first-time visitor won't know what "CT" means yet. */
+.brand-hover{cursor:default;display:inline-flex;align-items:center;}
+.brand-full{display:none;}
+.brand-hover:hover .brand-short{display:none;}
+.brand-hover:hover .brand-full{display:inline;}
+.nav-link{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:11px 12px;
+  border-radius:var(--radius-sm);
+  color:var(--muted);
+  font-size:13.5px;
+  cursor:pointer;
+  margin-bottom:2px;
+  border:1px solid transparent;
+}
+.nav-link:hover{background:var(--surface-2);color:var(--text);}
+.nav-link.active{
+  background:var(--neon-dim);
+  color:var(--neon);
+  border-color:rgba(57,255,136,0.25);
+}
+.nav-icon{width:18px;text-align:center;}
+.sidebar-foot{
+  margin-top:auto;
+  font-size:11px;
+  color:var(--muted);
+  border-top:1px solid var(--border);
+  padding-top:14px;
+}
+
+.main{
+  margin-left:220px;
+  flex:1;
+  min-width:0;
+  padding:28px 34px 100px;
+  display:flex;
+  justify-content:center;
+}
+.main-inner{
+  width:100%;
+  max-width:980px;
+}
+
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:22px;
+}
+.page-title{font-size:21px;font-weight:700;}
+.page-sub{font-size:13px;color:var(--muted);margin-top:2px;}
+.user-chip{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:6px 12px 6px 6px;
+  font-size:12.5px;
+  color:var(--muted);
+}
+.avatar{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--surface-3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--text);
+}
+
+.section{display:none;}
+.section.active{display:block;}
+
+/* ---------- Cards / stats ---------- */
+.grid{
+  display:grid;
+  gap:14px;
+}
+.grid-4{grid-template-columns:repeat(4,1fr);}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.grid-2{grid-template-columns:repeat(2,1fr);}
+
+.stat{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px;
+  position:relative;
+  overflow:hidden;
+}
+/* A thin coloured accent along the top edge of every stat card, tinted
+   to match the card's own state (green = good, amber = watch, red =
+   problem) so the dashboard reads at a glance before you read a single
+   number. Static gradient — painted once, costs nothing. */
+.stat::before{
+  content:"";
+  position:absolute; top:0; left:0; right:0; height:3px;
+  background:linear-gradient(90deg, var(--neon-deep), var(--neon));
+  opacity:0.55;
+}
+.stat.warn::before{background:linear-gradient(90deg,#B98A1F,var(--warn));}
+.stat.danger::before{background:linear-gradient(90deg,#A93A3A,var(--danger));}
+.stat:hover::before{opacity:1;}
+.stat .label{font-size:12px;color:var(--muted);margin-bottom:8px;}
+.stat .value{font-size:22px;font-weight:700;}
+.stat.pos .value{color:var(--neon);}
+.stat.warn .value{color:var(--warn);}
+.stat.danger .value{color:var(--danger);}
+.stat .delta{font-size:11px;color:var(--muted);margin-top:6px;}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:18px 20px;
+  margin-bottom:16px;
+}
+.card-head{
+  display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;
+}
+.card-title{font-size:14.5px;font-weight:700;}
+.card-sub{font-size:12px;color:var(--muted);}
+
+/* ---------- Buttons / forms ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  color:var(--text);
+  padding:9px 16px;
+  border-radius:var(--radius-sm);
+  font-size:13px;font-weight:600;
+  cursor:pointer;
+}
+.btn:hover{border-color:var(--border);background:var(--surface-3);}
+.btn-primary{
+  background:var(--neon);
+  border-color:var(--neon);
+  color:#052312;
+}
+.btn-primary:hover{background:#5dffa2;}
+.btn-danger{color:var(--danger);border-color:rgba(255,92,92,0.3);}
+.btn-block{width:100%;}
+.btn-sm{padding:6px 10px;font-size:12px;}
+
+label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px;}
+input,select,textarea{
+  width:100%;
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  color:var(--text);
+  padding:10px 12px;
+  border-radius:var(--radius-sm);
+  font-size:13.5px;
+  font-family:inherit;
+}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--neon-deep);}
+.field{margin-bottom:14px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+/* ---------- Table ---------- */
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{
+  text-align:left;color:var(--muted);font-weight:600;font-size:11.5px;
+  text-transform:uppercase;letter-spacing:0.4px;
+  padding:8px 10px;border-bottom:1px solid var(--border);
+}
+td{padding:10px 10px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+/* Row highlight on hover — makes long tables feel responsive to read
+   through, and costs nothing until the pointer is actually over a row. */
+tbody tr{transition:background .13s ease;}
+tbody tr:hover{background:var(--surface-2);}
+.badge{
+  display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;
+}
+.badge-ok{background:var(--neon-dim);color:var(--neon);}
+.badge-warn{background:rgba(255,209,102,0.12);color:var(--warn);}
+.badge-danger{background:var(--danger-dim);color:var(--danger);}
+.badge-muted{background:var(--surface-3);color:var(--muted);}
+
+/* ---------- Chart bars ---------- */
+.bars{height:120px;display:flex;align-items:flex-end;gap:8px;}
+.bars .bar{
+  flex:1;background:linear-gradient(to top,var(--neon-deep),var(--neon));
+  border-radius:4px 4px 0 0;position:relative;
+}
+.bars .bar span{
+  position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+  font-size:10px;color:var(--muted);white-space:nowrap;
+}
+
+/* ---------- Health ring ---------- */
+.health-row{display:flex;align-items:center;gap:16px;}
+.ring{
+  width:64px;height:64px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.ring-inner{
+  width:48px;height:48px;border-radius:50%;background:var(--surface);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:var(--neon);
+}
+.flag-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--danger-dim);color:var(--danger);
+  font-size:11.5px;font-weight:600;
+  padding:5px 11px;border-radius:20px;margin-top:4px;
+}
+.flag-dot{width:6px;height:6px;border-radius:50%;background:var(--danger);}
+
+/* ---------- Audit log ---------- */
+.log-item{
+  display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:12.5px;
+}
+.log-item:last-child{border-bottom:none;}
+.log-hash{
+  font-family:'SFMono-Regular',Consolas,monospace;font-size:10.5px;color:var(--muted);
+}
+.log-time{color:var(--muted);font-size:11px;white-space:nowrap;}
+
+/* ---------- Benford chart ---------- */
+.benford-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:11.5px;}
+.benford-row .digit{width:14px;color:var(--muted);}
+.benford-track{flex:1;height:8px;background:var(--surface-3);border-radius:4px;overflow:hidden;position:relative;}
+.benford-fill{height:100%;background:var(--neon-deep);}
+.benford-expected{
+  position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--warn);
+}
+
+/* ---------- AI chat ---------- */
+.chat-window{
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px;
+  min-height:260px;
+  display:flex;flex-direction:column;gap:10px;
+  margin-bottom:14px;
+}
+.msg{max-width:80%;padding:10px 13px;border-radius:12px;font-size:13px;line-height:1.55;}
+.msg.user{align-self:flex-end;background:var(--surface-3);color:var(--text);}
+.msg.ai{align-self:flex-start;background:rgba(57,255,136,0.08);border:1px solid rgba(57,255,136,0.25);color:var(--text);}
+.chat-input-row{display:flex;gap:8px;}
+.suggestion{
+  display:inline-block;background:var(--surface-2);border:1px solid var(--border);
+  color:var(--muted);font-size:12px;padding:6px 12px;border-radius:20px;margin:4px 6px 0 0;cursor:pointer;
+}
+.suggestion:hover{color:var(--text);border-color:var(--neon-deep);}
+
+/* ---------- Growth playbook ---------- */
+.playbook{
+  border-left:3px solid var(--neon);
+  background:var(--surface-2);
+  padding:12px 14px;
+  border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+  margin-bottom:10px;
+  font-size:13px;
+}
+.playbook .tag{font-size:10.5px;color:var(--neon);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;}
+
+/* (Login styles consolidated further down under "Auth screen") */
+
+/* ---------- Toast ---------- */
+#toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--surface-3);border:1px solid var(--neon-deep);color:var(--text);
+  padding:11px 20px;border-radius:20px;font-size:13px;
+  opacity:0;pointer-events:none;transition:all .25s ease;z-index:50;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ---------- Mobile bottom nav ---------- */
+.mobile-nav{display:none;}
+.mobile-topbar{display:none;}
+.sidebar-backdrop{display:none;}
+
+@media (max-width:900px){
+  .sidebar{
+    transform:translateX(-100%);
+    transition:transform .25s ease;
+    z-index:70;
+  }
+  .sidebar.mobile-open{transform:translateX(0);}
+  .sidebar-backdrop.show{
+    display:block;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:65;
+  }
+  .mobile-topbar{
+    display:flex;align-items:center;gap:12px;
+    padding:14px 16px;
+    position:fixed;top:0;left:0;right:0;
+    background:var(--bg);border-bottom:1px solid var(--border);z-index:55;
+  }
+  .mobile-topbar .hamburger{
+    width:38px;height:38px;border-radius:10px;background:var(--surface);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;color:var(--text);font-size:18px;cursor:pointer;
+    flex-shrink:0;
+  }
+  .mobile-topbar .brand{margin:0;font-size:17px;}
+  .main{margin-left:0;padding:70px 16px 90px;}
+  .grid-4{grid-template-columns:repeat(2,1fr);}
+  .grid-3{grid-template-columns:repeat(2,1fr);}
+  .grid-2{grid-template-columns:1fr;}
+  .form-row{grid-template-columns:1fr;}
+  .mobile-nav{
+    display:flex;justify-content:space-around;
+    position:fixed;bottom:0;left:0;right:0;
+    background:var(--surface);border-top:1px solid var(--border);
+    padding:10px 6px 14px;z-index:40;
+  }
+  .mobile-nav .nav-item{
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    font-size:9.5px;color:var(--muted);
+  }
+  .mobile-nav .nav-item.active{color:var(--neon);}
+  table{font-size:11.5px;}
+  .card{overflow-x:auto;}
+  .card-head{flex-wrap:wrap;gap:8px;}
+  .chart-controls{width:100%;}
+  .chip-select{width:100%;justify-content:space-between;}
+  .cart-row{grid-template-columns:1.6fr 50px 70px 20px;font-size:12px;}
+}
+
+.text-muted{color:var(--muted);}
+.mt-0{margin-top:0;}
+.mb-0{margin-bottom:0;}
+.hidden{display:none !important;}
+
+/* ---------- Section intro / explainer ---------- */
+.section-explainer{
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  border-left:3px solid var(--neon-deep);
+  border-radius:0 var(--radius-sm) var(--radius-sm) 0;
+  padding:12px 16px;
+  font-size:12.5px;
+  color:var(--muted);
+  line-height:1.6;
+  margin-bottom:18px;
+}
+.section-explainer b{color:var(--text);}
+
+/* ---------- Info tooltip ---------- */
+.info-dot{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:16px;height:16px;border-radius:50%;
+  background:var(--surface-3);color:var(--muted);
+  font-size:10px;font-weight:700;cursor:help;
+  margin-left:6px;position:relative;
+}
+.info-dot:hover .tooltip, .info-dot:focus .tooltip, .info-dot:focus-visible .tooltip{display:block;}
+.tooltip{
+  display:none;position:absolute;bottom:22px;left:50%;transform:translateX(-50%);
+  background:#000;border:1px solid var(--border);color:var(--text);
+  font-size:11px;font-weight:400;padding:8px 10px;border-radius:8px;
+  width:220px;line-height:1.5;z-index:30;
+}
+
+/* ---------- Icon fallback (no icon-font CDN needed) ----------
+   The original build loaded an icon font from a CDN; on a blocked
+   or offline network that request fails and every icon silently
+   disappears. These are plain Unicode glyphs styled to sit in the
+   same spot, so icons always show regardless of network. */
+.ti{font-style:normal;display:inline-block;}
+.ti-menu-2::before{content:"\2630";}
+.ti-plus::before{content:"+";}
+.ti-check::before{content:"\2713";}
+.ti-x::before{content:"\2715";}
+.ti-pencil::before{content:"\270E";}
+.ti-download::before{content:"\2B07";}
+.ti-file-text::before{content:"\1F4C4";}
+.ti-table::before{content:"\1F5C2";}
+.ti-code::before{content:"</>";font-size:0.85em;}
+.ti-send::before{content:"\27A4";}
+.ti-wallet::before{content:"\1F4B0";}
+.ti-truck::before{content:"\1F69A";}
+.ti-receipt::before{content:"\1F9FE";}
+.ti-receipt-tax::before{content:"\1F4CB";}
+.ti-shield-check::before{content:"\1F6E1";}
+.ti-trending-up::before{content:"\1F4C8";}
+.ti-sparkles::before{content:"\2728";}
+.ti-users-group::before{content:"\1F465";}
+.ti-users::before{content:"\1F464";}
+.ti-credit-card::before{content:"\1F4B3";}
+.ti-building-bank::before{content:"\1F3E6";}
+.ti-layout-dashboard::before{content:"\25A6";}
+.ti-box::before{content:"\1F4E6";}
+
+/* ---------- Auth screen ---------- */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:transparent;padding:20px;}
+.login-card{width:400px;max-width:100%;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:30px 28px;}
+.login-brand{font-size:24px;font-weight:700;color:var(--neon);margin-bottom:4px;}
+.login-tag{font-size:12.5px;color:var(--muted);margin-bottom:22px;}
+.auth-tabs{display:flex;gap:6px;background:var(--surface-2);padding:4px;border-radius:12px;margin-bottom:20px;}
+.auth-tab{flex:1;text-align:center;padding:9px 0;border-radius:9px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:background .15s ease,color .15s ease;}
+.auth-tab:hover{color:var(--text);background:var(--surface-3);}
+.auth-tab.active{background:var(--neon);color:#052312;}
+.auth-tab.active:hover{background:#5dffa2;color:#052312;}
+.auth-pane{display:none;}
+.auth-pane.active{display:block;}
+/* The pane fades in when you switch tabs, so it's obvious the form
+   changed rather than the fields silently swapping under the cursor. */
+.auth-pane.active{animation:popIn .25s ease both;}
+.auth-subtabs{display:flex;gap:16px;margin-bottom:16px;font-size:12px;}
+.auth-subtab{color:var(--muted);cursor:pointer;padding-bottom:4px;border-bottom:2px solid transparent;}
+.auth-subtab.active{color:var(--neon);border-color:var(--neon);}
+.auth-error{background:var(--danger-dim);color:var(--danger);font-size:12px;padding:9px 12px;border-radius:8px;margin-bottom:14px;}
+.code-explainer{
+  background:var(--surface-2);border:1px solid var(--border);border-radius:10px;
+  padding:10px 12px;font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:16px;
+}
+.code-explainer b{color:var(--text);}
+.code-explainer code{background:var(--surface-3);padding:1px 5px;border-radius:4px;color:var(--neon);}
+.super-badge{
+  display:inline-block;background:linear-gradient(90deg,#39FF88,#12A64C);color:#052312;
+  font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:0.3px;
+}
+.register-callout{
+  margin-top:18px;padding:14px 16px;border-radius:12px;
+  background:var(--neon-dim);border:1px solid rgba(57,255,136,0.3);
+}
+.register-callout-title{font-weight:700;color:var(--neon);font-size:13px;margin-bottom:4px;}
+.register-callout-body{font-size:11.5px;color:var(--muted);line-height:1.5;}
+
+/* ---------- Standard operating procedures ---------- */
+.sop-item{
+  background:var(--surface-2);border:1px solid var(--border);border-radius:10px;
+  padding:12px 14px;margin-bottom:10px;
+}
+.sop-item-head{display:flex;justify-content:space-between;align-items:center;font-size:13px;}
+.list-wrap{max-height:340px;overflow-y:auto;border-radius:8px;}
+.list-wrap.expanded{max-height:none;}
+.show-more-row{text-align:center;margin-top:10px;}
+.list-wrap::-webkit-scrollbar{width:8px;}
+.list-wrap::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:4px;}
+.list-wrap::-webkit-scrollbar-track{background:transparent;}
+.payout-status{
+  display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:4px;
+}
+.payout-status .dot{width:8px;height:8px;border-radius:50%;background:var(--border);}
+.payout-status.connected .dot{background:var(--neon);}
+.payout-status.connected{color:var(--neon);}
+.payout-divider{
+  text-align:center;font-size:11px;color:var(--muted);margin:16px 0 10px;
+  position:relative;
+}
+.payout-divider::before, .payout-divider::after{
+  content:"";position:absolute;top:50%;width:40%;height:1px;background:var(--border);
+}
+.payout-divider::before{left:0;} .payout-divider::after{right:0;}
+
+/* ---------- Forgot password / company code lookup ---------- */
+.forgot-block{
+  background:var(--surface-2);border:1px solid var(--border);border-radius:12px;
+  padding:16px;margin-bottom:14px;
+}
+.forgot-title{font-weight:700;font-size:13px;color:var(--neon);margin-bottom:10px;}
+.forgot-result{
+  margin-top:12px;padding:12px 14px;border-radius:9px;
+  background:var(--neon-dim);border:1px solid rgba(57,255,136,0.3);font-size:12.5px;line-height:1.6;
+}
+
+/* ---------- About / contact page ---------- */
+.about-wrap{
+  min-height:100vh;background:transparent;display:flex;justify-content:center;padding:40px 20px;
+}
+.about-card{width:100%;max-width:640px;}
+.about-card h3{color:var(--neon);font-size:15px;margin:24px 0 8px;}
+.about-card p{color:var(--text);font-size:13.5px;line-height:1.7;margin:0 0 4px;}
+.about-list{margin:0;padding-left:20px;color:var(--text);font-size:13.5px;line-height:1.9;}
+.about-list b{color:var(--neon);}
+.about-card a{color:var(--neon);}
+.legal-pane h3:first-child{margin-top:0;}
+
+/* ---------- Legal footer links (login + about pages) ---------- */
+.legal-footer{
+  display:flex;gap:14px;flex-wrap:wrap;margin-top:24px;padding-top:16px;
+  border-top:1px solid var(--border);
+}
+.legal-footer a{font-size:11px;color:var(--muted);}
+.legal-footer a:hover{color:var(--neon);}
+.legal-footer-inline{margin-top:16px;padding-top:12px;justify-content:center;}
+
+/* ---------- Department badges ---------- */
+.dept-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--surface-3);color:var(--muted);
+  font-size:10.5px;font-weight:600;padding:4px 9px;border-radius:20px;margin:2px 3px 2px 0;
+}
+.dept-badge.on{background:var(--neon-dim);color:var(--neon);}
+.dept-check{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:9px;cursor:pointer;font-size:12.5px;}
+.dept-check input{width:auto;flex-shrink:0;}
+#dept-checklist, .dept-checklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin:10px 0;}
+
+/* ---------- Customer tiers ---------- */
+.tier-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.tier-VIP{background:rgba(255,209,102,0.15);color:var(--warn);}
+.tier-Regular{background:var(--neon-dim);color:var(--neon);}
+.tier-New{background:rgba(111,183,255,0.15);color:#6FB7FF;}
+.tier-AtRisk{background:var(--danger-dim);color:var(--danger);}
+
+/* ---------- Chart controls ---------- */
+.chart-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.chip-select{
+  display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:3px;gap:2px;
+}
+.chip-opt{padding:6px 12px;font-size:11.5px;border-radius:7px;color:var(--muted);cursor:pointer;}
+.chip-opt.active{background:var(--neon);color:#052312;font-weight:700;}
+.chart-canvas-wrap{height:220px;position:relative;}
+.chart-canvas-wrap--auto{height:auto !important;display:block;}
+.chi-canvas-box{position:relative;width:100%;}
+
+/* ---------- Isometric 3D-style bars ---------- */
+.iso-wrap{display:flex;align-items:flex-end;gap:26px;height:180px;padding:20px 10px 0;}
+.iso-bar-group{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.iso-bar{
+  --w:34px;
+  width:var(--w);height:var(--h);position:relative;
+  background:linear-gradient(180deg,var(--neon),var(--neon-deep));
+  transform:rotateX(0deg);
+}
+.iso-top{
+  position:absolute;top:-9px;left:-9px;right:0;height:9px;
+  background:#7dffb0;
+  clip-path:polygon(0 100%, 100% 100%, 88% 0, 12% 0);
+}
+.iso-side{
+  position:absolute;top:0;right:-9px;bottom:0;width:9px;
+  background:#0e7a38;
+  clip-path:polygon(0 0, 100% 12%, 100% 100%, 0 100%);
+}
+.iso-label{font-size:10px;color:var(--muted);}
+
+/* ---------- Glossary ---------- */
+.glossary-item{padding:10px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
+.glossary-item:last-child{border-bottom:none;}
+.glossary-term{font-weight:700;color:var(--neon);margin-bottom:3px;}
+
+/* ---------- Sales cart ---------- */
+.cart-row{display:grid;grid-template-columns:2fr 70px 90px 24px;gap:8px;align-items:center;margin-bottom:8px;}
+.cart-total-row{display:flex;justify-content:space-between;font-size:13.5px;padding:10px 0;border-top:1px solid var(--border);margin-top:8px;}
+.cart-total-row.grand{font-weight:700;font-size:15px;color:var(--neon);}
+.icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;width:auto;padding:2px;}
+.icon-btn:hover{color:var(--danger);}
+
+/* ---------- Root cause panel ---------- */
+.rootcause{
+  background:rgba(255,92,92,0.06);border:1px solid rgba(255,92,92,0.25);
+  border-radius:var(--radius-sm);padding:12px 14px;margin-top:10px;font-size:12.5px;line-height:1.6;
+}
+.rootcause b{color:var(--danger);}
+
+/* ---------- Chart legend (drawn by charts.js next to canvas charts) ---------- */
+.chi-legend{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:8px;font-size:11px;color:var(--muted);}
+.chi-legend-item{display:inline-flex;align-items:center;gap:5px;}
+.chi-legend-item i{display:inline-block;width:9px;height:9px;border-radius:2px;}
+/* ---------- Impersonation badge (compact, not a full banner) ---------- */
+.imp-badge{
+  position:fixed;top:14px;right:20px;z-index:60;
+  background:var(--surface);border:1px solid var(--warn);color:var(--warn);
+  font-size:11.5px;font-weight:600;padding:8px 14px;border-radius:20px;
+  box-shadow:0 6px 18px rgba(0,0,0,0.45);
+  display:flex;align-items:center;gap:8px;
+}
+.imp-badge b{color:var(--text);}
+.imp-badge a{color:var(--warn);text-decoration:underline;font-weight:700;}
+@media (max-width:900px){ .imp-badge{ top:auto; bottom:78px; left:16px; right:16px; justify-content:center; } }
+
+/* ---------- Auditor read-only access badge (same shape as .imp-badge, neon not amber) ---------- */
+.auditor-badge{
+  position:fixed;top:14px;right:20px;z-index:60;
+  background:var(--surface);border:1px solid var(--neon-deep);color:var(--neon);
+  font-size:11.5px;font-weight:600;padding:8px 14px;border-radius:20px;
+  box-shadow:0 6px 18px rgba(0,0,0,0.45);
+  display:flex;align-items:center;gap:8px;
+}
+.auditor-badge b{color:var(--text);}
+@media (max-width:900px){ .auditor-badge{ top:auto; bottom:78px; left:16px; right:16px; justify-content:center; text-align:center; } }
+
+/* ---------- Back button ---------- */
+.back-btn{
+  position:fixed;bottom:22px;left:246px;z-index:55;
+  background:var(--surface);border:1px solid var(--border);color:var(--text);
+  font-size:12px;font-weight:600;padding:9px 16px;border-radius:20px;cursor:pointer;
+  box-shadow:0 6px 18px rgba(0,0,0,0.4);
+}
+.back-btn:hover{border-color:var(--neon-deep);color:var(--neon);}
+@media (max-width:900px){ .back-btn{ left:16px;bottom:78px; } }
+
