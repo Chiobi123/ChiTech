@@ -1,1 +1,0 @@
-alter table public.sales add column items_summary text;
