@@ -122,7 +122,67 @@ function analyseRows(rows,type,map){
   if(badDates) recommendations.push('Standardise dates to one format such as YYYY-MM-DD.');
   if(outliers) recommendations.push('Review outlier transactions against receipts, invoices or bank records.');
   if(!recommendations.length) recommendations.push('Keep the same structured export format for future reviews and compare the next period against this baseline.');
-  return {total_rows:rows.length,missing_values:missing,missing_by_field:missingByField,duplicate_rows:duplicates,warnings,bad_dates:badDates,negative_amounts:negative,outliers,strengths,weaknesses,recommendations};
+  // Business layer (spec 8): totals, averages, breakdowns, best/worst
+  // periods and top entities — computed from the same normalized values
+  // the commit step will write, so the review matches what lands.
+  const business = businessAnalysis(rows, type, map, amounts);
+  if(business.summary) strengths.push(business.summary);
+  business.recommendations.forEach(r=>recommendations.push(r));
+  return {total_rows:rows.length,missing_values:missing,missing_by_field:missingByField,duplicate_rows:duplicates,warnings,bad_dates:badDates,negative_amounts:negative,outliers,strengths,weaknesses,recommendations,business};
+}
+
+/** Business analysis over staged rows: totals, averages, per-day highs/lows,
+ *  category/payment/customer/product breakdowns and top entities. Pure
+ *  deterministic computation — the auditable baseline the optional AI layer
+ *  (spec 9) must trace back to. */
+function businessAnalysis(rows,type,map,amounts){
+  const out = {recommendations:[]};
+  const sum = amounts.reduce((a,b)=>a+b,0);
+  const avg = amounts.length ? sum/amounts.length : 0;
+  const money = n=>'₦'+Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
+  const top = (m,n=5)=>[...m.entries()].sort((a,b)=>b[1]-a[1]).slice(0,n).map(([k,v])=>({name:k,total:v}));
+  if(type==='sales'){
+    const byDay=new Map(), byPay=new Map(), byCust=new Map(), byProd=new Map();
+    rows.forEach(r=>{
+      const t=importNum(map.total?r[map.total]:'');
+      const day=map.date&&importDate(r[map.date])?importDate(r[map.date]).slice(0,10):'no-date';
+      if(t!==null){ byDay.set(day,(byDay.get(day)||0)+t);
+        const p=String(map.payment?r[map.payment]:'').trim()||'unspecified'; byPay.set(p,(byPay.get(p)||0)+t);
+        const c=String(map.customer_name?r[map.customer_name]:'').trim(); if(c) byCust.set(c,(byCust.get(c)||0)+t);
+        const g=String(map.product?r[map.product]:'').trim(); if(g) byProd.set(g,(byProd.get(g)||0)+t);
+      }
+    });
+    const days=[...byDay.entries()].filter(([d])=>d!=='no-date').sort((a,b)=>b[1]-a[1]);
+    out.summary=`Staged sales total ${money(sum)} across ${rows.length} transaction${rows.length===1?'':'s'} (average ${money(avg)}).`;
+    out.revenue=sum; out.transactions=rows.length; out.average_value=avg;
+    out.by_payment=top(byPay); out.top_customers=top(byCust); out.top_products=top(byProd);
+    if(days.length){ out.best_day={date:days[0][0],total:days[0][1]}; out.worst_day={date:days[days.length-1][0],total:days[days.length-1][1]}; }
+    if(byCust.size===1) out.recommendations.push('All staged sales come from one customer — concentration risk. Winning a second regular buyer matters more than more volume from this one.');
+    if(byPay.has('unspecified')) out.recommendations.push('Some sales lack a payment method — recording it each time makes reconciliation and tax review far easier.');
+  } else if(type==='expenses'){
+    const byCat=new Map();
+    rows.forEach(r=>{ const a=importNum(map.amount?r[map.amount]:''); if(a!==null){ const c=String(map.category?r[map.category]:'').trim()||'Other'; byCat.set(c,(byCat.get(c)||0)+a); } });
+    out.summary=`Staged expenses total ${money(sum)} across ${rows.length} record${rows.length===1?'':'s'} (average ${money(avg)}).`;
+    out.total=sum; out.by_category=top(byCat,10);
+    const lead=out.by_category[0];
+    if(lead && sum>0 && lead.total/sum>.5) out.recommendations.push(`"${lead.name}" is over half of staged expenses (${money(lead.total)}) — confirm it repeats deliberately before treating it as normal running cost.`);
+  } else if(type==='products'){
+    let low=0, val=0;
+    rows.forEach(r=>{ const s=Math.round(importNum(map.stock?r[map.stock]:'')??0), re=Math.round(importNum(map.reorder?r[map.reorder]:'')??0), p=importNum(map.price?r[map.price]:'')??0;
+      if(s<=re) low++; val+=s*p; });
+    out.summary=`${rows.length} product${rows.length===1?'':'s'} staged; stock on hand valued at ${money(val)}; ${low} at or below reorder level.`;
+    out.stock_value=val; out.reorder_count=low;
+    if(low) out.recommendations.push(`Restock the ${low} product${low===1?'':'s'} at/below reorder level before they stock out.`);
+  } else if(type==='customers'){
+    const spent=rows.map(r=>importNum(map.total_spent?r[map.total_spent]:'')??0).sort((a,b)=>b-a);
+    const top1=spent[0]||0, tot=spent.reduce((a,b)=>a+b,0);
+    const inactive=rows.filter(r=>{ const d=map.last_purchase?importDate(r[map.last_purchase]):null; return !d || (Date.now()-new Date(d).getTime())>90*864e5; }).length;
+    out.summary=`${rows.length} customer${rows.length===1?'':'s'} staged with combined recorded spend of ${money(tot)}; ${inactive} inactive 90+ days.`;
+    out.inactive_90d=inactive;
+    if(tot>0 && top1/tot>.5) out.recommendations.push('One customer dominates recorded spend — concentration risk; a win-back push for the inactive list reduces it.');
+    if(inactive) out.recommendations.push(`Follow up the ${inactive} customer${inactive===1?'':'s'} inactive 90+ days — even a simple check-in message wins some back.`);
+  }
+  return out;
 }
 
 async function prepareImport(){

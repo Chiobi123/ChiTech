@@ -352,7 +352,11 @@ async function syncTeam(companyId, team, syncedTeam){
    ============================================================ */
 async function loadPlatform(){
   const {data, error} = await sb.rpc('platform_overview');
-  if(error){ console.error('loadPlatform:', error); return {companies:[], users:[], salesByCompany:{}, securityAlerts:[]}; }
+  if(error){
+    console.error('loadPlatform:', error);
+    toast('Could not load the platform console: ' + (error.message || error), 5000);
+    return {companies:[], users:[], salesByCompany:{}, securityAlerts:[], loadError:(error.message || String(error))};
+  }
   const payload = data || {};
   const companies = (payload.companies||[]).map(c=>({
     id:c.id, name:c.name, code:c.code, plan:c.plan, ownerEmail:c.owner_email||null,

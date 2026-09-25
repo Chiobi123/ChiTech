@@ -57,7 +57,27 @@ window.addEventListener('DOMContentLoaded', async () => {
     el.addEventListener('click', ()=> setAuditorAnalysisMode(el.dataset.mode));
   });
 
-  if(session){ await bootApp(); }
+  // Section 1 fix: never render protected content from the cached session
+  // alone. Revalidate against Supabase Auth + profiles first; the loading
+  // veil stays up until validation passes, so neither the sign-in form nor
+  // a stale dashboard flashes on refresh.
+  try {
+    if(session){
+      const check = await validateStoredSession();
+      if(check.ok){ session = check.session; saveSession(session); await bootApp(); }
+      else if(check.reason==='transient'){
+        toastOnLogin('Could not reach the server — check your connection and refresh to try again.');
+      }
+      else { session = null; try{ await sb.auth.signOut(); }catch(e){} }
+    }
+    else {
+      // OAuth return (e.g. Google): linked identities boot straight in with
+      // the DB role; unlinked ones get onboarding, never a dashboard.
+      try { await finishOAuthLogin(); } catch(e){}
+    }
+  } finally {
+    document.getElementById('boot-veil').classList.add('hidden');
+  }
 });
 
 /** Escapes text before it's inserted into innerHTML, so a product name,
@@ -104,6 +124,9 @@ function initials(name){
 async function bootApp(){
   navStack = [];
   currentSection = null;
+  // Defensive gate: session.role was rebuilt from the profiles table by the
+  // caller (boot validation or fresh login). An unknown role renders nothing.
+  if(!session || !['super_admin','company_admin','worker','auditor'].includes(session.role)){ logout(); return; }
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
 
@@ -1564,7 +1587,10 @@ function toggleWorkerStatus(memberId){
 function renderTeam(){
   const company = currentCompany();
   document.getElementById('team-code').textContent = company ? company.code : '—';
-  document.getElementById('team-table').innerHTML = state.team.map(m=>`
+  renderDeptChecklist('invite-depts', []);
+  const q = (document.getElementById('team-search').value || '').trim().toLowerCase();
+  const members = state.team.filter(m=>!q || (m.name||'').toLowerCase().includes(q) || (m.email||'').toLowerCase().includes(q));
+  document.getElementById('team-table').innerHTML = members.map(m=>`
     <tr>
       <td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.email)}</td>
       <td>${m.role==='company_admin'?'Admin':'Worker'}</td>
@@ -1572,13 +1598,86 @@ function renderTeam(){
           : m.departments.length ? m.departments.map(d=>`<span class="dept-badge on">${escapeHtml(deptLabel(d))}</span>`).join('')
           : '<span class="text-muted" style="font-size:11px;">No access assigned yet</span>'}</td>
       <td>${m.active!==false ? '<span class="badge badge-ok">Active</span>' : '<span class="badge badge-muted">Paused</span>'}</td>
-      <td>${m.role!=='company_admin' ? `<button class="btn btn-sm" onclick="toggleDeptEditor('${m.id}')">Edit access</button> <button class="btn btn-sm" onclick="toggleWorkerStatus('${m.id}')" style="margin-left:4px;">${m.active!==false?'Pause':'Reactivate'}</button>` : ''}</td>
+      <td>${m.role!=='company_admin' ? `<button class="btn btn-sm" onclick="toggleDeptEditor('${m.id}')">Edit access</button> <button class="btn btn-sm" onclick="toggleWorkerStatus('${m.id}')" style="margin-left:4px;">${m.active!==false?'Pause':'Reactivate'}</button>${m.active===false?` <button class="btn btn-sm btn-primary" onclick="approveWorker('${m.id}')" style="margin-left:4px;">Approve</button>`:''} <button class="btn btn-sm" onclick="removeWorker('${m.id}')" style="margin-left:4px;">Remove</button>` : ''}</td>
     </tr>
     ${m.role!=='company_admin' ? `<tr id="dept-editor-${m.id}" class="hidden"><td colspan="6">
       <div id="dept-checklist-${m.id}" class="dept-checklist"></div>
       <button class="btn btn-sm btn-primary" style="margin-top:8px;" onclick="saveWorkerDepartments('${m.id}')">Save access</button>
     </td></tr>` : ''}
   `).join('');
+  loadInvitations();
+}
+
+/* ---------------- Worker invitations (admin) ---------------- */
+async function inviteWorker(){
+  const email = document.getElementById('invite-email').value.trim().toLowerCase();
+  const departments = Array.from(document.querySelectorAll('#invite-depts input:checked')).map(i=>i.value);
+  if(!email || email.indexOf('@') < 0){ toast('Enter a valid worker email.'); return; }
+  const {data, error} = await sb.rpc('invite_worker', { p_email: email, p_departments: departments });
+  if(error){ toast('Invitation failed: ' + error.message, 4000); return; }
+  document.getElementById('invite-status').textContent = 'Invitation created. Share the token with ' + email + ' (see Pending invitations).';
+  document.getElementById('invite-email').value = '';
+  state = await loadBusiness(session.companyId);
+  renderTeam();
+}
+
+async function loadInvitations(){
+  const el = document.getElementById('invite-table');
+  if(!el) return;
+  const {data, error} = await sb.from('worker_invitations').select('id,email,status,expires_at,created_at').eq('company_id', session.companyId).order('created_at', {ascending:false});
+  if(error){ el.innerHTML = `<tr><td colspan="4" class="text-muted">Could not load invitations.</td></tr>`; return; }
+  el.innerHTML = (data||[]).map(inv=>`<tr>
+    <td>${escapeHtml(inv.email)}</td>
+    <td>${escapeHtml(inv.status)}${inv.status==='pending' && new Date(inv.expires_at) < new Date() ? ' (expired)' : ''}</td>
+    <td>${new Date(inv.expires_at).toLocaleDateString('en-NG')}</td>
+    <td>${inv.status==='pending' ? `<button class="btn btn-sm" onclick="resendInvitation('${inv.id}')">Resend</button> <button class="btn btn-sm" onclick="revokeInvitation('${inv.id}')" style="margin-left:4px;">Revoke</button>` : ''}</td>
+  </tr>`).join('') || `<tr><td colspan="4" class="text-muted">No invitations yet.</td></tr>`;
+}
+
+async function resendInvitation(id){
+  const {data, error} = await sb.rpc('resend_invitation', { p_invitation_id: id });
+  if(error){ toast('Resend failed: ' + error.message, 4000); return; }
+  toast('New token issued — share it with the worker.', 5000);
+  loadInvitations();
+}
+
+async function revokeInvitation(id){
+  if(!confirm('Revoke this invitation? The token stops working immediately.')) return;
+  const {error} = await sb.rpc('revoke_invitation', { p_invitation_id: id });
+  if(error){ toast('Revoke failed: ' + error.message, 4000); return; }
+  toast('Invitation revoked.');
+  loadInvitations();
+}
+
+/** Approve = save the ticked departments, then activate. Blocked until at
+ *  least one department is assigned. */
+async function approveWorker(memberId){
+  const row = document.getElementById('dept-editor-'+memberId);
+  if(row && row.classList.contains('hidden')){ toggleDeptEditor(memberId); toast('Tick departments, save, then approve again.'); return; }
+  const departments = row ? Array.from(row.querySelectorAll('input:checked')).map(i=>i.value) : null;
+  const m = state.team.find(x=>x.id===memberId);
+  if(!m) return;
+  if(departments && departments.length){
+    m.departments = departments;
+    addAuditLog('team.departments_change', `Set ${m.name}'s access to ${departments.map(deptLabel).join(', ')}`);
+  }
+  if(!m.departments.length){ toast('Assign at least one department first.'); return; }
+  const {error} = await sb.rpc('set_worker_active', { p_profile_id: memberId, p_active: true });
+  if(error){ toast('Approval failed: ' + error.message, 4000); return; }
+  state = await loadBusiness(session.companyId);
+  renderTeam();
+  toast('Worker approved and activated.');
+}
+
+async function removeWorker(memberId){
+  const m = state.team.find(x=>x.id===memberId);
+  if(!m) return;
+  if(!confirm(`Remove ${m.name} (${m.email}) from the company? Their history stays in the audit log.`)) return;
+  const {error} = await sb.rpc('remove_worker', { p_profile_id: memberId });
+  if(error){ toast('Remove failed: ' + error.message, 4000); return; }
+  state = await loadBusiness(session.companyId);
+  renderTeam();
+  toast('Worker removed.');
 }
 
 /* ================= AUDITOR ACCESS (admin-side grant management) =================
@@ -1731,6 +1830,9 @@ async function renderSuperAdmin(){
   const companies = platform.companies || [];
   const salesByCompany = platform.salesByCompany || {};
   const alerts = platform.securityAlerts || [];
+  if(platform.loadError){
+    document.getElementById('sa-table').innerHTML = `<tr><td colspan="7" class="auth-error">Platform data failed to load: ${escapeHtml(platform.loadError)} — sign out and back in; if it persists, contact support.</td></tr>`;
+  }
   let totalWorkers=0, totalSales=0, mrr=0, foundingCount=0;
   const planCounts = {};
 

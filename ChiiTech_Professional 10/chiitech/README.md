@@ -1,5 +1,23 @@
 # ChiiTech — frontend prototype
 
+## Current round — 2026-09-25: imports, security alerts, super-admin isolation (live)
+
+- Live DB `ChiTech b` now on 21 migrations: 19 super-admin privacy +
+  fraud signals (`bootstrap_super_admin`, `compute_fraud_signals`,
+  `platform_fraud_overview`), 20 imports + security alerts, 21 detection
+  rules. Verified: 3 staging/alert tables with RLS, 3 policies, 13
+  functions, 3 triggers, `can_access_company()` isolated (no super_admin
+  bypass).
+- ChatGPT contribution reviewed: kept import pipeline + alerts +
+  triggers, declined what conflicted with tested privacy model.
+- Frontend: `js/imports.js` + Import & Analysis page (CSV/JSON/Excel),
+  Super Admin Risk column + Security Alerts table + password-change card.
+- Backup: live 19 reconstructed from `pg_get_functiondef` (header-marked,
+  functionally equivalent); live 20/21 covered by
+  `20260923000100` + `20260923000200`. See `supabase/migrations/README.md`.
+- Rolled-back 10-step live test passed (import → analyse → commit →
+  auto-alert → RLS blocks worker + direct alert insert).
+
 A working, click-through frontend for the ChiiTech product blueprint: multi-company
 admin/worker/auditor accounts, a super-admin console, dashboard, sales, products, customers,
 orders, expenses, tax analysis, an audit trail engine, a growth engine, team management,

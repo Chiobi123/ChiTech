@@ -510,7 +510,7 @@ tbody tr:hover{background:var(--surface-2);}
   display:none;position:absolute;bottom:22px;left:50%;transform:translateX(-50%);
   background:#000;border:1px solid var(--border);color:var(--text);
   font-size:11px;font-weight:400;padding:8px 10px;border-radius:8px;
-  width:220px;line-height:1.5;z-index:30;
+  width:220px;max-width:62vw;line-height:1.5;z-index:30;
 }
 
 /* ---------- Icon fallback (no icon-font CDN needed) ----------
@@ -743,4 +743,28 @@ tbody tr:hover{background:var(--surface-2);}
 }
 .back-btn:hover{border-color:var(--neon-deep);color:var(--neon);}
 @media (max-width:900px){ .back-btn{ left:16px;bottom:78px; } }
+
+/* ---------- Small phones (≤560px): single-column stats, roomier touch
+   targets, no sideways overflow. Tablets/large phones keep the 900px
+   two-column rules above. */
+@media (max-width:560px){
+  .grid-4,.grid-3{grid-template-columns:1fr 1fr;}
+  .stat .value{font-size:19px;overflow-wrap:anywhere;}
+  .login-card{padding:22px 18px;border-radius:16px;}
+  .auth-tabs{flex-wrap:wrap;}
+  .auth-tab{flex:1 1 40%;font-size:12px;padding:9px 4px;}
+  .page-title{font-size:19px;}
+  .topbar{flex-wrap:wrap;gap:8px;}
+  .btn{min-height:42px;}
+  .btn-sm{min-height:34px;}
+  table{font-size:11px;}
+  th,td{padding:8px 7px;}
+  #team-search{max-width:100%;width:100%;}
+  #dept-checklist,.dept-checklist{grid-template-columns:1fr 1fr;}
+  .iso-wrap{gap:12px;}
+  .iso-bar{--w:24px;}
+  .msg{max-width:92%;}
+  .cart-row{grid-template-columns:1.4fr 44px 62px 20px;}
+  input,select,textarea{font-size:16px;}
+}
 

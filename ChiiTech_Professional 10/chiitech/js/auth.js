@@ -81,6 +81,49 @@ function loadSession(){
 function saveSession(s){ sessionStorage.setItem('chiitech_session', JSON.stringify(s)); }
 function clearSession(){ sessionStorage.removeItem('chiitech_session'); }
 
+/** Boot-time revalidation (Section 1 fix): never trust the cached session
+ *  alone. Compares the stored session against the live Supabase Auth user
+ *  + profiles row. Returns {ok:true, session} or {ok:false, reason}.
+ *  Clears stale storage whenever the identity changed, signed out, or was
+ *  closed — so switching accounts in one browser can never briefly render
+ *  the previous account's dashboard. Transient network/DB errors return
+ *  reason 'transient' WITHOUT clearing storage, so a refresh during a
+ *  network blip never signs a valid user out. */
+async function validateStoredSession(){
+  const stored = loadSession();
+  // Auditors are not Supabase Auth users (code-based grant); their grant is
+  // revalidated fresh on every boot inside bootApp(). Leave them untouched.
+  if(stored && stored.role==='auditor') return {ok:true, session:stored};
+  let user = null;
+  try {
+    const res = await sb.auth.getUser();
+    user = res.data.user;
+  } catch(e){ return {ok:false, reason:'transient'}; }
+  if(!user){ if(stored) clearSession(); return {ok:false, reason:'no-auth-user'}; }
+  let profile = null, perr = null;
+  try {
+    const res = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    profile = res.data; perr = res.error;
+  } catch(e){ perr = e; }
+  if(perr){ return {ok:false, reason:'transient'}; }
+  if(!profile){ clearSession(); return {ok:false, reason:'no-profile'}; }
+  if(profile.deleted_at){ clearSession(); return {ok:false, reason:'deleted'}; }
+  const fresh = {
+    email: profile.email, role: profile.role, companyId: profile.company_id,
+    name: profile.name, departments: profile.departments||[]
+  };
+  const same = stored
+    && String(stored.email||'').trim().toLowerCase()===String(fresh.email||'').trim().toLowerCase()
+    && stored.role===fresh.role
+    && String(stored.companyId||'')===String(fresh.companyId||'');
+  if(!same){
+    clearSession();
+    if(!stored) return {ok:false, reason:'no-stored-session'};
+    return {ok:false, reason:'identity-changed'};
+  }
+  return {ok:true, session:fresh};
+}
+
 /** Fetches the signed-in Supabase Auth user's own profiles row and
  *  builds it into the same `session` shape the rest of the app expects.
  *  Returns null if there's no matching profile yet (shouldn't normally
@@ -123,7 +166,7 @@ async function registerCompany(){
   const {company_id, company_code} = rpcData[0];
 
   session = { email, role:'company_admin', companyId:company_id, name, departments:['all'] };
-  saveSession(session);
+  clearSession(); saveSession(session);
   await bootApp();
   setTimeout(()=> toast(`Company created! Your company code is ${company_code} — find it any time on the Team page.`, 6000), 400);
 }
@@ -154,40 +197,103 @@ async function loginAdmin(){
   }
   clearLoginThrottle(email);
   session = built;
-  saveSession(session);
+  clearSession(); saveSession(session);
   await bootApp();
 }
 
-/* ---------------- Worker: join a company (self-service, code-based) ----------------
-   Replaces the old "admin types in a password for you" flow — with real
-   Supabase Auth, an admin's own browser session can't safely create
-   another user's account from inside the app (doing so would swap the
-   admin's active session for the new user's). So a worker creates their
-   own account here with a company code the admin shares, same pattern
-   as the auditor access code. The admin assigns departments afterward
-   from the Team page. */
+/* ---------------- Worker: join via invitation token ----------------
+   The company code is only an identifier — membership requires a
+   single-use, expiring, email-bound invitation (see migration 22).
+   The worker creates their own Supabase Auth account, then the token
+   links that identity to the company as an inactive worker the admin
+   must approve (assign departments + activate). */
 async function joinAsWorker(){
-  const code = document.getElementById('join-worker-code').value.trim().toUpperCase();
+  const token = document.getElementById('join-worker-token').value.trim();
   const name = document.getElementById('join-worker-name').value.trim();
   const email = document.getElementById('join-worker-email').value.trim().toLowerCase();
   const password = document.getElementById('join-worker-pass').value;
 
-  if(!code || !name || !email || !password){ authError('Fill in every field to join.'); return; }
+  if(!token || !name || !email || !password){ authError('Fill in every field, including your invitation token.'); return; }
   if(password.length < 6){ authError('Password must be at least 6 characters.'); return; }
 
-  const {data, error} = await sb.auth.signUp({ email, password });
-  if(error){ authError(error.message); return; }
-  if(!data.session){ authError('Check your email to confirm your account, then sign in.'); return; }
+  // Already signed in (e.g. via Google): skip account creation and accept
+  // the invitation directly with this identity.
+  const {data:{user:existing}} = await sb.auth.getUser();
+  if(!existing){
+    const {data, error} = await sb.auth.signUp({ email, password });
+    if(error){ authError(error.message); return; }
+    if(!data.session){ authError('Check your email to confirm your account, then sign in and accept the invitation.'); return; }
+  }
 
-  const {data:rpcData, error:rpcError} = await sb.rpc('join_company_as_worker', {
-    p_company_code: code, p_name: name
+  const {data:rpcData, error:rpcError} = await sb.rpc('accept_invitation', { p_token: token });
+  if(rpcError){ await sb.auth.signOut(); authError(rpcError.message); return; }
+
+  const built = await buildSessionFromProfile();
+  if(!built || built.role!=='worker'){ await sb.auth.signOut(); authError('Invitation accepted but the worker profile could not be loaded. Ask your admin.'); return; }
+  session = built;
+  clearSession(); saveSession(session);
+  await bootApp();
+  setTimeout(()=> toast('Invitation accepted — your admin will assign your access and approve you shortly.', 6000), 400);
+}
+
+/* ---------------- Google sign-in (optional OAuth method) ----------------
+   Uses Supabase Auth OAuth — no Google secrets in this file. Google users
+   NEVER auto-receive privileges: after redirect, an identity with no
+   profiles row lands on the unlinked-account notice, never a dashboard. */
+async function loginWithGoogle(){
+  const {error} = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + window.location.pathname }
+  });
+  if(error) authError(error.message);
+}
+
+/** Shown when a signed-in OAuth identity has no ChiiTech profile:
+ *  no dashboard, no role — onboarding form plus guidance. */
+function showUnlinkedNotice(email){
+  clearSession(); session = null;
+  try{ document.getElementById('app').classList.add('hidden'); }catch(e){}
+  try{ document.getElementById('login-screen').classList.remove('hidden'); }catch(e){}
+  try{
+    document.getElementById('oauth-email').textContent = email;
+    document.getElementById('oauth-signup').classList.remove('hidden');
+  }catch(e){}
+  authError(`Signed in with Google as ${email}, but that address isn't linked to any company yet. Register your company above, or accept a worker invitation under "Join as Worker". Your existing email/password login still works.`);
+}
+
+function hideOAuthSignup(){ try{ document.getElementById('oauth-signup').classList.add('hidden'); }catch(e){} }
+
+/** Google sign-up for owners: creates the company under the current OAuth
+ *  identity (no password involved) and signs them in as company_admin. */
+async function registerCompanyWithOAuth(){
+  const companyName = document.getElementById('oauth-company').value.trim();
+  const name = document.getElementById('oauth-name').value.trim();
+  if(!companyName || !name){ authError('Enter your company name and your name.'); return; }
+  const {data:{user}} = await sb.auth.getUser();
+  if(user && isSuperAdmin(user.email)){ authError('That address is reserved — sign in normally instead.'); return; }
+  const {data:rpcData, error:rpcError} = await sb.rpc('register_company', {
+    p_company_name: companyName, p_admin_name: name
   });
   if(rpcError){ authError(rpcError.message); return; }
-
-  session = { email, role:'worker', companyId:rpcData[0].company_id, name, departments:[] };
-  saveSession(session);
+  const built = await buildSessionFromProfile();
+  if(!built){ authError('Company created but profile lookup failed — sign in again.'); return; }
+  clearSession(); session = built; saveSession(session);
+  hideOAuthSignup();
   await bootApp();
-  setTimeout(()=> toast(`Welcome to ${rpcData[0].company_name} — your admin will assign your access shortly.`, 6000), 400);
+  setTimeout(()=> toast(`Company created! Your company code is ${rpcData[0].company_code}.`, 6000), 400);
+}
+
+/** Google login for already-linked accounts: role comes from the profiles
+ *  table only — OAuth never grants a role by itself. */
+async function finishOAuthLogin(){
+  const {data:{user}} = await sb.auth.getUser();
+  if(!user){ clearSession(); return; }
+  const built = await buildSessionFromProfile();
+  if(built === 'deleted'){ await sb.auth.signOut(); hideOAuthSignup(); authError('This account has been closed.'); return; }
+  if(!built){ showUnlinkedNotice(user.email || 'unknown address'); return; }
+  clearSession(); session = built; saveSession(session);
+  hideOAuthSignup();
+  await bootApp();
 }
 
 /* ---------------- Worker sign-in ---------------- */
@@ -217,7 +323,7 @@ async function loginWorker(){
 
   clearLoginThrottle(email);
   session = built;
-  saveSession(session);
+  clearSession(); saveSession(session);
   await bootApp();
 }
 
@@ -242,7 +348,7 @@ async function loginAuditor(){
   session = { email:null, role:'auditor', companyId:grant.company_id, companyName:grant.company_name,
     companyCode:code, name:grant.grant_name, departments:[], grantId:grant.grant_id, accessCode,
     expiresAt:grant.expires_at };
-  saveSession(session);
+  clearSession(); saveSession(session);
   await bootApp();
 }
 
@@ -308,6 +414,7 @@ async function deleteMyAccount(){
 async function logout(){
   clearSession();
   session = null;
+  hideOAuthSignup();
   if(sb.auth.getSession){ await sb.auth.signOut(); }
   document.getElementById('app').classList.add('hidden');
   document.getElementById('login-screen').classList.remove('hidden');

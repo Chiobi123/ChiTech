@@ -1,0 +1,3 @@
+# Local scratch + build artifacts (never commit)
+/chiitech/
+*.zip

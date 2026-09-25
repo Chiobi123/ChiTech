@@ -10,8 +10,16 @@
      and isn't at the mercy of a blocked network request. -->
 </head>
 <body>
+<!-- Boot veil: covers everything until session validation resolves, so a
+     refresh never flashes the sign-in form or a stale dashboard. Removed
+     by the boot handler in app.js. -->
+<div id="boot-veil" style="position:fixed;inset:0;background:#0A0F0D;z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
+  <div style="font-size:26px;font-weight:800;letter-spacing:2px;">CHIITECH</div>
+  <div style="font-size:12.5px;color:#9AA69F;">Loading your workspace…</div>
+</div>
 <!--
   CHIITECH — page structure, top to bottom:
+  0. #boot-veil      loading cover until boot validation resolves
   1. #login-screen   Admin/Worker sign-in + company registration
   2. #app            Everything after login:
        - #imp-banner       shown only when a super admin is "viewing as" a company
@@ -48,6 +56,16 @@
 
     <div id="auth-error" class="auth-error hidden"></div>
 
+    <div id="oauth-signup" class="hidden" style="margin-bottom:14px;">
+      <div class="forgot-title">Finish Google sign-up</div>
+      <p class="text-muted" style="font-size:11.5px;">Signed in with Google as <b id="oauth-email">—</b>.
+        Either register your company now (you become its admin) or accept a worker
+        invitation under “Join as Worker”.</p>
+      <div class="field"><label>Company name</label><input id="oauth-company" placeholder="e.g. Adaeze Fashion House"></div>
+      <div class="field"><label>Your name</label><input id="oauth-name" placeholder="e.g. Adaeze Okafor"></div>
+      <button class="btn btn-primary btn-block" onclick="registerCompanyWithOAuth()">Register my company</button>
+    </div>
+
     <div class="code-explainer">
       <b>How company codes work:</b> when an admin registers a company, they get a unique code
       (e.g. <code>CHI-1234</code>) shown right after sign-up and on their Team page. Workers create their own
@@ -67,6 +85,7 @@
         <div class="field"><label>Admin email</label><input id="login-admin-email" type="text" placeholder="you@business.com"></div>
         <div class="field"><label>Password</label><input id="login-admin-pass" type="password" placeholder="Your password"></div>
         <button class="btn btn-primary btn-block" onclick="loginAdmin()">Sign in as admin</button>
+        <button class="btn btn-block" style="margin-top:8px;" onclick="loginWithGoogle()">Continue with Google</button>
         <p class="text-muted" style="font-size:11.5px;margin-top:12px;">
           <a href="#" onclick="showAuthTab('forgot');return false;">Forgot your password or company code?</a>
         </p>
@@ -95,6 +114,7 @@
       <div class="field"><label>Work email</label><input id="login-worker-email" type="text" placeholder="you@business.com"></div>
       <div class="field"><label>Password</label><input id="login-worker-pass" type="password"></div>
       <button class="btn btn-primary btn-block" onclick="loginWorker()">Sign in as worker</button>
+      <button class="btn btn-block" style="margin-top:8px;" onclick="loginWithGoogle()">Continue with Google</button>
       <p class="text-muted" style="font-size:11.5px;margin-top:12px;">
         Don't have an account yet? <a href="#" onclick="showAuthTab('join');return false;">Join as Worker</a>
         &nbsp;&#8226;&nbsp; <a href="#" onclick="showAuthTab('forgot');return false;">Forgot your password or code?</a>
@@ -104,11 +124,12 @@
     <!-- JOIN AS WORKER PANE -->
     <div id="auth-join" class="auth-pane">
       <p class="text-muted" style="font-size:11.5px;margin-bottom:14px;">
-        Ask your company admin for the company code, then create your own account below — your password is
-        never shared with or set by anyone else. Your admin will assign which sections you can see afterward
-        from the Team page; until then you'll be signed in but won't see any sections yet.
+        Ask your company admin to invite you by email — you'll get a single-use invitation
+        token (valid 7 days). Create your account below, then accept the invitation. Your
+        password is never shared with or set by anyone else. Your admin assigns your
+        sections and approves you afterward.
       </p>
-      <div class="field"><label>Company code</label><input id="join-worker-code" placeholder="e.g. CHI-1234" style="text-transform:uppercase;"></div>
+      <div class="field"><label>Invitation token</label><input id="join-worker-token" placeholder="Paste the token from your invitation"></div>
       <div class="field"><label>Full name</label><input id="join-worker-name" placeholder="e.g. Ifeoma Balogun"></div>
       <div class="field"><label>Work email</label><input id="join-worker-email" type="text" placeholder="you@business.com"></div>
       <div class="field"><label>Password</label><input id="join-worker-pass" type="password" placeholder="Choose a password"></div>
@@ -1024,14 +1045,33 @@
         <div><div class="page-title">Team &amp; departments</div><div class="page-sub">Add workers and control exactly what they can see and do</div></div>
       </div>
       <div class="section-explainer">
-        Share your company code — <b id="team-code">—</b> — with each worker. They create their own account under
-        "Join as Worker" on the login screen (their password is theirs alone — nobody here ever sets or sees it),
-        then show up in the table below with no access yet. Click <b>Edit access</b> next to their name to tick
-        which sections they can see.
+        Invite each worker by email — they receive a single-use invitation token (valid 7 days).
+        They create their own account, accept the invitation, then show up in the table below with
+        no access yet. Click <b>Edit access</b> to tick sections, then <b>Approve</b> to activate.
+        Your company code — <b id="team-code">—</b> — is only an identifier; it no longer grants
+        access by itself.
       </div>
 
       <div class="card">
-        <div class="card-head"><div class="card-title">Team</div></div>
+        <div class="card-head"><div class="card-title">Invite worker</div></div>
+        <div class="form-row">
+          <div class="field"><label>Worker email</label><input id="invite-email" type="text" placeholder="worker@business.com"></div>
+          <div class="field"><label>Initial departments (optional — can assign later)</label><div id="invite-depts" class="dept-checklist"></div></div>
+        </div>
+        <button class="btn btn-primary" onclick="inviteWorker()">Send invitation</button>
+        <div id="invite-status" class="text-muted" style="margin-top:8px;font-size:12px;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">Pending invitations</div></div>
+        <table>
+          <thead><tr><th>Email</th><th>Status</th><th>Expires</th><th></th></tr></thead>
+          <tbody id="invite-table"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">Team</div><input id="team-search" placeholder="Search name or email…" oninput="renderTeam()" style="max-width:220px;"></div>
         <table>
           <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Departments</th><th>Status</th><th></th></tr></thead>
           <tbody id="team-table"></tbody>
