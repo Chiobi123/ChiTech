@@ -47,137 +47,84 @@
       <a href="#" onclick="showLegal('refund');return false;">Refunds</a>
     </div>
 
-    <div class="auth-tabs">
-      <div class="auth-tab active" data-tab="admin" onclick="showAuthTab('admin')">Log in as Admin</div>
-      <div class="auth-tab" data-tab="worker" onclick="showAuthTab('worker')">Log in as Worker</div>
-      <div class="auth-tab" data-tab="join" onclick="showAuthTab('join')">Join as Worker</div>
-      <div class="auth-tab" data-tab="auditor" onclick="showAuthTab('auditor')">Log in as Auditor</div>
-    </div>
-
     <div id="auth-error" class="auth-error hidden"></div>
 
     <div id="oauth-signup" class="hidden" style="margin-bottom:14px;">
       <div class="forgot-title">Finish Google sign-up</div>
       <p class="text-muted" style="font-size:11.5px;">Signed in with Google as <b id="oauth-email">—</b>.
         Either register your company now (you become its admin) or accept a worker
-        invitation under “Join as Worker”.</p>
+        invitation below.</p>
       <div class="field"><label>Company name</label><input id="oauth-company" placeholder="e.g. Adaeze Fashion House"></div>
       <div class="field"><label>Your name</label><input id="oauth-name" placeholder="e.g. Adaeze Okafor"></div>
       <button class="btn btn-primary btn-block" onclick="registerCompanyWithOAuth()">Register my company</button>
     </div>
 
-    <div class="code-explainer">
-      <b>How company codes work:</b> when an admin registers a company, they get a unique code
-      (e.g. <code>CHI-1234</code>) shown right after sign-up and on their Team page. Workers create their own
-      account with that code under <b>"Join as Worker"</b> — their password is theirs alone, nobody else ever
-      sets or sees it — then the admin ticks which sections they can access from the Team page. Once that's
-      done, they sign back in under "Log in as Worker."
-    </div>
-
-    <!-- ADMIN PANE -->
-    <div id="auth-admin" class="auth-pane active">
-      <div class="auth-subtabs">
-        <div class="auth-subtab active" data-sub="signin" onclick="showAuthSub('signin')">Sign in</div>
-        <div class="auth-subtab" data-sub="register" onclick="showAuthSub('register')">Register your company</div>
-      </div>
-
-      <div id="auth-signin">
-        <div class="field"><label>Admin email</label><input id="login-admin-email" type="text" placeholder="you@business.com"></div>
-        <div class="field"><label>Password</label><input id="login-admin-pass" type="password" placeholder="Your password"></div>
-        <button class="btn btn-primary btn-block" onclick="loginAdmin()">Sign in as admin</button>
-        <button class="btn btn-block" style="margin-top:8px;" onclick="loginWithGoogle()">Continue with Google</button>
-        <p class="text-muted" style="font-size:11.5px;margin-top:12px;">
-          <a href="#" onclick="showAuthTab('forgot');return false;">Forgot your password or company code?</a>
-        </p>
-        <div class="register-callout">
-          <div class="register-callout-title">New to ChiiTech?</div>
-          <div class="register-callout-body">Create your company's account — it takes under a minute and you'll get a company code to invite your team.</div>
-          <button class="btn btn-block" style="margin-top:10px;" onclick="showAuthSub('register')">Create your company account</button>
-        </div>
-      </div>
-
-      <div id="auth-register" class="hidden">
-        <div class="field"><label>Company name</label><input id="reg-company" placeholder="e.g. Adaeze Fashion House"></div>
-        <div class="field"><label>Your name</label><input id="reg-name" placeholder="e.g. Adaeze Okafor"></div>
-        <div class="field"><label>Email</label><input id="reg-email" type="text" placeholder="you@business.com"></div>
-        <div class="field"><label>Password</label><input id="reg-password" type="password" placeholder="Choose a password"></div>
-        <button class="btn btn-primary btn-block" onclick="registerCompany()">Create company &amp; sign in</button>
-        <p class="text-muted" style="font-size:11.5px;margin-top:12px;">
-          You'll get a company code to share with workers so they can sign in under the "Log in as Worker" tab.
-        </p>
-      </div>
-    </div>
-
-    <!-- WORKER PANE -->
-    <div id="auth-worker" class="auth-pane">
-      <div class="field"><label>Company code</label><input id="login-worker-code" placeholder="e.g. CHI-1234" style="text-transform:uppercase;"></div>
-      <div class="field"><label>Work email</label><input id="login-worker-email" type="text" placeholder="you@business.com"></div>
-      <div class="field"><label>Password</label><input id="login-worker-pass" type="password"></div>
-      <button class="btn btn-primary btn-block" onclick="loginWorker()">Sign in as worker</button>
-      <button class="btn btn-block" style="margin-top:8px;" onclick="loginWithGoogle()">Continue with Google</button>
-      <p class="text-muted" style="font-size:11.5px;margin-top:12px;">
-        Don't have an account yet? <a href="#" onclick="showAuthTab('join');return false;">Join as Worker</a>
-        &nbsp;&#8226;&nbsp; <a href="#" onclick="showAuthTab('forgot');return false;">Forgot your password or code?</a>
+    <!-- SIGN IN (the only main view — no codes, roles or setup here) -->
+    <div id="auth-view-signin" class="auth-pane active">
+      <div class="field"><label>Email</label><input id="login-email" type="text" placeholder="you@business.com"></div>
+      <div class="field"><label>Password</label><input id="login-pass" type="password" placeholder="Your password"></div>
+      <button class="btn btn-primary btn-block" onclick="login()">Sign in</button>
+      <p style="margin-top:10px;"><a href="#" onclick="showAuthView('forgot');return false;">Forgot password?</a></p>
+      <div class="or-divider"><span>OR</span></div>
+      <button class="btn btn-block" onclick="loginWithGoogle()">Continue with Google</button>
+      <p class="text-muted" style="font-size:12px;margin-top:14px;text-align:center;">
+        Don&apos;t have an account? <a href="#" onclick="showAuthView('register');return false;">Create account</a>
+      </p>
+      <p class="text-muted" style="font-size:11.5px;margin-top:6px;text-align:center;">
+        <a href="#" onclick="showAuthView('invite');return false;">Have a worker invitation?</a>
+        &nbsp;&#8226;&nbsp; <a href="#" onclick="showAuthView('auditor');return false;">Auditor access</a>
       </p>
     </div>
 
-    <!-- JOIN AS WORKER PANE -->
-    <div id="auth-join" class="auth-pane">
+    <!-- CREATE ACCOUNT (new business owner) -->
+    <div id="auth-view-register" class="auth-pane">
+      <div class="field"><label>Company name</label><input id="reg-company" placeholder="e.g. Adaeze Fashion House"></div>
+      <div class="field"><label>Your name</label><input id="reg-name" placeholder="e.g. Adaeze Okafor"></div>
+      <div class="field"><label>Email</label><input id="reg-email" type="text" placeholder="you@business.com"></div>
+      <div class="field"><label>Password</label><input id="reg-password" type="password" placeholder="Choose a password"></div>
+      <button class="btn btn-primary btn-block" onclick="registerCompany()">Create company &amp; sign in</button>
+      <p style="margin-top:14px;"><a href="#" onclick="showAuthView('signin');return false;">&larr; Back to sign in</a></p>
+    </div>
+
+    <!-- ACCEPT WORKER INVITATION -->
+    <div id="auth-view-invite" class="auth-pane">
       <p class="text-muted" style="font-size:11.5px;margin-bottom:14px;">
-        Ask your company admin to invite you by email — you'll get a single-use invitation
-        token (valid 7 days). Create your account below, then accept the invitation. Your
-        password is never shared with or set by anyone else. Your admin assigns your
-        sections and approves you afterward.
+        Ask your company admin to invite you by email — you&apos;ll get a single-use invitation
+        token (valid 7 days). Your admin assigns your sections and approves you afterward.
       </p>
       <div class="field"><label>Invitation token</label><input id="join-worker-token" placeholder="Paste the token from your invitation"></div>
       <div class="field"><label>Full name</label><input id="join-worker-name" placeholder="e.g. Ifeoma Balogun"></div>
       <div class="field"><label>Work email</label><input id="join-worker-email" type="text" placeholder="you@business.com"></div>
       <div class="field"><label>Password</label><input id="join-worker-pass" type="password" placeholder="Choose a password"></div>
       <button class="btn btn-primary btn-block" onclick="joinAsWorker()">Create my account</button>
-      <p class="text-muted" style="font-size:11.5px;margin-top:12px;">
-        Already have an account? <a href="#" onclick="showAuthTab('worker');return false;">Log in as Worker</a>
-      </p>
+      <p style="margin-top:14px;"><a href="#" onclick="showAuthView('signin');return false;">&larr; Back to sign in</a></p>
     </div>
 
-    <!-- AUDITOR PANE -->
-    <div id="auth-auditor" class="auth-pane">
+    <!-- AUDITOR (behind a quiet link — external reviewers only) -->
+    <div id="auth-view-auditor" class="auth-pane">
       <p class="text-muted" style="font-size:11.5px;margin-bottom:14px;">
-        For an external accountant or auditor given ongoing, read-only access by the company admin — not a
-        regular login. Sign in any time, as often as you like, to check in on the business — you can never
-        change anything here. You'll need the company code and a separate auditor access code from them.
+        For an external accountant or auditor given ongoing, read-only access by the company admin.
+        You&apos;ll need the company code and a separate auditor access code from them.
       </p>
       <div class="field"><label>Company code</label><input id="login-auditor-code" placeholder="e.g. CHI-1234" style="text-transform:uppercase;"></div>
       <div class="field"><label>Auditor access code</label><input id="login-auditor-access" placeholder="e.g. AUD-7K3F9" style="text-transform:uppercase;"></div>
       <button class="btn btn-primary btn-block" onclick="loginAuditor()">Sign in as auditor</button>
-      <p class="text-muted" style="font-size:11.5px;margin-top:12px;">
-        Access is read-only, expires automatically if the admin set an end date, and every sign-in is logged and
-        visible to the company admin.
-      </p>
+      <p style="margin-top:14px;"><a href="#" onclick="showAuthView('signin');return false;">&larr; Back to sign in</a></p>
     </div>
 
-    <!-- FORGOT PASSWORD / COMPANY CODE PANE -->
-    <div id="auth-forgot" class="auth-pane">
+    <!-- FORGOT PASSWORD -->
+    <div id="auth-view-forgot" class="auth-pane">
       <div class="forgot-block">
         <div class="forgot-title">Forgot your password?</div>
         <p class="text-muted" style="font-size:11.5px;margin-top:-4px;margin-bottom:10px;">
-          Works for admins and workers alike. We'll email a reset link to the address your account uses — click
+          We&apos;ll email a reset link to the address your account uses — click
           it to choose a new password.
         </p>
         <div class="field"><label>Your email</label><input id="forgot-admin-email" type="text" placeholder="you@business.com"></div>
         <button class="btn btn-block" onclick="resetAdminPassword()">Email me a reset link</button>
       </div>
 
-      <div class="forgot-block">
-        <div class="forgot-title">Find your company code</div>
-        <p class="text-muted" style="font-size:11.5px;margin-top:-4px;margin-bottom:10px;">
-          Works for admins and workers — enter the email your account was created with.
-        </p>
-        <div class="field"><label>Your email</label><input id="forgot-lookup-email" type="text" placeholder="you@business.com"></div>
-        <button class="btn btn-block" onclick="lookupCompanyCode()">Find my company code</button>
-        <div id="forgot-lookup-result"></div>
-      </div>
-
-      <p style="margin-top:14px;"><a href="#" onclick="showAuthTab('admin');showAuthSub('signin');return false;">&larr; Back to sign in</a></p>
+      <p style="margin-top:14px;"><a href="#" onclick="showAuthView('signin');return false;">&larr; Back to sign in</a></p>
     </div>
   </div>
 </div>

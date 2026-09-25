@@ -68,6 +68,10 @@ window.addEventListener('DOMContentLoaded', async () => {
       else if(check.reason==='transient'){
         toastOnLogin('Could not reach the server — check your connection and refresh to try again.');
       }
+      else if(check.reason==='not-approved'){
+        session = null; try{ await sb.auth.signOut(); }catch(e){}
+        toastOnLogin('Your account is waiting for your admin to approve it.');
+      }
       else { session = null; try{ await sb.auth.signOut(); }catch(e){} }
     }
     else {

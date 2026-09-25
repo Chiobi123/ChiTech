@@ -110,8 +110,10 @@ async function validateStoredSession(){
   if(profile.deleted_at){ clearSession(); return {ok:false, reason:'deleted'}; }
   const fresh = {
     email: profile.email, role: profile.role, companyId: profile.company_id,
-    name: profile.name, departments: profile.departments||[]
+    name: profile.name, departments: profile.departments||[],
+    active: profile.active !== false
   };
+  if(fresh.role==='worker' && fresh.active===false){ clearSession(); return {ok:false, reason:'not-approved'}; }
   const same = stored
     && String(stored.email||'').trim().toLowerCase()===String(fresh.email||'').trim().toLowerCase()
     && stored.role===fresh.role
@@ -137,7 +139,8 @@ async function buildSessionFromProfile(){
   if(profile.deleted_at) return 'deleted';
   return {
     email: profile.email, role: profile.role, companyId: profile.company_id,
-    name: profile.name, departments: profile.departments||[]
+    name: profile.name, departments: profile.departments||[],
+    active: profile.active !== false
   };
 }
 
@@ -171,10 +174,14 @@ async function registerCompany(){
   setTimeout(()=> toast(`Company created! Your company code is ${company_code} — find it any time on the Team page.`, 6000), 400);
 }
 
-/* ---------------- Admin sign-in ---------------- */
-async function loginAdmin(){
-  const email = document.getElementById('login-admin-email').value.trim().toLowerCase();
-  const password = document.getElementById('login-admin-pass').value;
+/* ---------------- Unified sign-in (single front door) ----------------
+   Email + password only — no codes, no roles on screen. Supabase
+   authenticates; the profiles table (via RLS) decides who this is and
+   bootApp routes to the right console. Authorization stays in the
+   database, never in a client-side role value. */
+async function login(){
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const password = document.getElementById('login-pass').value;
 
   const throttle = checkLoginThrottle(email);
   if(throttle.blocked){ authError(`Too many attempts — try again in ${throttle.waitSec}s.`); return; }
@@ -191,11 +198,18 @@ async function loginAdmin(){
     await sb.auth.signOut();
     authError('This account has been closed. Contact support if you believe this is a mistake.'); return;
   }
-  if(!built || (built.role!=='company_admin' && built.role!=='super_admin')){
+  if(!built || !['super_admin','company_admin','worker'].includes(built.role)){
     await sb.auth.signOut();
-    authError('No admin account matches that email/password.'); return;
+    authError('No account matches that email/password.'); return;
+  }
+  if(built.active===false){
+    await sb.auth.signOut();
+    authError(built.role==='worker'
+      ? 'Your account is waiting for your admin to approve it. Ask them to assign your access first.'
+      : 'This account is paused. Contact support.'); return;
   }
   clearLoginThrottle(email);
+  hideOAuthSignup();
   session = built;
   clearSession(); saveSession(session);
   await bootApp();
@@ -258,7 +272,7 @@ function showUnlinkedNotice(email){
     document.getElementById('oauth-email').textContent = email;
     document.getElementById('oauth-signup').classList.remove('hidden');
   }catch(e){}
-  authError(`Signed in with Google as ${email}, but that address isn't linked to any company yet. Register your company above, or accept a worker invitation under "Join as Worker". Your existing email/password login still works.`);
+  authError(`Signed in with Google as ${email}, but that address isn't linked to any company yet. Register your company above, or ask your admin for a worker invitation and accept it below. Your existing email/password login still works.`);
 }
 
 function hideOAuthSignup(){ try{ document.getElementById('oauth-signup').classList.add('hidden'); }catch(e){} }
@@ -291,40 +305,18 @@ async function finishOAuthLogin(){
   const built = await buildSessionFromProfile();
   if(built === 'deleted'){ await sb.auth.signOut(); hideOAuthSignup(); authError('This account has been closed.'); return; }
   if(!built){ showUnlinkedNotice(user.email || 'unknown address'); return; }
+  if(built.active===false){ await sb.auth.signOut(); hideOAuthSignup(); authError('Your account is waiting for your admin to approve it. Ask them to assign your access first.'); return; }
   clearSession(); session = built; saveSession(session);
   hideOAuthSignup();
   await bootApp();
 }
 
-/* ---------------- Worker sign-in ---------------- */
+/* ---------------- Worker sign-in (legacy code-based flow, retired) ----
+   Unified login() above replaces this: the company code is only an
+   identifier now, and profile.company_id (via RLS) is authoritative.
+   Kept as a thin alias so nothing that still calls it breaks. */
 async function loginWorker(){
-  const code = document.getElementById('login-worker-code').value.trim().toUpperCase();
-  const email = document.getElementById('login-worker-email').value.trim().toLowerCase();
-  const password = document.getElementById('login-worker-pass').value;
-
-  const throttle = checkLoginThrottle(email);
-  if(throttle.blocked){ authError(`Too many attempts — try again in ${throttle.waitSec}s.`); return; }
-
-  const {error} = await sb.auth.signInWithPassword({ email, password });
-  if(error){ recordLoginFailure(email); authError('No worker account matches those details.'); return; }
-
-  const built = await buildSessionFromProfile();
-  if(built==='deleted'){
-    await sb.auth.signOut();
-    authError('This account has been closed. Contact your admin if you believe this is a mistake.'); return;
-  }
-  if(!built || built.role!=='worker'){ await sb.auth.signOut(); authError('No worker account matches those details.'); return; }
-
-  const {data:company} = await sb.from('companies').select('code,name').eq('id', built.companyId).maybeSingle();
-  if(!company || company.code!==code){
-    await sb.auth.signOut();
-    authError('Company code doesn\'t match this account, or the company account has been closed — check with your admin.'); return;
-  }
-
-  clearLoginThrottle(email);
-  session = built;
-  clearSession(); saveSession(session);
-  await bootApp();
+  return login();
 }
 
 /* ---------------- Auditor sign-in ----------------
@@ -352,21 +344,20 @@ async function loginAuditor(){
   await bootApp();
 }
 
-/** Switches which login-screen pane is showing (admin/worker/join/
- *  auditor/forgot). Note: this was referenced by the login screen's
- *  markup everywhere but was never actually defined anywhere in the
- *  app — meaning none of the tabs, the register button, or the forgot-
- *  password links could have worked before now. */
-function showAuthTab(tab){
-  document.querySelectorAll('.auth-tab').forEach(el=>el.classList.toggle('active', el.dataset.tab===tab));
-  document.querySelectorAll('.auth-pane').forEach(el=>el.classList.toggle('active', el.id==='auth-'+tab));
+/** Switches which login-screen view is showing
+ *  (signin/register/invite/auditor/forgot). Single simple front door —
+ *  roles, codes and setup live behind it, never on it. */
+function showAuthView(view){
+  document.querySelectorAll('.auth-pane').forEach(el=>el.classList.toggle('active', el.id==='auth-view-'+view));
   const err = document.getElementById('auth-error');
   if(err) err.classList.add('hidden');
 }
+// Legacy aliases (old markup called these; kept so nothing breaks).
+function showAuthTab(tab){
+  showAuthView({admin:'signin', worker:'signin', join:'invite', auditor:'auditor', forgot:'forgot'}[tab] || 'signin');
+}
 function showAuthSub(sub){
-  document.querySelectorAll('.auth-subtab').forEach(el=>el.classList.toggle('active', el.dataset.sub===sub));
-  document.getElementById('auth-signin').classList.toggle('hidden', sub!=='signin');
-  document.getElementById('auth-register').classList.toggle('hidden', sub!=='register');
+  showAuthView(sub === 'register' ? 'register' : 'signin');
 }
 
 function showAbout(){
@@ -418,8 +409,7 @@ async function logout(){
   if(sb.auth.getSession){ await sb.auth.signOut(); }
   document.getElementById('app').classList.add('hidden');
   document.getElementById('login-screen').classList.remove('hidden');
-  showAuthTab('admin');
-  showAuthSub('signin');
+  showAuthView('signin');
 }
 
 /* ---------------- Legal screen (unchanged) ---------------- */

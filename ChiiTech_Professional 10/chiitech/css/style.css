@@ -558,6 +558,11 @@ tbody tr:hover{background:var(--surface-2);}
 /* The pane fades in when you switch tabs, so it's obvious the form
    changed rather than the fields silently swapping under the cursor. */
 .auth-pane.active{animation:popIn .25s ease both;}
+
+/* ---------- Single sign-in view ---------- */
+.or-divider{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:11px;}
+.or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.or-divider span{padding:0 2px;}
 .auth-subtabs{display:flex;gap:16px;margin-bottom:16px;font-size:12px;}
 .auth-subtab{color:var(--muted);cursor:pointer;padding-bottom:4px;border-bottom:2px solid transparent;}
 .auth-subtab.active{color:var(--neon);border-color:var(--neon);}
