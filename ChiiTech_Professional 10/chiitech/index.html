@@ -1165,9 +1165,9 @@
       </div>
       <div class="section-explainer">
         Two different things live here: what <b>you pay ChiiTech</b> for the subscription, and how <b>your
-        customers pay you</b>. This build uses <b>Paystack</b> for card/transfer/USSD payments and direct
-        <b>bank transfer</b> as the two payout methods — connecting either one for real requires your Paystack
-        API keys and bank KYC, which this screen prepares but doesn't yet process live.
+        customers pay you</b>. Online collection runs through <b>Paystack</b> (card/transfer/USSD) —
+        connecting it for real requires your Paystack API keys, which this screen prepares but doesn&apos;t
+        yet process live.
       </div>
 
       <div class="grid grid-2" style="margin-bottom:16px;">
@@ -1183,16 +1183,7 @@
           <button class="btn btn-primary btn-block" style="margin-top:10px;" onclick="connectPaystack()">
             <i class="ti ti-building-bank"></i>&nbsp; <span id="bill-paystack-btn-label">Connect Paystack</span>
           </button>
-
-          <div class="payout-divider">or receive payouts by</div>
-
-          <div id="bill-bank-status" class="payout-status"></div>
-          <div class="form-row">
-            <div class="field"><label>Bank name</label><input id="bill-bank-name" placeholder="e.g. GTBank"></div>
-            <div class="field"><label>Account number</label><input id="bill-bank-acct" placeholder="10-digit NUBAN"></div>
-          </div>
-          <div class="field"><label>Account name</label><input id="bill-bank-holder" placeholder="Must match your business/BVN name"></div>
-          <button class="btn btn-block" onclick="saveBankTransfer()">Save bank transfer details</button>
+          <p class="text-muted" style="font-size:11.5px;margin-top:10px;">Online payments only — card, transfer and USSD through Paystack once connected.</p>
         </div>
       </div>
 

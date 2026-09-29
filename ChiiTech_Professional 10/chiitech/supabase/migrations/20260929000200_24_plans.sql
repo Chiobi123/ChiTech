@@ -13,9 +13,9 @@ create table if not exists public.plans (
 
 insert into public.plans(id, name, price, features, active) values
   ('free', 'Free', 0,
-   '["Dashboard","Sales","Products","Customers","Orders","Expenses","Basic tax (VAT)","Team up to 3","Password + Google login"]'::jsonb, true),
+   '["Dashboard","Sales","Products","Customers","Orders","Expenses","Basic tax (VAT)","Team up to 3","Import previous records (CSV/Excel/JSON)","Password + Google login"]'::jsonb, true),
   ('pro', 'Pro', 5000,
-   '["Everything in Free","Audit suite + auditor access","Growth engine + AI analysis","Import center (CSV/Excel/JSON)","Photo receipts","Spending limits","Close-the-month lock","Security alerts center","Unlimited team + invitations","Data exports"]'::jsonb, true)
+   '["Everything in Free","Audit suite + auditor access","Growth engine + AI analysis","Full import analysis","Photo receipts","Spending limits","Close-the-month lock","Security alerts center","Unlimited team + invitations","Data exports"]'::jsonb, true)
 on conflict (id) do nothing;
 
 create table if not exists public.subscriptions (

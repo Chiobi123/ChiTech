@@ -463,7 +463,7 @@ function toastOnLogin(msg){
    Company roles get Free sections everywhere; Pro sections (audit, growth,
    ai, imports, auditoraccess) need plan 'pro'. The Free team cap (3) is
    enforced server-side in invite_worker(), so the UI can never bypass it. */
-const PRO_SECTIONS = { audit:1, growth:1, ai:1, imports:1, auditoraccess:1 };
+const PRO_SECTIONS = { audit:1, growth:1, ai:1, auditoraccess:1 };
 function myPlan(){ return (typeof state!=='undefined' && state && state.subscription && state.subscription.planId) || 'free'; }
 function canUsePlan(section){
   if(!session || session.role==='super_admin') return true;

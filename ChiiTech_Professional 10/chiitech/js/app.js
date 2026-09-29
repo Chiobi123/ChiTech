@@ -1927,7 +1927,10 @@ function renderAuditorAccess(){
   `).join('') || `<tr><td colspan="2" class="text-muted">No auditor visits logged yet.</td></tr>`;
 }
 
-/* ================= BILLING & PAYOUTS ================= */
+/* ================= BILLING & PAYOUTS =================
+   Online collection only (Paystack). Bank-transfer details removed —
+   payouts run through the connected provider, never manual account
+   capture in the app. */
 function connectPaystack(){
   state.payoutConfig.paystackConnected = !state.payoutConfig.paystackConnected;
   addAuditLog('billing.paystack', state.payoutConfig.paystackConnected ? 'Paystack marked as connected (demo)' : 'Paystack disconnected');
@@ -1935,18 +1938,6 @@ function connectPaystack(){
   toast(state.payoutConfig.paystackConnected
     ? 'Marked as connected. Going live needs your real Paystack API keys wired in by a developer.'
     : 'Paystack disconnected.');
-}
-
-function saveBankTransfer(){
-  const bank = document.getElementById('bill-bank-name').value.trim();
-  const acct = document.getElementById('bill-bank-acct').value.trim();
-  const holder = document.getElementById('bill-bank-holder').value.trim();
-  if(!bank || !acct || !holder){ toast('Fill in bank name, account number and account name'); return; }
-  if(!/^\d{10}$/.test(acct)){ toast('Account number should be 10 digits (NUBAN)'); return; }
-  state.payoutConfig.bankTransfer = { bank, acct, holder };
-  addAuditLog('billing.bank_transfer', `Bank transfer payout details saved (${bank}, acct ending ${acct.slice(-4)})`);
-  renderBilling();
-  toast('Bank transfer details saved');
 }
 
 function renderBilling(){
@@ -1975,17 +1966,6 @@ function renderBilling(){
     `<span class="dot"></span> ${ps ? 'Connected (demo)' : 'Not connected yet'}`;
   document.getElementById('bill-paystack-status').className = 'payout-status' + (ps ? ' connected' : '');
   document.getElementById('bill-paystack-btn-label').textContent = ps ? 'Disconnect Paystack' : 'Connect Paystack';
-
-  const bt = state.payoutConfig.bankTransfer;
-  document.getElementById('bill-bank-status').innerHTML = bt
-    ? `<span class="dot"></span> Saved: ${escapeHtml(bt.bank)} •••• ${escapeHtml(bt.acct.slice(-4))}`
-    : `<span class="dot"></span> No bank transfer details saved yet`;
-  document.getElementById('bill-bank-status').className = 'payout-status' + (bt ? ' connected' : '');
-  if(bt){
-    document.getElementById('bill-bank-name').value = bt.bank;
-    document.getElementById('bill-bank-acct').value = bt.acct;
-    document.getElementById('bill-bank-holder').value = bt.holder;
-  }
 
   const rows = state.billingHistory||[];
   document.getElementById('bill-history-table').innerHTML = rows.length ? rows.map(b=>`
