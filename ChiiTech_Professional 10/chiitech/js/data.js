@@ -60,10 +60,8 @@ const DEPARTMENTS = [
   { id:'analytics', label:'Data analysis & growth', icon:'ti-trending-up' },
 ];
 
-/* What each subscription plan is worth per month — used to work out the
-   platform owner's monthly recurring revenue on the Super Admin console.
-   Keep this in sync with the Pricing Model table in the PRD. */
-const PLAN_PRICES = { 'Free':0, 'Founding':2500, 'Pro':5000, 'Business':10000, 'Enterprise':25000 };
+/* Live plan prices come from the plans table (see loadPlatform); no
+   hardcoded price map lives in the frontend anymore. */
 
 /** The empty shape `state` starts as before anything has loaded, and
  *  what a brand new company's business bucket looks like the moment

@@ -439,14 +439,6 @@ async function resetAdminPassword(){
   toastOnLogin('If that email has an account, a reset link is on its way — check your inbox.');
 }
 
-// A tiny local copy of escapeHtml for use before app.js has loaded/on the
-// login screen (app.js's escapeHtml is the canonical one used everywhere
-// else once the app itself is running).
-function escapeHtmlSafe(str){
-  const div = document.createElement('div');
-  div.textContent = str===undefined || str===null ? '' : String(str);
-  return div.innerHTML;
-}
 
 function toastOnLogin(msg){
   // Minimal inline confirmation for the login screen (the real #toast
