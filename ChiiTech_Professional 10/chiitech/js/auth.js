@@ -181,12 +181,15 @@ async function registerCompany(){
    bootApp routes to the right console. Authorization stays in the
    database, never in a client-side role value. */
 async function login(){
+  const btn = document.getElementById('login-btn');
   const email = document.getElementById('login-email').value.trim().toLowerCase();
   const password = document.getElementById('login-pass').value;
 
   const throttle = checkLoginThrottle(email);
   if(throttle.blocked){ authError(`Too many attempts — try again in ${throttle.waitSec}s.`); return; }
 
+  if(btn){ btn.disabled = true; btn.textContent = 'Signing in…'; }
+  try {
   const {data, error} = await sb.auth.signInWithPassword({ email, password });
   if(error){ recordLoginFailure(email); authError('No account matches that email/password.'); return; }
 
@@ -214,7 +217,16 @@ async function login(){
   session = built;
   clearSession(); saveSession(session);
   await bootApp();
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = 'Sign in'; }
+  }
 }
+
+/* Last-resort error surfacing: any uncaught runtime error shows its message
+   as a toast so failures are never silent blank screens. */
+window.addEventListener('error', (e)=>{
+  try { toast('Something went wrong: ' + (e.message || 'unknown error'), 5000); } catch(_){}
+});
 
 /* ---------------- Worker: join via invitation token ----------------
    The company code is only an identifier — membership requires a
@@ -456,7 +468,7 @@ function toastOnLogin(msg){
    Company roles get Free sections everywhere; Pro sections (audit, growth,
    ai, imports, auditoraccess) need plan 'pro'. The Free team cap (3) is
    enforced server-side in invite_worker(), so the UI can never bypass it. */
-const PRO_SECTIONS = { audit:1, growth:1, ai:1, auditoraccess:1 };
+const PRO_SECTIONS = {};
 function myPlan(){ return (typeof state!=='undefined' && state && state.subscription && state.subscription.planId) || 'free'; }
 function canUsePlan(section){
   if(!session || session.role==='super_admin') return true;
@@ -468,6 +480,17 @@ function requirePlan(section){
   toast('That needs Pro — see Billing to upgrade.', 4000);
   showSection('billing');
   return false;
+}
+
+/* ---------------- Pay-to-use gate ----------------
+   Every feature is open to every paying company. Only the subscription
+   STATUS can lock a company out (past_due/cancelled → Billing only).
+   Trials and active subscriptions pass. Super_admin is exempt. */
+function billingLocked(){
+  if(!session || session.role==='super_admin' || session.role==='auditor') return false;
+  if(typeof state==='undefined' || !state || !state.subscription) return false;
+  const s = state.subscription.status;
+  return s==='past_due' || s==='cancelled';
 }
 
 /* ---------------- Department / role gating ---------------- */
@@ -518,6 +541,8 @@ function applyAccessControl(){
     }
     // Free/Pro plan gate (super_admin exempt — role first, plan second).
     if(allowed && !canUsePlan(el.dataset.nav)) allowed = false;
+    // Paywall: locked companies navigate Billing only.
+    if(allowed && billingLocked() && el.dataset.nav!=='billing') allowed = false;
     el.classList.toggle('hidden', !allowed);
   });
   document.querySelectorAll('[data-qa]').forEach(el=>{

@@ -148,15 +148,22 @@ async function bootApp(){
   }
 
   if(session.role==='auditor'){
-    const grant = await validateAuditorGrant();
-    if(!grant){
-      // Revoked or expired since the person signed in (or on reload).
-      // There's no live push in this static build, so re-checking on
-      // every boot is how a revoke actually takes effect for them.
+    const check = await validateAuditorGrant();
+    if(!check || !check.grant){
+      // Revoked/expired → signed out with the exact server reason.
+      // Network/DB failure → session kept, retryable message instead.
+      if(check && check.transient){
+        document.getElementById('login-screen').classList.remove('hidden');
+        document.getElementById('app').classList.add('hidden');
+        toastOnLogin('Could not verify auditor access (' + (check.message || 'connection') + ') — check your connection and try again.');
+        return;
+      }
+      const why = (check && check.message) || 'This auditor access is no longer valid — ask the company admin for a new code.';
       logout();
-      setTimeout(()=> toastOnLogin('This auditor access is no longer valid — ask the company admin for a new code.'), 200);
+      setTimeout(()=> toastOnLogin(why), 200);
       return;
     }
+    const grant = check.grant;
     document.querySelectorAll('.nav-link, .mobile-nav .nav-item').forEach(el=>{
       el.classList.toggle('hidden', el.dataset.nav!=='auditor');
     });
@@ -197,6 +204,16 @@ async function bootApp(){
   renderAll();
 
   const order = ['dashboard','sales','products','customers','orders','expenses','tax','audit','growth','ai','team','billing','auditoraccess'];
+  if(session.role!=='super_admin' && billingLocked()){
+    if(session.role!=='company_admin'){
+      await sb.auth.signOut(); clearSession(); session = null;
+      toastOnLogin('This company\u2019s subscription is inactive — ask your admin to settle billing.');
+      return;
+    }
+    showSection('billing', true);
+    toast('Subscription inactive — settle billing to unlock the app.', 5000);
+    return;
+  }
   const firstAllowed = order.find(name=>{
     if(!canUsePlan(name)) return false;
     const dept = SECTION_ACCESS[name];
@@ -230,6 +247,12 @@ function renderAll(){
 
 function showSection(name, fromBack){
   if(session && session.role!=='auditor' && !requirePlan(name)) return;
+  // Paywall: inactive subscriptions see Billing only (admin) — workers are
+  // stopped at boot with an explanatory message instead.
+  if(session && billingLocked() && name!=='billing'){
+    toast('Subscription inactive — settle billing to unlock the app.', 4000);
+    name = 'billing';
+  }
   // Route guards: admin and platform sections are never reachable by the
   // wrong role, even via console calls or stale nav state.
   if(session){
@@ -401,15 +424,29 @@ function saveState(){ saveBusiness(session.companyId, state); }
  *  that's what makes writes a no-op for this session, not just hidden
  *  buttons). */
 async function validateAuditorGrant(){
-  const {error: loginError} = await sb.rpc('auditor_login', {
-    p_company_code: session.companyCode, p_access_code: session.accessCode
-  });
-  if(loginError) return null;
+  // Returns {grant} on success, {invalid,message} when revoked/expired,
+  // {transient,message} on network/DB failure (session must be kept).
+  let loginError = null;
+  try {
+    const r = await sb.rpc('auditor_login', {
+      p_company_code: session.companyCode, p_access_code: session.accessCode
+    });
+    loginError = r.error;
+    if(loginError){
+      const msg = loginError.message || '';
+      if(/revoked|expired|recognised|recognized/i.test(msg)) return {invalid:true, message:msg};
+      return {transient:true, message:msg};
+    }
+  } catch(e){ return {transient:true, message:(e && e.message) || 'connection failed'}; }
 
-  const {data, error} = await sb.rpc('auditor_fetch_data', {
-    p_grant_id: session.grantId, p_access_code: session.accessCode
-  });
-  if(error || !data) return null;
+  let data = null, fetchError = null;
+  try {
+    const r = await sb.rpc('auditor_fetch_data', {
+      p_grant_id: session.grantId, p_access_code: session.accessCode
+    });
+    data = r.data; fetchError = r.error;
+  } catch(e){ fetchError = e; }
+  if(fetchError || !data) return {transient:true, message:((fetchError && fetchError.message) || 'could not load data')};
 
   state = seedEmptyBusiness();
   state.products = data.products.map(SYNC_DEFS.products.fromRow);
@@ -2103,7 +2140,10 @@ async function renderSuperAdmin(){
     <td>${escapeHtml(s.plan_id)}</td>
     <td>${s.status==='active'?'<span class="badge badge-ok">Active</span>':s.status==='pending'?'<span class="badge badge-warn">Pending payment</span>':`<span class="badge badge-muted">${escapeHtml(s.status)}</span>`}</td>
     <td>${s.renews_at?new Date(s.renews_at).toLocaleDateString('en-NG'):'—'}</td>
-    <td>${s.status==='pending'?`<button class="btn btn-sm btn-primary" onclick="confirmPlan('${s.company_id}')">Confirm payment</button>`:''}</td>
+    <td>${s.status==='pending'?`<button class="btn btn-sm btn-primary" onclick="confirmPlan('${s.company_id}')">Confirm payment</button>`:''}
+    ${s.status!=='cancelled'?` <button class="btn btn-sm" onclick="setSubStatus('${s.company_id}','past_due',0)" style="margin-left:4px;" title="Suspend access immediately">Suspend</button>`:''}
+    ${s.status==='cancelled'||s.status==='past_due'?` <button class="btn btn-sm" onclick="setSubStatus('${s.company_id}','active',30)" style="margin-left:4px;" title="Reinstate for 30 days">Reinstate</button>`:''}
+    ${s.status!=='trial'?` <button class="btn btn-sm" onclick="setSubStatus('${s.company_id}','trial',30)" style="margin-left:4px;" title="Start a trial period">Trial</button>`:''}</td>
   </tr>`; }).join('') || `<tr><td colspan="5" class="text-muted">No subscriptions yet.</td></tr>`;
 }
 
@@ -2124,6 +2164,15 @@ async function confirmPlan(companyId){
   const {error} = await sb.rpc('confirm_plan', { p_company_id: companyId });
   if(error){ toast('Confirm failed: ' + error.message, 4000); return; }
   platform = await loadPlatform(); await renderSuperAdmin(); toast('Plan activated.');
+}
+/** Trial / suspend / reinstate any company. Status (not features) governs
+ *  access: trial+active = full app; past_due/cancelled = Billing only. */
+async function setSubStatus(companyId, status, days){
+  const label = status==='trial' ? 'start a trial' : status==='active' ? 'reinstate access' : 'suspend access';
+  if(!confirm(`Confirm: ${label} for this company?`)) return;
+  const {error} = await sb.rpc('set_subscription_status', { p_company_id: companyId, p_status: status, p_renew_days: days });
+  if(error){ toast('Update failed: ' + error.message, 4000); return; }
+  platform = await loadPlatform(); await renderSuperAdmin(); toast('Subscription updated.');
 }
 
 async function resolveSecurityAlert(id){
