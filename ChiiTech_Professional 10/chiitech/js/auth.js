@@ -438,24 +438,6 @@ async function resetAdminPassword(){
   toastOnLogin('If that email has an account, a reset link is on its way — check your inbox.');
 }
 
-/** Looks up which company an email belongs to and shows the company
- *  code right on the page, via lookup_company_by_email() — works before
- *  signing in, for anyone (admin or worker) who's forgotten their code. */
-async function lookupCompanyCode(){
-  const email = document.getElementById('forgot-lookup-email').value.trim().toLowerCase();
-  const result = document.getElementById('forgot-lookup-result');
-  const {data, error} = await sb.rpc('lookup_company_by_email', { p_email: email });
-  if(error || !data || !data.length){
-    result.innerHTML = `<p class="auth-error" style="margin-top:10px;">No account found with that email.</p>`; return;
-  }
-  const {company_name, company_code} = data[0];
-  result.innerHTML = `<div class="forgot-result">
-    Company: <b>${escapeHtmlSafe(company_name||'—')}</b><br>
-    Company code: <b style="color:var(--neon);font-size:16px;letter-spacing:1px;">${escapeHtmlSafe(company_code||'—')}</b><br>
-    <span class="text-muted" style="font-size:11px;">Share this code with workers so they can join under "Log in as Worker".</span>
-  </div>`;
-}
-
 // A tiny local copy of escapeHtml for use before app.js has loaded/on the
 // login screen (app.js's escapeHtml is the canonical one used everywhere
 // else once the app itself is running).
@@ -474,6 +456,25 @@ function toastOnLogin(msg){
   el.style.color = 'var(--neon)';
   el.classList.remove('hidden');
   setTimeout(()=>{ el.classList.add('hidden'); el.style.background=''; el.style.color=''; }, 3500);
+}
+
+/* ---------------- Free / Pro plan gating ----------------
+   Role first, plan second: super_admin is above plans and always passes.
+   Company roles get Free sections everywhere; Pro sections (audit, growth,
+   ai, imports, auditoraccess) need plan 'pro'. The Free team cap (3) is
+   enforced server-side in invite_worker(), so the UI can never bypass it. */
+const PRO_SECTIONS = { audit:1, growth:1, ai:1, imports:1, auditoraccess:1 };
+function myPlan(){ return (typeof state!=='undefined' && state && state.subscription && state.subscription.planId) || 'free'; }
+function canUsePlan(section){
+  if(!session || session.role==='super_admin') return true;
+  if(!PRO_SECTIONS[section]) return true;
+  return myPlan()==='pro';
+}
+function requirePlan(section){
+  if(canUsePlan(section)) return true;
+  toast('That needs Pro — see Billing to upgrade.', 4000);
+  showSection('billing');
+  return false;
 }
 
 /* ---------------- Department / role gating ---------------- */
@@ -522,6 +523,8 @@ function applyAccessControl(){
     } else {
       allowed = canAccess(dept);
     }
+    // Free/Pro plan gate (super_admin exempt — role first, plan second).
+    if(allowed && !canUsePlan(el.dataset.nav)) allowed = false;
     el.classList.toggle('hidden', !allowed);
   });
   document.querySelectorAll('[data-qa]').forEach(el=>{

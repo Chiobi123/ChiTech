@@ -197,6 +197,7 @@ async function bootApp(){
 
   const order = ['dashboard','sales','products','customers','orders','expenses','tax','audit','growth','ai','team','billing','auditoraccess'];
   const firstAllowed = order.find(name=>{
+    if(!canUsePlan(name)) return false;
     const dept = SECTION_ACCESS[name];
     if(dept===null) return true;
     if(dept==='admin') return session.role==='company_admin';
@@ -227,6 +228,7 @@ function renderAll(){
 }
 
 function showSection(name, fromBack){
+  if(session && session.role!=='auditor' && !requirePlan(name)) return;
   if(!fromBack && currentSection && currentSection!==name){ navStack.push(currentSection); }
   currentSection = name;
   document.getElementById('back-btn').classList.toggle('hidden', navStack.length===0);
@@ -1949,10 +1951,24 @@ function saveBankTransfer(){
 
 function renderBilling(){
   const company = currentCompany();
-  const price = PLAN_PRICES[company?.plan] || 0;
-  document.getElementById('bill-plan-name').textContent = (company?.plan||'Founding') + ' plan';
-  document.getElementById('bill-plan-price').textContent =
-    (price ? fmtN(price) : '₦0') + '/month' + (company?.plan==='Founding' ? ' • locked in for your first 50–100 businesses' : '');
+  const sub = state.subscription || { planId:'free', status:'active', renewsAt:null };
+  const plans = (state.plans||[]).filter(p=>p.active);
+  const current = plans.find(p=>p.id===sub.planId) || { name:'Free', price:0 };
+  document.getElementById('bill-plan-name').textContent = current.name + ' plan';
+  document.getElementById('bill-plan-status').textContent =
+    `Status: ${sub.status}` + (sub.renewsAt ? ` • renews ${new Date(sub.renewsAt).toLocaleDateString('en-NG')}` : '') +
+    (sub.status==='pending' ? ' — payment confirmation in progress.' : '');
+  document.getElementById('bill-plans').innerHTML = plans.map(p=>{
+    const mine = p.id===sub.planId && sub.status!=='pending';
+    const pend = p.id===sub.planId && sub.status==='pending';
+    return `<div class="card mb-0" style="${mine?'border-color:var(--neon);':''}">
+      <div class="card-title">${escapeHtml(p.name)} — ${p.price?fmtN(p.price)+'/mo':'Free forever'}</div>
+      <ul class="about-list" style="font-size:12px;">${(p.features||[]).map(f=>`<li>${escapeHtml(f)}</li>`).join('')}</ul>
+      ${mine ? '<span class="badge badge-ok">Current plan</span>'
+        : pend ? '<span class="badge badge-warn">Awaiting confirmation</span>'
+        : (session.role==='company_admin' ? `<button class="btn btn-sm btn-primary" onclick="requestPlan('${p.id}')">Choose ${escapeHtml(p.name)}</button>` : '')}
+    </div>`;
+  }).join('');
 
   const ps = state.payoutConfig.paystackConnected;
   document.getElementById('bill-paystack-status').innerHTML =
@@ -1976,9 +1992,19 @@ function renderBilling(){
     <tr><td>${new Date(b.date).toLocaleDateString('en-NG')}</td><td>${escapeHtml(b.description)}</td>
     <td>${fmtN(b.amount)}</td><td><span class="badge ${b.status==='Paid'?'badge-ok':'badge-warn'}">${escapeHtml(b.status)}</span></td></tr>
   `).join('') : `<tr><td colspan="4" class="text-muted">
-    No invoices yet — ChiiTech subscription billing isn't wired up to a real payment run in this build, so
-    nothing has actually been charged. Real invoices will appear here once billing goes live.
+    No invoices yet — subscription payments will appear here once confirmed.
   </td></tr>`;
+}
+
+async function requestPlan(planId){
+  if(session.role!=='company_admin') return;
+  if(!confirm(`Switch to this plan? Payment is confirmed by the platform before it activates.`)) return;
+  const {error} = await sb.rpc('request_plan_change', { p_plan_id: planId });
+  if(error){ toast('Request failed: ' + error.message, 4000); return; }
+  addAuditLog('billing.plan_requested', 'Requested plan: ' + planId);
+  state = await loadBusiness(session.companyId);
+  renderAll();
+  toast('Request sent — your plan activates after payment confirmation.');
 }
 /** Undoes a self-service company deletion — clears the flag set by
  *  soft_delete_company() (see migration 12) so the company, its admin,
@@ -2002,14 +2028,20 @@ async function renderSuperAdmin(){
   }
   let totalWorkers=0, totalSales=0, mrr=0, foundingCount=0;
   const planCounts = {};
+  const priceByPlan = {};
+  (platform.plans||[]).forEach(p=>{ priceByPlan[p.id] = Number(p.price||0); });
+  const subByCompany = {};
+  (platform.subscriptions||[]).forEach(s=>{ subByCompany[s.company_id] = s; });
 
   companies.forEach(c=>{
     totalWorkers += Number(c.teamSize||0);
     const salesTotal = salesByCompany[c.id] || 0;
     totalSales += salesTotal;
-    mrr += PLAN_PRICES[c.plan] || 0;
-    planCounts[c.plan] = (planCounts[c.plan]||0) + 1;
-    if(c.plan==='Founding') foundingCount++;
+    const sub = subByCompany[c.id];
+    const key = (sub ? sub.plan_id : (c.plan||'').toLowerCase());
+    if(sub && sub.status==='active') mrr += priceByPlan[sub.plan_id] || 0;
+    planCounts[key] = (planCounts[key]||0) + 1;
+    if(key==='founding') foundingCount++;
   });
 
   const rows = companies.map(c=>`<tr${c.deletedAt ? ' style="opacity:0.55;"' : ''}>
@@ -2038,9 +2070,48 @@ async function renderSuperAdmin(){
   const planLabels = Object.keys(planCounts);
   chiDoughnut('sa-revenue-chart', {
     labels: planLabels.length ? planLabels.map(p=>`${p} (${planCounts[p]})`) : ['No companies yet'],
-    values: planLabels.length ? planLabels.map(p=>(PLAN_PRICES[p]||0)*planCounts[p]) : [1],
+    values: planLabels.length ? planLabels.map(p=>(priceByPlan[p]||0)*planCounts[p]) : [1],
     centerLabel: fmtN(mrr),
   });
+
+  document.getElementById('sa-plans-table').innerHTML = (platform.plans||[]).map(p=>`<tr>
+    <td><b>${escapeHtml(p.name)}</b><br><span class="text-muted" style="font-size:11px;">${(p.features||[]).map(escapeHtml).join(' • ')}</span></td>
+    <td><input type="number" min="0" id="plan-price-${p.id}" value="${p.price}" style="max-width:130px;"></td>
+    <td>${p.active?'<span class="badge badge-ok">Live</span>':'<span class="badge badge-muted">Hidden</span>'}</td>
+    <td><button class="btn btn-sm btn-primary" onclick="savePlanPrice('${p.id}')">Save</button>
+    <button class="btn btn-sm" onclick="togglePlanActive('${p.id}',${p.active?'false':'true'})" style="margin-left:4px;">${p.active?'Hide':'Show'}</button></td>
+  </tr>`).join('');
+
+  const compById = {};
+  companies.forEach(c=>{ compById[c.id] = c; });
+  document.getElementById('sa-subs-table').innerHTML = (platform.subscriptions||[]).map(s=>{
+    const c = compById[s.company_id];
+    return `<tr>
+    <td>${escapeHtml(c?c.name:s.company_id)}</td>
+    <td>${escapeHtml(s.plan_id)}</td>
+    <td>${s.status==='active'?'<span class="badge badge-ok">Active</span>':s.status==='pending'?'<span class="badge badge-warn">Pending payment</span>':`<span class="badge badge-muted">${escapeHtml(s.status)}</span>`}</td>
+    <td>${s.renews_at?new Date(s.renews_at).toLocaleDateString('en-NG'):'—'}</td>
+    <td>${s.status==='pending'?`<button class="btn btn-sm btn-primary" onclick="confirmPlan('${s.company_id}')">Confirm payment</button>`:''}</td>
+  </tr>`; }).join('') || `<tr><td colspan="5" class="text-muted">No subscriptions yet.</td></tr>`;
+}
+
+async function savePlanPrice(planId){
+  const price = Number(document.getElementById('plan-price-'+planId).value);
+  if(!(price>=0)){ toast('Enter a valid price.'); return; }
+  const {error} = await sb.rpc('set_plan', { p_plan_id: planId, p_price: price });
+  if(error){ toast('Save failed: ' + error.message, 4000); return; }
+  platform = await loadPlatform(); await renderSuperAdmin(); toast('Price updated — applies to new and renewing cycles.');
+}
+async function togglePlanActive(planId, active){
+  const {error} = await sb.rpc('set_plan', { p_plan_id: planId, p_active: active });
+  if(error){ toast('Save failed: ' + error.message, 4000); return; }
+  platform = await loadPlatform(); await renderSuperAdmin(); toast(active?'Plan visible.':'Plan hidden.');
+}
+async function confirmPlan(companyId){
+  if(!confirm('Confirm payment received and activate this plan?')) return;
+  const {error} = await sb.rpc('confirm_plan', { p_company_id: companyId });
+  if(error){ toast('Confirm failed: ' + error.message, 4000); return; }
+  platform = await loadPlatform(); await renderSuperAdmin(); toast('Plan activated.');
 }
 
 async function resolveSecurityAlert(id){

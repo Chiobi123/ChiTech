@@ -348,6 +348,22 @@
       </div>
 
       <div class="card">
+        <div class="card-head"><div class="card-title">Plans &amp; prices</div><div class="card-sub">You set prices here — changes apply to new and renewing cycles only</div></div>
+        <table>
+          <thead><tr><th>Plan</th><th>Monthly price ₦</th><th>Features</th><th>Active</th><th></th></tr></thead>
+          <tbody id="sa-plans-table"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">Subscribers</div><div class="card-sub">Confirm payment to activate a requested plan</div></div>
+        <table>
+          <thead><tr><th>Company</th><th>Plan</th><th>Status</th><th>Renews</th><th></th></tr></thead>
+          <tbody id="sa-subs-table"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
         <div class="card-head"><div class="card-title">Registered companies</div></div>
         <table>
           <thead><tr><th>Company</th><th>Code</th><th>Owner</th><th>Plan</th><th>Team size</th><th>Joined</th><th></th></tr></thead>
@@ -1157,10 +1173,9 @@
       <div class="grid grid-2" style="margin-bottom:16px;">
         <div class="card mb-0">
           <div class="card-head"><div class="card-title">Your subscription</div></div>
-          <p style="font-size:22px;font-weight:700;color:var(--neon);margin:0 0 4px;" id="bill-plan-name">Founding plan</p>
-          <p class="text-muted" style="font-size:12.5px;margin:0 0 14px;" id="bill-plan-price">₦2,500/month &#8226; locked in for your first 50–100 businesses</p>
-          <button class="btn">Upgrade to Pro (₦5,000/mo)</button>
-          <p class="text-muted" style="font-size:11px;margin-top:10px;">No invoice has been billed yet — see why below.</p>
+          <p style="font-size:22px;font-weight:700;color:var(--neon);margin:0 0 4px;" id="bill-plan-name">Free plan</p>
+          <p class="text-muted" style="font-size:12.5px;margin:0 0 14px;" id="bill-plan-status"></p>
+          <div id="bill-plans" class="grid grid-2"></div>
         </div>
         <div class="card mb-0">
           <div class="card-head"><div class="card-title">Get paid through ChiiTech</div></div>

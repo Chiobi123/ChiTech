@@ -79,6 +79,7 @@ function seedEmptyBusiness(){
     materialityThreshold: 5000, findings: [],
     team: [], auditorGrants: [], auditVisitLog: [],
     debts: [], budgets: [], receipts: [], periods: [],
+    plans: [], subscription: { planId:'free', status:'active', renewsAt:null },
     meta: { nextId: 100 } // unused now that ids are real uuids — kept only for shape stability
   };
 }
@@ -172,7 +173,7 @@ const INSERT_ONLY_DEFS = {
    shape app.js has always expected.
    ============================================================ */
 async function loadBusiness(companyId){
-  const [products, customers, sales, expenses, orders, sop, auditLog, auditorGrants, visits, team, settings, findings, debts, budgets, receipts, periods] = await Promise.all([
+  const [products, customers, sales, expenses, orders, sop, auditLog, auditorGrants, visits, team, settings, findings, debts, budgets, receipts, periods, plans, subscription] = await Promise.all([
     sb.from('products').select('*').eq('company_id', companyId),
     sb.from('customers').select('*').eq('company_id', companyId),
     sb.from('sales').select('*').eq('company_id', companyId),
@@ -189,8 +190,10 @@ async function loadBusiness(companyId){
     sb.from('budgets').select('*').eq('company_id', companyId),
     sb.from('receipts').select('id,record_type,record_id,mime,created_at').eq('company_id', companyId),
     sb.from('accounting_periods').select('*').eq('company_id', companyId).order('month', {ascending:false}),
+    sb.from('plans').select('*').eq('active', true).order('price'),
+    sb.from('subscriptions').select('*').eq('company_id', companyId).maybeSingle(),
   ]);
-  for(const r of [products,customers,sales,expenses,orders,sop,auditLog,auditorGrants,visits,team,settings,findings,debts,budgets,receipts,periods]){
+  for(const r of [products,customers,sales,expenses,orders,sop,auditLog,auditorGrants,visits,team,settings,findings,debts,budgets,receipts,periods,plans,subscription]){
     if(r.error){ console.error('loadBusiness:', r.error); toast('Could not load some data — ' + r.error.message, 4000); }
   }
 
@@ -215,6 +218,9 @@ async function loadBusiness(companyId){
   biz.budgets = (budgets.data||[]).map(r=>({ category:r.category, month:r.month, limit:Number(r.limit_amount) }));
   biz.receipts = (receipts.data||[]).map(r=>({ id:r.id, recordType:r.record_type, recordId:r.record_id, mime:r.mime }));
   biz.periods = (periods.data||[]).map(r=>({ month:r.month, closedAt:r.closed_at?new Date(r.closed_at).getTime():null }));
+  biz.plans = (plans.data||[]).map(r=>({ id:r.id, name:r.name, price:Number(r.price), features:r.features||[], active:r.active }));
+  const sub = subscription.data;
+  biz.subscription = sub ? { planId:sub.plan_id, status:sub.status, renewsAt:sub.renews_at?new Date(sub.renews_at).getTime():null } : { planId:'free', status:'active', renewsAt:null };
 
   const s = settings.data;
   if(s){
@@ -454,7 +460,9 @@ async function loadPlatform(){
     eventType:a.event_type, title:a.title, description:a.description, source:a.source, status:a.status,
     metadata:a.metadata||{}, createdAt:new Date(a.created_at).getTime(), resolvedAt:a.resolved_at?new Date(a.resolved_at).getTime():null
   }));
-  return { companies, users, salesByCompany, securityAlerts };
+  const plans = (payload.plans||[]).map(p=>({ id:p.id, name:p.name, price:Number(p.price), features:p.features||[], active:p.active }));
+  const subscriptions = (payload.subscriptions||[]).map(s=>({ company_id:s.company_id, plan_id:s.plan_id, status:s.status, renews_at:s.renews_at }));
+  return { companies, users, salesByCompany, securityAlerts, plans, subscriptions };
 }
 
 /** Only used by the Super Admin console's suspend/activate-company and
