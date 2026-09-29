@@ -1,6 +1,16 @@
 # ChiiTech — frontend prototype
 
-## Current round — 2026-09-25: imports, security alerts, super-admin isolation (live)
+## Current round — 2026-09-29: small-business batch (auditor + analyst review)
+
+- New tables (migration 23, applied + verified live): `accounting_periods`
+  (close/reopen with logged reasons + trigger lock), `debts` (owe/owed),
+  `budgets` (monthly spending limits), `receipts` (photo proof).
+- Dashboard “Money pulse”: daily sales target, owe/owed totals, budget bars,
+  slow stock, regulars + quiet customers, staff scoreboard.
+- Photo receipts on sales/expenses rows (compressed on-device).
+- Close-the-month card on the Audit page (admin only, reason-logged).
+
+## Previous round — 2026-09-25: imports, security alerts, super-admin isolation (live)
 
 - Live DB `ChiTech b` now on 21 migrations: 19 super-admin privacy +
   fraud signals (`bootstrap_super_admin`, `compute_fraud_signals`,

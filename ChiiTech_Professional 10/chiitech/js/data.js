@@ -78,6 +78,7 @@ function seedEmptyBusiness(){
     sop: [], billingHistory: [], payoutConfig: { paystackConnected:false, bankTransfer:null },
     materialityThreshold: 5000, findings: [],
     team: [], auditorGrants: [], auditVisitLog: [],
+    debts: [], budgets: [], receipts: [], periods: [],
     meta: { nextId: 100 } // unused now that ids are real uuids — kept only for shape stability
   };
 }
@@ -171,7 +172,7 @@ const INSERT_ONLY_DEFS = {
    shape app.js has always expected.
    ============================================================ */
 async function loadBusiness(companyId){
-  const [products, customers, sales, expenses, orders, sop, auditLog, auditorGrants, visits, team, settings, findings] = await Promise.all([
+  const [products, customers, sales, expenses, orders, sop, auditLog, auditorGrants, visits, team, settings, findings, debts, budgets, receipts, periods] = await Promise.all([
     sb.from('products').select('*').eq('company_id', companyId),
     sb.from('customers').select('*').eq('company_id', companyId),
     sb.from('sales').select('*').eq('company_id', companyId),
@@ -184,8 +185,12 @@ async function loadBusiness(companyId){
     sb.from('profiles').select('id,email,name,role,departments,active').eq('company_id', companyId),
     sb.from('company_settings').select('*').eq('company_id', companyId).maybeSingle(),
     sb.from('audit_findings').select('*').eq('company_id', companyId).order('created_at', {ascending:false}),
+    sb.from('debts').select('*').eq('company_id', companyId).order('created_at', {ascending:false}),
+    sb.from('budgets').select('*').eq('company_id', companyId),
+    sb.from('receipts').select('id,record_type,record_id,mime,created_at').eq('company_id', companyId),
+    sb.from('accounting_periods').select('*').eq('company_id', companyId).order('month', {ascending:false}),
   ]);
-  for(const r of [products,customers,sales,expenses,orders,sop,auditLog,auditorGrants,visits,team,settings,findings]){
+  for(const r of [products,customers,sales,expenses,orders,sop,auditLog,auditorGrants,visits,team,settings,findings,debts,budgets,receipts,periods]){
     if(r.error){ console.error('loadBusiness:', r.error); toast('Could not load some data — ' + r.error.message, 4000); }
   }
 
@@ -204,6 +209,12 @@ async function loadBusiness(companyId){
   biz.team = (team.data||[]).map(r=>({ id:r.id, email:r.email, name:r.name, role:r.role,
     departments:r.departments||[], active:r.active }));
   biz.findings = (findings.data||[]).map(SYNC_DEFS.findings.fromRow);
+  biz.debts = (debts.data||[]).map(r=>({ id:r.id, direction:r.direction, party:r.party,
+    amount:Number(r.amount), dueDate:r.due_date, status:r.status, note:r.note,
+    settledAt:r.settled_at?new Date(r.settled_at).getTime():null }));
+  biz.budgets = (budgets.data||[]).map(r=>({ category:r.category, month:r.month, limit:Number(r.limit_amount) }));
+  biz.receipts = (receipts.data||[]).map(r=>({ id:r.id, recordType:r.record_type, recordId:r.record_id, mime:r.mime }));
+  biz.periods = (periods.data||[]).map(r=>({ month:r.month, closedAt:r.closed_at?new Date(r.closed_at).getTime():null }));
 
   const s = settings.data;
   if(s){
@@ -344,12 +355,81 @@ async function syncTeam(companyId, team, syncedTeam){
   }
 }
 
+/* Small-business tables (migration 23) use direct writes — low volume,
+   admin-driven, no diff-sync needed. Errors toast visibly. */
+async function refreshBusiness(){ state = await loadBusiness(session.companyId); renderAll(); }
+
 /* ============================================================
    PLATFORM — the company directory. For a normal admin/worker this is
    just their own company (RLS scopes the SELECT automatically); for the
    super_admin it's every company, plus a full user directory for the
    Super Admin console.
    ============================================================ */
+
+async function saveDebt(d){
+  const {error} = await sb.from('debts').insert({
+    company_id: session.companyId, direction: d.direction, party: d.party,
+    amount: d.amount, due_date: d.dueDate||null, note: d.note||null });
+  if(error){ toast('Could not save: ' + error.message, 4000); return false; }
+  addAuditLog(d.direction==='i_owe' ? 'debt.owed_added' : 'debt.owed_to_me_added', `${d.party}: ${fmtN(d.amount)}`);
+  await refreshBusiness(); return true;
+}
+async function settleDebt(id){
+  const {error} = await sb.from('debts').update({ status:'settled', settled_at:new Date().toISOString() }).eq('id', id);
+  if(error){ toast('Could not settle: ' + error.message, 4000); return; }
+  const d = state.debts.find(x=>x.id===id);
+  addAuditLog('debt.settled', `${d?d.party:''} settled (${fmtN(d?d.amount:0)})`);
+  await refreshBusiness(); toast('Settled.');
+}
+async function saveBudget(category, month, limit){
+  const {error} = await sb.from('budgets').upsert({
+    company_id: session.companyId, category, month, limit_amount: limit }, { onConflict: 'company_id,category,month' });
+  if(error){ toast('Could not save limit: ' + error.message, 4000); return false; }
+  await refreshBusiness(); return true;
+}
+/** Photo receipts: downscaled client-side to ~100KB JPEG data URLs so they
+ *  stay cheap to store and fast to load on phones. */
+function fileToReceiptDataUrl(file){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const maxSide = 1024;
+      const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width*scale); c.height = Math.round(img.height*scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(img.src);
+      resolve(c.toDataURL('image/jpeg', 0.72));
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+async function attachReceipt(recordType, recordId, file){
+  try {
+    const dataUrl = await fileToReceiptDataUrl(file);
+    const {error} = await sb.from('receipts').insert({
+      company_id: session.companyId, record_type: recordType, record_id: recordId,
+      image_data: dataUrl, mime: 'image/jpeg' });
+    if(error){ toast('Could not attach photo: ' + error.message, 4000); return; }
+    addAuditLog('receipt.attached', `Photo attached to ${recordType}.`);
+    await refreshBusiness(); toast('Photo attached.');
+  } catch(e){ toast('Could not read that photo.', 4000); }
+}
+function receiptsFor(recordType, recordId){
+  return (state.receipts||[]).filter(r=>r.recordType===recordType && r.recordId===recordId);
+}
+async function closePeriod(month){
+  const {error} = await sb.rpc('close_period', { p_month: month });
+  if(error){ toast('Could not close: ' + error.message, 4000); return; }
+  await refreshBusiness(); toast('Month closed.');
+}
+async function reopenPeriod(month, reason){
+  if(!reason || reason.trim().length<4){ toast('Give a short reason for reopening.'); return; }
+  const {error} = await sb.rpc('reopen_period', { p_month: month, p_reason: reason });
+  if(error){ toast('Could not reopen: ' + error.message, 4000); return; }
+  await refreshBusiness(); toast('Month reopened (reason logged).');
+}
 async function loadPlatform(){
   const {data, error} = await sb.rpc('platform_overview');
   if(error){

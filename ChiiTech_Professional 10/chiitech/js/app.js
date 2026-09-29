@@ -691,14 +691,16 @@ function recordSale(){
 function renderSales(){
   const tbody = document.getElementById('sales-table');
   const rows = [...state.sales].reverse().slice(0,25);
-  tbody.innerHTML = rows.map(s=>`<tr>
+  tbody.innerHTML = rows.map(s=>{ const rc = receiptsFor('sale', s.id).length;
+    return `<tr>
     <td>${s.invoiceNo||'—'}</td>
     <td>${new Date(s.time).toLocaleString('en-NG',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'})}</td>
     <td>${escapeHtml(s.itemsSummary||s.productName)}</td>
     <td>${fmtN(s.cost)}</td>
     <td>${fmtN(s.subtotal!==undefined?s.subtotal:s.total)}${s.discount>0?` <span class="badge badge-warn">-${fmtN(s.discount)}</span>`:''}</td>
     <td>${escapeHtml(s.customerName)}</td><td>${escapeHtml(s.payment)}</td><td class="text-muted">${escapeHtml(s.recordedBy||'—')}</td>
-  </tr>`).join('') || `<tr><td colspan="8" class="text-muted">No sales recorded yet.</td></tr>`;
+    <td><button class="btn btn-sm" onclick="askReceipt('sale','${s.id}')" title="Attach a photo receipt">📷${rc?` ${rc}`:''}</button></td>
+  </tr>`; }).join('') || `<tr><td colspan="9" class="text-muted">No sales recorded yet.</td></tr>`;
   renderCart();
 }
 
@@ -729,7 +731,8 @@ function addExpense(){
 function renderExpenses(){
   const tbody = document.getElementById('expenses-table');
   const rows = [...state.expenses].reverse().slice(0,25);
-  tbody.innerHTML = rows.map(e=>`<tr>
+  tbody.innerHTML = rows.map(e=>{ const rc = receiptsFor('expense', e.id).length;
+    return `<tr>
     <td>${new Date(e.time).toLocaleString('en-NG',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'})}</td>
     <td>${escapeHtml(e.category)}</td><td>${escapeHtml(e.note||'—')}</td><td>${fmtN(e.amount)}</td>
     <td class="text-muted">${escapeHtml(e.loggedBy||'—')}</td>
@@ -738,7 +741,8 @@ function renderExpenses(){
             ? '<span class="badge badge-muted">Flagged (below materiality)</span>'
             : '<span class="badge badge-danger">Flagged</span>')
         : '<span class="badge badge-ok">Clear</span>'}</td>
-  </tr>`).join('') || `<tr><td colspan="6" class="text-muted">No expenses logged yet.</td></tr>`;
+    <td><button class="btn btn-sm" onclick="askReceipt('expense','${e.id}')" title="Attach a photo receipt">📷${rc?` ${rc}`:''}</button></td>
+  </tr>`; }).join('') || `<tr><td colspan="7" class="text-muted">No expenses logged yet.</td></tr>`;
 
   const flagged = [...state.expenses].reverse().filter(e=>e.flag).slice(0,5);
   document.getElementById('expense-rootcause').innerHTML = flagged.length ? `
@@ -904,6 +908,132 @@ function renderDashboard(){
   document.getElementById('d-flag-pill').innerHTML = openFlags>0
     ? `<span class="flag-pill"><span class="flag-dot"></span>${openFlags} expense${openFlags>1?'s':''} flagged for review</span>`
     : '';
+  renderPulse();
+}
+
+/* ================= MONEY PULSE (small-business answers) ================
+   Plain-language numbers from the company's own books: daily sales target,
+   owe/owed, spending limits, slow stock, regulars, staff scoreboard. */
+function thisMonthKey(){ const d = new Date(); return d.toISOString().slice(0,7)+'-01'; }
+function monthStartTs(){ const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d.getTime(); }
+
+function renderPulse(){
+  // 1. How much must I sell today? (monthly expenses run-rate + 20% margin headroom, / days left)
+  const ms = monthStartTs();
+  const mExp = state.expenses.filter(e=>e.time>=ms).reduce((a,e)=>a+e.amount,0);
+  const mSales = state.sales.filter(s=>s.time>=ms).reduce((a,s)=>a+s.total,0);
+  const now = new Date(), dim = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  const left = Math.max(1, dim - now.getDate() + 1);
+  const target = Math.max(0, (mExp*1.2 - mSales) / left);
+  document.getElementById('pulse-target').textContent = fmtN(target);
+  document.getElementById('pulse-target-sub').textContent =
+    mSales >= mExp*1.2 ? 'Covered for the month — every extra sale is growth.' :
+    `Sell about this much daily for the remaining ${left} day${left===1?'':'s'} to cover costs with headroom.`;
+
+  // 2. Owe / owed (customer balances + tracked debts)
+  const custOwes = state.customers.filter(c=>(c.balanceDue||0)>0);
+  const openDebts = (state.debts||[]).filter(d=>d.status==='open');
+  const owedToMe = custOwes.reduce((a,c)=>a+(c.balanceDue||0),0) + openDebts.filter(d=>d.direction==='owed_to_me').reduce((a,d)=>a+d.amount,0);
+  const iOwe = openDebts.filter(d=>d.direction==='i_owe').reduce((a,d)=>a+d.amount,0);
+  const overdue = openDebts.filter(d=>d.dueDate && new Date(d.dueDate).getTime() < Date.now()).length;
+  document.getElementById('pulse-debts').innerHTML =
+    `Owes you: <b>${fmtN(owedToMe)}</b> &nbsp;•&nbsp; You owe: <b>${fmtN(iOwe)}</b>` +
+    (overdue ? `<br><span class="badge badge-danger">${overdue} overdue</span>` : '');
+  renderDebtsTable();
+
+  // 3. Spending limits vs actuals this month
+  const byCat = {};
+  state.expenses.filter(e=>e.time>=ms).forEach(e=>{ const c=e.category||'Other'; byCat[c]=(byCat[c]||0)+e.amount; });
+  const monthKey = thisMonthKey();
+  const monthBudgets = (state.budgets||[]).filter(b=>b.month===monthKey);
+  const budgetForm = session.role==='company_admin' ? `<div style="margin-top:6px;" class="form-row">
+      <div class="field"><label>Category</label><input id="budget-cat" placeholder="e.g. Transport"></div>
+      <div class="field"><label>Monthly limit ₦</label><input id="budget-limit" type="number" min="0" placeholder="0"></div>
+      <div class="field"><label>&nbsp;</label><button class="btn btn-sm btn-primary" onclick="setBudget()">Set limit</button></div>
+    </div>` : '<div class="text-muted">Ask your admin to set monthly spending limits.</div>';
+  document.getElementById('pulse-budgets').innerHTML = (monthBudgets.length ? monthBudgets.map(b=>{
+    const spent = byCat[b.category]||0, pct = b.limit>0 ? Math.round(spent/b.limit*100) : 0;
+    const cls = pct>=100 ? 'badge-danger' : pct>=80 ? 'badge-warn' : 'badge-ok';
+    return `<div>${escapeHtml(b.category)}: ${fmtN(spent)} / ${fmtN(b.limit)} <span class="badge ${cls}">${pct}%</span></div>`;
+  }).join('') : 'No limits set yet.') + budgetForm;
+
+  // 4. Slow & stuck stock (nothing sold in 60+ days)
+  const saleCutoff = Date.now() - 60*864e5;
+  const recentNames = new Set();
+  state.sales.forEach(s=>{
+    (s.items||[]).forEach(it=>{ if(s.time>=saleCutoff) recentNames.add(it.name); });
+  });
+  const slow = state.products.filter(p=>!recentNames.has(p.name)).slice(0,5);
+  document.getElementById('pulse-stock').innerHTML = slow.length
+    ? slow.map(p=>`<div>${escapeHtml(p.name)} — ${p.stock} on hand (quiet 60+ days)</div>`).join('')
+    : 'Everything on shelf has moved recently.';
+
+  // 5. Regulars (top 3 by spend) + quiet customers (90+ days)
+  const ranked = [...state.customers].sort((a,b)=>(b.totalSpent||0)-(a.totalSpent||0));
+  const quiet = state.customers.filter(c=>{ const t=c.lastPurchase||0; return Date.now()-t>90*864e5; }).length;
+  document.getElementById('pulse-regulars').innerHTML =
+    (ranked.slice(0,3).map(c=>`<div>${escapeHtml(c.name)} — ${fmtN(c.totalSpent||0)} total</div>`).join('') || 'No customers yet.') +
+    (quiet ? `<div class="text-muted">${quiet} quiet 90+ days — say hello.</div>` : '');
+
+  // 6. Staff scoreboard (revenue recorded per person, last 7 days)
+  const cut = Date.now() - 7*864e5, byWho = {};
+  state.sales.filter(s=>s.time>=cut).forEach(s=>{ const w=s.recordedBy||'—'; byWho[w]=(byWho[w]||0)+s.total; });
+  const board = Object.entries(byWho).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  document.getElementById('pulse-staff').innerHTML = board.length
+    ? board.map(([w,t])=>`<div>${escapeHtml(w)} — ${fmtN(t)}</div>`).join('')
+    : 'No sales this week yet.';
+}
+
+function renderDebtsTable(){
+  const el = document.getElementById('debts-table');
+  if(!el) return;
+  const rows = [...(state.debts||[])].reverse().slice(0,20);
+  el.innerHTML = rows.map(d=>`<tr>
+    <td>${escapeHtml(d.party)}</td>
+    <td>${d.direction==='i_owe' ? '<span class="badge badge-warn">You owe</span>' : '<span class="badge badge-ok">Owes you</span>'}</td>
+    <td>${fmtN(d.amount)}</td>
+    <td>${d.dueDate ? new Date(d.dueDate).toLocaleDateString('en-NG') : '—'}${d.status==='open'&&d.dueDate&&new Date(d.dueDate).getTime()<Date.now()?' <span class="badge badge-danger">Overdue</span>':''}</td>
+    <td>${d.status==='open' ? `<span class="badge badge-muted">Open</span> <button class="btn btn-sm" onclick="settleDebt('${d.id}')" style="margin-left:4px;">Settle</button>` : '<span class="badge badge-ok">Settled</span>'}</td>
+  </tr>`).join('') || `<tr><td colspan="5" class="text-muted">Nothing owed either way. Add the first above.</td></tr>`;
+  const admin = session.role==='company_admin';
+  document.getElementById('debt-form').style.display = admin ? '' : 'none';
+  document.getElementById('debt-form-2').style.display = admin ? '' : 'none';
+}
+
+async function addDebt(){
+  if(session.role!=='company_admin'){ toast('Only the admin manages debts.'); return; }
+  const party = document.getElementById('debt-party').value.trim();
+  const amount = Number(document.getElementById('debt-amount').value)||0;
+  if(!party || amount<=0){ toast('Enter who and a valid amount.'); return; }
+  if(await saveDebt({ direction: document.getElementById('debt-direction').value,
+    party, amount, dueDate: document.getElementById('debt-due').value||null,
+    note: document.getElementById('debt-note').value.trim() })){
+    document.getElementById('debt-party').value='';
+    document.getElementById('debt-amount').value='';
+    document.getElementById('debt-note').value='';
+  }
+}
+
+async function setBudget(){
+  if(session.role!=='company_admin'){ toast('Only the admin sets limits.'); return; }
+  const cat = document.getElementById('budget-cat').value.trim();
+  const limit = Number(document.getElementById('budget-limit').value)||0;
+  if(!cat || limit<=0){ toast('Enter a category and a valid limit.'); return; }
+  if(await saveBudget(cat, thisMonthKey(), limit)) toast('Monthly limit set.');
+}
+
+/* Photo receipts: one hidden file input serves every row. */
+let _receiptTarget = null;
+function askReceipt(recordType, recordId){
+  _receiptTarget = { recordType, recordId };
+  document.getElementById('receipt-file').click();
+}
+async function submitReceipt(input){
+  const file = input.files && input.files[0];
+  input.value = '';
+  if(!file || !_receiptTarget) return;
+  await attachReceipt(_receiptTarget.recordType, _receiptTarget.recordId, file);
+  _receiptTarget = null;
 }
 
 /* ================= TAX ANALYSIS ================= */
@@ -1111,6 +1241,39 @@ function renderAudit(){
 
   document.getElementById('materiality-input').value = state.materialityThreshold;
   renderFindings('findings-list', true);
+  renderPeriodStatus();
+}
+
+function monthKeyToLabel(mk){
+  const [y, m] = mk.split('-').map(Number);
+  return new Date(y, m-1, 1).toLocaleDateString('en-NG', {month:'long', year:'numeric'});
+}
+function renderPeriodStatus(){
+  const el = document.getElementById('period-status');
+  if(!el) return;
+  const closed = (state.periods||[]).filter(p=>p.closedAt);
+  el.innerHTML = closed.length
+    ? 'Closed: ' + closed.map(p=>monthKeyToLabel(p.month.slice(0,7))).join(', ') + '. Sales/expenses in these months are locked.'
+    : 'No month closed yet. Closing locks a settled month against accidental edits.';
+  const admin = session.role==='company_admin';
+  document.getElementById('period-form').style.display = admin ? '' : 'none';
+}
+function periodInputMonth(){
+  const v = document.getElementById('period-month').value;
+  if(!v) return null;
+  return v + '-01';
+}
+async function closeMonth(){
+  if(session.role!=='company_admin'){ toast('Only the admin closes months.'); return; }
+  const m = periodInputMonth() || thisMonthKey();
+  if(!confirm(`Close ${monthKeyToLabel(m.slice(0,7))}? New sales/expenses dated then will be blocked until you reopen with a reason.`)) return;
+  await closePeriod(m);
+}
+async function reopenMonth(){
+  if(session.role!=='company_admin'){ toast('Only the admin reopens months.'); return; }
+  const m = periodInputMonth();
+  if(!m){ toast('Pick the month to reopen.'); return; }
+  await reopenPeriod(m, document.getElementById('period-reason').value);
 }
 
 /** Shared by the normal Audit page (editable) and the Auditor Command

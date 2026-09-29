@@ -434,6 +434,59 @@
       </div>
 
       <div class="card">
+        <div class="card-head"><div class="card-title">Money pulse</div><div class="card-sub">Plain-answers from your own books — updated every visit</div></div>
+        <div class="grid grid-2">
+          <div>
+            <div class="forgot-title">How much must I sell today?</div>
+            <div class="value" id="pulse-target" style="font-size:24px;font-weight:800;">—</div>
+            <div class="text-muted" id="pulse-target-sub" style="font-size:11.5px;"></div>
+          </div>
+          <div>
+            <div class="forgot-title">Who owes me / who I owe</div>
+            <div id="pulse-debts" class="text-muted" style="font-size:12.5px;line-height:1.7;"></div>
+          </div>
+        </div>
+        <div class="grid grid-2" style="margin-top:12px;">
+          <div>
+            <div class="forgot-title">Slow &amp; stuck stock</div>
+            <div id="pulse-stock" class="text-muted" style="font-size:12.5px;line-height:1.7;"></div>
+          </div>
+          <div>
+            <div class="forgot-title">Regulars &amp; quiet customers</div>
+            <div id="pulse-regulars" class="text-muted" style="font-size:12.5px;line-height:1.7;"></div>
+          </div>
+        </div>
+        <div class="grid grid-2" style="margin-top:12px;">
+          <div>
+            <div class="forgot-title">Spending limits — this month</div>
+            <div id="pulse-budgets" class="text-muted" style="font-size:12.5px;line-height:1.7;"></div>
+          </div>
+          <div>
+            <div class="forgot-title">Staff scoreboard — last 7 days</div>
+            <div id="pulse-staff" class="text-muted" style="font-size:12.5px;line-height:1.7;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" id="debts-card">
+        <div class="card-head"><div class="card-title">Owe &amp; owed</div><div class="card-sub">People who owe you, and people you owe — with due dates and reminders</div></div>
+        <div class="form-row" id="debt-form">
+          <div class="field"><label>Who</label><input id="debt-party" placeholder="e.g. Musa (tailor)"></div>
+          <div class="field"><label>Direction</label><select id="debt-direction"><option value="owed_to_me">Owes me</option><option value="i_owe">I owe</option></select></div>
+          <div class="field"><label>Amount ₦</label><input id="debt-amount" type="number" min="0" placeholder="0"></div>
+          <div class="field"><label>Due date (optional)</label><input id="debt-due" type="date"></div>
+        </div>
+        <div class="form-row" id="debt-form-2">
+          <div class="field"><label>Note (optional)</label><input id="debt-note" placeholder="e.g. Ankara balance"></div>
+          <div class="field"><label>&nbsp;</label><button class="btn btn-primary" onclick="addDebt()">Add</button></div>
+        </div>
+        <table>
+          <thead><tr><th>Who</th><th></th><th>Amount</th><th>Due</th><th></th></tr></thead>
+          <tbody id="debts-table"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
         <div class="card-head">
           <div class="card-title">Sales trend — last 7 days
             <span class="info-dot" tabindex="0" role="note" aria-label="More info">i<span class="tooltip">Total revenue recorded per day for the last week, from your Sales log.</span></span>
@@ -545,7 +598,7 @@
       <div class="card">
         <div class="card-head"><div class="card-title">Recent sales</div><div class="card-sub">Cost = what the goods cost you • Sold for = what the customer actually paid</div></div>
         <table>
-          <thead><tr><th>Invoice</th><th>Time</th><th>Items</th><th>Cost</th><th>Sold for</th><th>Customer</th><th>Payment</th><th>Recorded by</th></tr></thead>
+          <thead><tr><th>Invoice</th><th>Time</th><th>Items</th><th>Cost</th><th>Sold for</th><th>Customer</th><th>Payment</th><th>Recorded by</th><th>Photo</th></tr></thead>
           <tbody id="sales-table"></tbody>
         </table>
       </div>
@@ -687,7 +740,7 @@
       <div class="card">
         <div class="card-head"><div class="card-title">Recent expenses</div></div>
         <table>
-          <thead><tr><th>Time</th><th>Category</th><th>Note</th><th>Amount</th><th>Logged by</th><th>Flag</th></tr></thead>
+          <thead><tr><th>Time</th><th>Category</th><th>Note</th><th>Amount</th><th>Logged by</th><th>Flag</th><th>Photo</th></tr></thead>
           <tbody id="expenses-table"></tbody>
         </table>
         <div id="expense-rootcause"></div>
@@ -757,6 +810,19 @@
       <div class="card">
         <div class="card-head"><div class="card-title">Audit terms explained <span class="info-dot" tabindex="0" role="note" aria-label="More info">i<span class="tooltip">Click any term below for a plain-language explanation — no accounting background required.</span></span></div></div>
         <div id="audit-glossary"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">Close the month</div><div class="card-sub">Lock settled figures so they can&apos;t be edited by accident — reopening needs a written reason, always logged</div></div>
+        <div id="period-status" class="text-muted" style="font-size:12.5px;margin-bottom:8px;"></div>
+        <div class="form-row" id="period-form">
+          <div class="field"><label>Month</label><input id="period-month" type="month"></div>
+          <div class="field"><label>Reason (only needed to reopen)</label><input id="period-reason" placeholder="e.g. Sept invoice arrived late"></div>
+          <div class="field"><label>&nbsp;</label>
+            <span><button class="btn btn-primary" onclick="closeMonth()">Close month</button>
+            <button class="btn" onclick="reopenMonth()" style="margin-left:8px;">Reopen</button></span>
+          </div>
+        </div>
       </div>
 
       <div class="card">
@@ -1240,6 +1306,7 @@
 </div>
 
 <div id="toast"></div>
+<input type="file" id="receipt-file" accept="image/*" class="hidden" onchange="submitReceipt(this)">
 
 <!-- Supabase JS client — talks to the real backend (see supabase-config.js
      for the project URL/key and js/data.js for how it's used). Loaded from
