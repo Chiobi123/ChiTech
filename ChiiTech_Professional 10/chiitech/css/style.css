@@ -800,7 +800,72 @@ body::before{
 }
 .login-card{
   background:linear-gradient(180deg,rgba(24,32,25,0.96),rgba(16,22,18,0.98));
-  box-shadow:0 24px 70px rgba(0,0,0,0.55),0 0 0 1px rgba(57,255,136,0.14),0 0 44px rgba(57,255,136,0.07);
+  border:1px solid rgba(57,255,136,0.22);
+}
+
+/* ---------- Living flower garden (background only) ----------
+   Layered neon-green blooms, blurred and translucent so they never fight
+   the content. They breathe (slow scale) on a long loop; static when the
+   visitor prefers reduced motion. Pure CSS — no images, no libraries. */
+.flower-field{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.flower{
+  position:absolute;bottom:-12vmin;width:34vmin;height:34vmin;opacity:.5;
+  filter:blur(1px);
+  animation:bloom 14s ease-in-out infinite alternate;
+}
+.flower.f2{left:8%;width:26vmin;height:26vmin;opacity:.38;animation-duration:18s;animation-delay:-6s;}
+.flower.f3{left:auto;right:6%;width:42vmin;height:42vmin;opacity:.42;animation-duration:22s;animation-delay:-11s;}
+.flower.f1{left:38%;}
+.flower .petals{position:absolute;inset:0;animation:sway 9s ease-in-out infinite alternate;}
+.flower .petals span{
+  position:absolute;left:50%;bottom:50%;width:9vmin;height:20vmin;
+  transform-origin:50% 100%;
+  background:radial-gradient(ellipse at 50% 30%,rgba(190,255,215,0.5),rgba(57,255,136,0.28) 55%,rgba(57,255,136,0.05) 75%,transparent 78%);
+  border-radius:50% 50% 46% 46%;
+  mix-blend-mode:screen;
+}
+.flower .petals span:nth-child(1){transform:rotate(0deg);}
+.flower .petals span:nth-child(2){transform:rotate(45deg);}
+.flower .petals span:nth-child(3){transform:rotate(90deg);}
+.flower .petals span:nth-child(4){transform:rotate(135deg);}
+.flower .petals span:nth-child(5){transform:rotate(180deg);}
+.flower .petals span:nth-child(6){transform:rotate(225deg);}
+.flower .petals span:nth-child(7){transform:rotate(270deg);}
+.flower .petals span:nth-child(8){transform:rotate(315deg);}
+.flower .core{
+  position:absolute;left:50%;bottom:50%;width:7vmin;height:7vmin;transform:translate(-50%,50%);
+  background:radial-gradient(circle,#fff 0%,rgba(255,255,255,0.55) 30%,rgba(57,255,136,0.12) 65%,transparent 72%);
+  border-radius:50%;mix-blend-mode:screen;
+}
+.flower .stem{
+  position:absolute;left:50%;bottom:-14vmin;width:1.2vmin;height:26vmin;transform:translateX(-50%);
+  background:linear-gradient(180deg,transparent,rgba(57,255,136,0.22));
+  border-radius:1vmin;filter:blur(2px);
+}
+@keyframes bloom{
+  from{transform:scale(0.94) translateY(0);}
+  to{transform:scale(1.06) translateY(-2vmin);}
+}
+@keyframes sway{
+  from{transform:rotate(-4deg);}
+  to{transform:rotate(4deg);}
+}
+@media (prefers-reduced-motion: reduce){
+  .flower,.flower .petals{animation:none;}
+}
+
+/* ---------- Chart life: gentle entrance, drawn once ---------- */
+.chart-canvas-wrap{animation:chartIn .6s ease both;}
+@keyframes chartIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+@media (prefers-reduced-motion: reduce){.chart-canvas-wrap{animation:none;}}
+
+/* ---------- Collapsible explainers (long guidance folds away) ---------- */
+.section-explainer{position:relative;}
+.section-explainer.foldable{max-height:44px;overflow:hidden;transition:max-height .3s ease;}
+.section-explainer.foldable.open{max-height:600px;}
+.explainer-toggle{
+  display:inline-block;margin-top:6px;font-size:11.5px;color:var(--neon);
+  cursor:pointer;background:none;border:none;padding:0;
 }
 .card{
   background:linear-gradient(180deg,var(--surface),rgba(20,27,24,0.92));

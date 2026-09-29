@@ -191,6 +191,7 @@ async function bootApp(){
 
   populateSelects();
   applyAccessControl();
+  makeExplainersCollapsible();
   setupCollapsibleLists();
   makeDivCollapsible('audit-log');
   renderAll();
@@ -264,6 +265,28 @@ function toggleMobileMenu(force){
   const open = typeof force==='boolean' ? force : !sidebar.classList.contains('mobile-open');
   sidebar.classList.toggle('mobile-open', open);
   backdrop.classList.toggle('show', open);
+}
+
+/** Long section explainers fold into a "Learn more" toggle so pages stay
+ *  scannable — the guidance is one tap away, never a wall of text. Safe
+ *  to call repeatedly; each explainer is processed once. */
+function makeExplainersCollapsible(){
+  document.querySelectorAll('.section-explainer').forEach(el=>{
+    if(el.dataset.folded) return;
+    el.dataset.folded = '1';
+    if(el.textContent.trim().length < 220) return;
+    el.classList.add('foldable');
+    const btn = document.createElement('button');
+    btn.className = 'explainer-toggle';
+    btn.textContent = 'Learn more ▾';
+    btn.setAttribute('aria-expanded', 'false');
+    btn.onclick = ()=>{
+      const open = el.classList.toggle('open');
+      btn.textContent = open ? 'Show less ▴' : 'Learn more ▾';
+      btn.setAttribute('aria-expanded', String(open));
+    };
+    el.appendChild(btn);
+  });
 }
 
 /** Generic "Show more / Show less" for long tables: collapses a list

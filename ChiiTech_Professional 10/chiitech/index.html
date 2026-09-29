@@ -10,6 +10,12 @@
      and isn't at the mercy of a blocked network request. -->
 </head>
 <body>
+<!-- Living flower garden: decorative neon blooms behind everything. -->
+<div class="flower-field" aria-hidden="true">
+  <div class="flower f1"><div class="stem"></div><div class="petals"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="core"></div></div>
+  <div class="flower f2"><div class="stem"></div><div class="petals"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="core"></div></div>
+  <div class="flower f3"><div class="stem"></div><div class="petals"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="core"></div></div>
+</div>
 <!-- Boot veil: covers everything until session validation resolves, so a
      refresh never flashes the sign-in form or a stale dashboard. Removed
      by the boot handler in app.js. -->
@@ -1093,7 +1099,7 @@
           <div class="field"><label>Initial departments (optional — can assign later)</label><div id="invite-depts" class="dept-checklist"></div></div>
         </div>
         <button class="btn btn-primary" onclick="inviteWorker()">Send invitation</button>
-        <div id="invite-status" class="text-muted" style="margin-top:8px;font-size:12px;"></div>
+        <div id="invite-status" class="text-muted" style="margin-top:8px;font-size:12px;">Invitations you send appear below with their tokens.</div>
       </div>
 
       <div class="card">
