@@ -81,7 +81,8 @@
       <div class="field"><label>Company name</label><input id="reg-company" placeholder="e.g. Adaeze Fashion House"></div>
       <div class="field"><label>Your name</label><input id="reg-name" placeholder="e.g. Adaeze Okafor"></div>
       <div class="field"><label>Email</label><input id="reg-email" type="text" placeholder="you@business.com"></div>
-      <div class="field"><label>Password</label><input id="reg-password" type="password" placeholder="Choose a password"></div>
+      <div class="field"><label>Password</label><input id="reg-password" type="password" minlength="8" placeholder="8+ characters"></div>
+      <label class="dept-check" style="margin-bottom:12px;"><input type="checkbox" id="reg-consent"> I accept the <a href="#" onclick="showLegal('terms');return false;">Terms</a> &amp; <a href="#" onclick="showLegal('privacy');return false;">Privacy Policy</a></label>
       <button class="btn btn-primary btn-block" onclick="registerCompany()">Create company &amp; sign in</button>
       <p style="margin-top:14px;"><a href="#" onclick="showAuthView('signin');return false;">&larr; Back to sign in</a></p>
     </div>
@@ -125,6 +126,10 @@
       </div>
 
       <p style="margin-top:14px;"><a href="#" onclick="showAuthView('signin');return false;">&larr; Back to sign in</a></p>
+    </div>
+
+    <div class="login-trust">
+      <span>✓ Record sales in seconds</span><span>✓ Stay audit-ready</span><span>✓ Grow with your numbers</span>
     </div>
   </div>
 </div>

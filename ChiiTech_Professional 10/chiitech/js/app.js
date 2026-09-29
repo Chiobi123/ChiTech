@@ -229,6 +229,13 @@ function renderAll(){
 
 function showSection(name, fromBack){
   if(session && session.role!=='auditor' && !requirePlan(name)) return;
+  // Route guards: admin and platform sections are never reachable by the
+  // wrong role, even via console calls or stale nav state.
+  if(session){
+    if(name==='superadmin' && session.role!=='super_admin'){ logout(); return; }
+    if((name==='team'||name==='billing'||name==='auditoraccess'||name==='imports') && session.role!=='company_admin'){ toast('Only the company admin can open that section.'); return; }
+    if(name==='auditor' && session.role!=='auditor'){ logout(); return; }
+  }
   if(!fromBack && currentSection && currentSection!==name){ navStack.push(currentSection); }
   currentSection = name;
   document.getElementById('back-btn').classList.toggle('hidden', navStack.length===0);
@@ -1034,6 +1041,8 @@ async function submitReceipt(input){
   const file = input.files && input.files[0];
   input.value = '';
   if(!file || !_receiptTarget) return;
+  if(!file.type.startsWith('image/')){ toast('Only image files please.'); return; }
+  if(file.size > 5*1024*1024){ toast('Photo too large — 5MB max.'); return; }
   await attachReceipt(_receiptTarget.recordType, _receiptTarget.recordId, file);
   _receiptTarget = null;
 }

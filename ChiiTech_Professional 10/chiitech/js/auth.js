@@ -154,7 +154,8 @@ async function registerCompany(){
   if(!companyName || !name || !email || !password){
     authError('Fill in every field to register your company.'); return;
   }
-  if(password.length < 6){ authError('Password must be at least 6 characters.'); return; }
+  if(password.length < 8){ authError('Password must be at least 8 characters.'); return; }
+  if(!document.getElementById('reg-consent').checked){ authError('Please accept the Terms & Privacy Policy to continue.'); return; }
 
   const {data, error} = await sb.auth.signUp({ email, password });
   if(error){ authError(error.message); return; }
@@ -228,7 +229,7 @@ async function joinAsWorker(){
   const password = document.getElementById('join-worker-pass').value;
 
   if(!token || !name || !email || !password){ authError('Fill in every field, including your invitation token.'); return; }
-  if(password.length < 6){ authError('Password must be at least 6 characters.'); return; }
+  if(password.length < 8){ authError('Password must be at least 8 characters.'); return; }
 
   // Already signed in (e.g. via Google): skip account creation and accept
   // the invitation directly with this identity.

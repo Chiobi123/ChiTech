@@ -563,6 +563,13 @@ tbody tr:hover{background:var(--surface-2);}
 .or-divider{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:11px;}
 .or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:var(--border);}
 .or-divider span{padding:0 2px;}
+
+/* ---------- Login trust row (one glance: what ChiiTech does) ---------- */
+.login-trust{
+  display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
+  margin-top:18px;font-size:11.5px;color:var(--muted);
+}
+.login-trust span{white-space:nowrap;}
 .auth-subtabs{display:flex;gap:16px;margin-bottom:16px;font-size:12px;}
 .auth-subtab{color:var(--muted);cursor:pointer;padding-bottom:4px;border-bottom:2px solid transparent;}
 .auth-subtab.active{color:var(--neon);border-color:var(--neon);}
@@ -772,4 +779,64 @@ tbody tr:hover{background:var(--surface-2);}
   .cart-row{grid-template-columns:1.4fr 44px 62px 20px;}
   input,select,textarea{font-size:16px;}
 }
+
+/* ============================================================
+   VISUAL REFRESH — depth, glow and polish on the black /
+   neon-green / white identity. Layout and breakpoints above are
+   untouched; this layer only adds atmosphere and finish.
+   ============================================================ */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(560px 380px at 12% -4%, rgba(57,255,136,0.10), transparent 65%),
+    radial-gradient(640px 420px at 88% 8%, rgba(57,255,136,0.07), transparent 65%),
+    radial-gradient(700px 520px at 50% 115%, rgba(57,255,136,0.06), transparent 60%);
+}
+#app,.login-wrap,.about-wrap{position:relative;z-index:1;}
+.login-brand{
+  background:linear-gradient(100deg,#fff 20%,var(--neon) 55%,#fff 85%);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  letter-spacing:3px;
+}
+.login-card{
+  background:linear-gradient(180deg,rgba(24,32,25,0.96),rgba(16,22,18,0.98));
+  box-shadow:0 24px 70px rgba(0,0,0,0.55),0 0 0 1px rgba(57,255,136,0.14),0 0 44px rgba(57,255,136,0.07);
+}
+.card{
+  background:linear-gradient(180deg,var(--surface),rgba(20,27,24,0.92));
+  box-shadow:0 10px 28px rgba(0,0,0,0.35);
+}
+.card-title{letter-spacing:.2px;}
+.page-title{letter-spacing:.2px;}
+.btn-primary{
+  background:linear-gradient(180deg,#4dff9a,var(--neon-deep));
+  box-shadow:0 6px 18px rgba(57,255,136,0.25),inset 0 1px 0 rgba(255,255,255,0.35);
+  transition:transform .12s ease,box-shadow .15s ease,filter .15s ease;
+}
+.btn-primary:hover{filter:brightness(1.07);box-shadow:0 8px 24px rgba(57,255,136,0.35),inset 0 1px 0 rgba(255,255,255,0.35);}
+.btn-primary:active{transform:translateY(1px);}
+.btn{transition:transform .12s ease,border-color .15s ease,background .15s ease;}
+.stat{position:relative;overflow:hidden;}
+.stat::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--neon),transparent);
+  opacity:.55;
+}
+.stat .value{font-variant-numeric:tabular-nums;}
+table tbody tr{transition:background .12s ease;}
+table tbody tr:hover{background:rgba(57,255,136,0.05);}
+.nav-link{transition:background .12s ease,color .12s ease,border-color .15s ease;}
+.nav-link.active{box-shadow:inset 2px 0 0 var(--neon),0 0 18px rgba(57,255,136,0.08);}
+input,select,textarea{transition:border-color .15s ease,box-shadow .15s ease;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--neon-deep);box-shadow:0 0 0 3px rgba(57,255,136,0.15);}
+a{color:var(--neon);}
+:focus-visible{outline:2px solid var(--neon);outline-offset:2px;border-radius:6px;}
+.badge{letter-spacing:.2px;}
+.dept-badge.on{box-shadow:0 0 12px rgba(57,255,136,0.18);}
+.flag-pill{box-shadow:0 0 14px rgba(255,92,92,0.18);}
+.mobile-nav .nav-item.active{text-shadow:0 0 12px rgba(57,255,136,0.5);}
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-thumb{background:#24352c;border-radius:8px;border:2px solid var(--bg);}
+::-webkit-scrollbar-track{background:transparent;}
+::selection{background:rgba(57,255,136,0.28);}
 
