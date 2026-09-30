@@ -2207,6 +2207,8 @@ function addMsg(role, text, isHtml){
   win.scrollTop = win.scrollHeight;
 }
 
+let aiHistory = []; // last 3 exchanges — short conversational memory
+
 function askAI(preset){
   const input = document.getElementById('ai-input');
   const question = (preset || input.value).trim();
@@ -2216,8 +2218,15 @@ function askAI(preset){
   addMsg('ai', 'Thinking…', false);
   aiChat(question).then(answer=>{
     const win = document.getElementById('chat-window');
-    win.removeChild(win.lastChild);
+    if(win.lastChild) win.removeChild(win.lastChild);
     addMsg('ai', answer, true);
+    aiHistory.push({q: question, a: String(answer).replace(/<[^>]*>/g, '').slice(0, 500)});
+    if(aiHistory.length > 3) aiHistory = aiHistory.slice(-3);
+  }).catch(()=>{
+    const win = document.getElementById('chat-window');
+    if(win.lastChild) win.removeChild(win.lastChild);
+    try { addMsg('ai', answerQuestion(question), true); }
+    catch(e){ addMsg('ai', 'Sorry — I could not answer that. Try asking about sales, stock, cash, customers or tax.', false); }
   });
 }
 
@@ -2225,21 +2234,25 @@ function askAI(preset){
  *  live state (never raw ledgers); the function only writes prose around
  *  them. Any failure — offline, timeout, quota — falls back silently. */
 async function aiChat(question){
-  const weekCut = Date.now() - 7*864e5;
-  const figures = {
-    sales_today: state.sales.filter(s=>s.time>=todayRange()).reduce((a,s)=>a+s.total,0),
-    expenses_today: state.expenses.filter(e=>e.time>=todayRange()).reduce((a,e)=>a+e.amount,0),
-    sales_7d: state.sales.filter(s=>s.time>=weekCut).reduce((a,s)=>a+s.total,0),
-    low_stock: state.products.filter(p=>p.stock<=p.reorder).map(p=>({name:p.name, stock:p.stock})),
-    owed_to_me: state.customers.filter(c=>(c.balanceDue||0)>0).map(c=>({name:c.name, amount:c.balanceDue})),
-    flagged_expenses: state.expenses.filter(e=>e.flag).length,
-    health_score: computeHealthScore()
-  };
+  let figures;
+  try {
+    const weekCut = Date.now() - 7*864e5;
+    figures = {
+      sales_today: state.sales.filter(s=>s.time>=todayRange()).reduce((a,s)=>a+s.total,0),
+      expenses_today: state.expenses.filter(e=>e.time>=todayRange()).reduce((a,e)=>a+e.amount,0),
+      sales_7d: state.sales.filter(s=>s.time>=weekCut).reduce((a,s)=>a+s.total,0),
+      low_stock: state.products.filter(p=>p.stock<=p.reorder).map(p=>({name:p.name, stock:p.stock})),
+      owed_to_me: state.customers.filter(c=>(c.balanceDue||0)>0).map(c=>({name:c.name, amount:c.balanceDue})),
+      flagged_expenses: state.expenses.filter(e=>e.flag).length,
+      health_score: computeHealthScore()
+    };
+  } catch(e){ return answerQuestion(question); }
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(()=>ctrl.abort(), 12000);
     const {data, error} = await sb.functions.invoke('ai-assist', {
-      body: { mode:'chat', company_id: session.companyId, question, figures },
+      body: { mode:'chat', company_id: session.companyId, question, figures,
+        history: aiHistory.map(h=>({q:h.q, a:h.a})) },
       signal: ctrl.signal
     });
     clearTimeout(timer);
