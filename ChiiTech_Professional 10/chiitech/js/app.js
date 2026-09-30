@@ -256,9 +256,9 @@ function showSection(name, fromBack){
   // Route guards: admin and platform sections are never reachable by the
   // wrong role, even via console calls or stale nav state.
   if(session){
-    if(name==='superadmin' && session.role!=='super_admin'){ logout(); return; }
+    if(name==='superadmin' && session.role!=='super_admin'){ toast('Platform console is for the site owner only.'); return; }
     if((name==='team'||name==='billing'||name==='auditoraccess'||name==='imports') && session.role!=='company_admin'){ toast('Only the company admin can open that section.'); return; }
-    if(name==='auditor' && session.role!=='auditor'){ logout(); return; }
+    if(name==='auditor' && session.role!=='auditor'){ toast('The Auditor Command Center needs an auditor access code — use Auditor access instead.'); return; }
   }
   if(!fromBack && currentSection && currentSection!==name){ navStack.push(currentSection); }
   currentSection = name;
