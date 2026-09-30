@@ -85,9 +85,9 @@ serve(async (req) => {
         "Authorization": `Bearer ${Deno.env.get("GROQ_API_KEY")}`,
       },
       body: JSON.stringify({
-        model: Deno.env.get("AI_MODEL") || "openai/gpt-oss-120b",
+        model: Deno.env.get("AI_MODEL") || "openai/gpt-oss-20b",
         temperature: 0.3,
-        max_tokens: 900,
+        max_tokens: 600,
         messages: [
           { role: "system", content: system },
           { role: "user", content: userText },

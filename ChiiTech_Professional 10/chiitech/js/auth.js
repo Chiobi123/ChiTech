@@ -132,7 +132,11 @@ async function validateStoredSession(){
  *  happen — register/join flows always create one in the same step as
  *  the auth account — but is handled rather than left to throw). */
 async function buildSessionFromProfile(){
-  const {data:{user}} = await sb.auth.getUser();
+  let user = null;
+  try {
+    const res = await sb.auth.getUser();
+    user = res && res.data ? res.data.user : null;
+  } catch(e){ return null; }
   if(!user) return null;
   const {data:profile, error} = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
   if(error || !profile) return null;
@@ -167,6 +171,7 @@ async function registerCompany(){
     p_company_name: companyName, p_admin_name: name
   });
   if(rpcError){ authError(rpcError.message); return; }
+  if(!rpcData || !rpcData[0]){ authError('Company record was not created — try signing in, or contact support.'); return; }
   const {company_id, company_code} = rpcData[0];
 
   session = { email, role:'company_admin', companyId:company_id, name, departments:['all'] };
@@ -348,7 +353,8 @@ async function loginAuditor(){
 
   const {data, error} = await sb.rpc('auditor_login', { p_company_code: code, p_access_code: accessCode });
   if(error){ authError(error.message); return; }
-  const grant = data[0];
+  const grant = data && data[0];
+  if(!grant){ authError('Those codes were not recognised — check both with your admin.'); return; }
 
   session = { email:null, role:'auditor', companyId:grant.company_id, companyName:grant.company_name,
     companyCode:code, name:grant.grant_name, departments:[], grantId:grant.grant_id, accessCode,
@@ -419,10 +425,11 @@ async function logout(){
   clearSession();
   session = null;
   hideOAuthSignup();
-  if(sb.auth.getSession){ await sb.auth.signOut(); }
+  // UI first so sign-out feels instant; the server sign-out finishes behind.
   document.getElementById('app').classList.add('hidden');
   document.getElementById('login-screen').classList.remove('hidden');
   showAuthView('signin');
+  try{ if(sb.auth.getSession){ await sb.auth.signOut(); } }catch(e){}
 }
 
 /* ---------------- Legal screen (unchanged) ---------------- */
