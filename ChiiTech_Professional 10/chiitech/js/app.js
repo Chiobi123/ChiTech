@@ -2213,7 +2213,39 @@ function askAI(preset){
   if(!question) return;
   addMsg('user', question, false);
   input.value = '';
-  setTimeout(()=> addMsg('ai', answerQuestion(question), true), 350);
+  addMsg('ai', 'Thinking…', false);
+  aiChat(question).then(answer=>{
+    const win = document.getElementById('chat-window');
+    win.removeChild(win.lastChild);
+    addMsg('ai', answer, true);
+  });
+}
+
+/** LLM layer with deterministic fallback: figures are computed locally from
+ *  live state (never raw ledgers); the function only writes prose around
+ *  them. Any failure — offline, timeout, quota — falls back silently. */
+async function aiChat(question){
+  const weekCut = Date.now() - 7*864e5;
+  const figures = {
+    sales_today: state.sales.filter(s=>s.time>=todayRange()).reduce((a,s)=>a+s.total,0),
+    expenses_today: state.expenses.filter(e=>e.time>=todayRange()).reduce((a,e)=>a+e.amount,0),
+    sales_7d: state.sales.filter(s=>s.time>=weekCut).reduce((a,s)=>a+s.total,0),
+    low_stock: state.products.filter(p=>p.stock<=p.reorder).map(p=>({name:p.name, stock:p.stock})),
+    owed_to_me: state.customers.filter(c=>(c.balanceDue||0)>0).map(c=>({name:c.name, amount:c.balanceDue})),
+    flagged_expenses: state.expenses.filter(e=>e.flag).length,
+    health_score: computeHealthScore()
+  };
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(()=>ctrl.abort(), 12000);
+    const {data, error} = await sb.functions.invoke('ai-assist', {
+      body: { mode:'chat', company_id: session.companyId, question, figures },
+      signal: ctrl.signal
+    });
+    clearTimeout(timer);
+    if(!error && data && data.answer) return escapeHtml(data.answer).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+  } catch(e){ /* fall through to local baseline */ }
+  return answerQuestion(question);
 }
 
 function answerQuestion(q){

@@ -222,6 +222,39 @@ function renderImportReview(){
   document.getElementById('imp-findings').innerHTML=`<div style="margin-bottom:12px;"><b>Strengths</b>${a.strengths.map(x=>`<div class="playbook">✓ ${importEsc(x)}</div>`).join('')}</div><div style="margin-bottom:12px;"><b>Weaknesses / disadvantages</b>${a.weaknesses.length?a.weaknesses.map(x=>`<div class="playbook">⚠ ${importEsc(x)}</div>`).join(''):'<div class="text-muted" style="margin-top:8px;">No major structural weakness was detected by the automated checks.</div>'}</div><div><b>Recommended actions</b>${a.recommendations.map(x=>`<div class="playbook">→ ${importEsc(x)}</div>`).join('')}</div>`;
   document.getElementById('imp-mapping').innerHTML=Object.entries(d.mapping).map(([f,h])=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;"><span>${importEsc(f)}</span><code>${importEsc(h)}</code></div>`).join('') || '<div class="text-muted">No fields could be mapped automatically. Change the spreadsheet headings and try again.</div>';
   const headers=[...new Set(d.rows.flatMap(r=>Object.keys(r)))].slice(0,8); document.getElementById('imp-preview-head').innerHTML='<tr>'+headers.map(h=>`<th>${importEsc(h)}</th>`).join('')+'</tr>'; document.getElementById('imp-preview-body').innerHTML=d.rows.slice(0,25).map(r=>'<tr>'+headers.map(h=>`<td>${importEsc(r[h])}</td>`).join('')+'</tr>').join('');
+  if(!document.getElementById('imp-ai-btn')){
+    const btn = document.createElement('button');
+    btn.id = 'imp-ai-btn'; btn.className = 'btn btn-primary'; btn.style.marginTop = '12px';
+    btn.textContent = 'Explain with AI';
+    btn.onclick = explainImportWithAI;
+    document.getElementById('imp-findings').appendChild(btn);
+    const div = document.createElement('div');
+    div.id = 'imp-ai-result'; div.style.marginTop = '10px';
+    document.getElementById('imp-findings').appendChild(div);
+  } else { document.getElementById('imp-ai-result').innerHTML = ''; }
+}
+
+/** LLM review of the stored batch analysis. Same contract as chat:
+ *  server-side key, evidence-bound prose, silent fallback to the
+ *  deterministic findings already on screen. */
+async function explainImportWithAI(){
+  const box = document.getElementById('imp-ai-result');
+  if(!importDraft || !box) return;
+  box.innerHTML = '<div class="text-muted">Asking the AI…</div>';
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(()=>ctrl.abort(), 15000);
+    const {data, error} = await sb.functions.invoke('ai-assist', {
+      body: { mode:'import', company_id: session.companyId, analysis: importDraft.analysis },
+      signal: ctrl.signal
+    });
+    clearTimeout(timer);
+    if(!error && data && data.answer){
+      box.innerHTML = `<div class="playbook">✦ ${importEsc(data.answer).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>')}</div>`;
+      return;
+    }
+  } catch(e){ /* fall through */ }
+  box.innerHTML = '<div class="text-muted">AI unavailable right now — the automated findings above remain the audited baseline.</div>';
 }
 
 function normalizedRow(r,d){
