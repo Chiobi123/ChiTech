@@ -47,6 +47,7 @@
       &nbsp;<a href="#" onclick="showAbout();return false;" style="font-size:11px;">What is ChiiTech? &rarr;</a>
     </div>
     <div class="legal-footer legal-footer-inline">
+      <span class="text-muted" id="build-tag" style="font-size:10.5px;">build 20261002</span>
       <a href="#" onclick="showLegal('privacy');return false;">Privacy</a>
       <a href="#" onclick="showLegal('terms');return false;">Terms</a>
       <a href="#" onclick="showLegal('cookies');return false;">Cookies</a>
@@ -1127,7 +1128,7 @@
         <div><div class="page-title">Auditor access</div><div class="page-sub">Give an external accountant or auditor standing, read-only access</div></div>
       </div>
       <div class="section-explainer">
-        Share your company code — <b id="auditor-company-code">—</b> — plus the access code generated below with
+        Share your company code — <b id="auditor-company-code">—</b> <button class="btn btn-sm" onclick="copyCode(document.getElementById('auditor-company-code').textContent)" title="Copy exact code">Copy</button> — plus the access code generated below with
         whoever needs to review your books. They sign in under "Log in as Auditor" on the login screen and see a
         locked-down, read-only <b>Auditor Command Center</b> — the same audit confidence, trial balance,
         segregation-of-duties check, Benford's Law check, SOPs and activity log as your own Audit page, with no

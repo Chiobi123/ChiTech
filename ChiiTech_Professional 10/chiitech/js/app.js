@@ -1980,6 +1980,17 @@ async function removeWorker(memberId){
    (state.auditorGrants), not a platform.users account — see loginAuditor()
    in auth.js for how someone signs in with it, and
    renderAuditorCommandCenter() above for what they see once they do. */
+/** Copy an access code exactly — no retyping, no look-alike letter mistakes. */
+async function copyCode(text){
+  try { await navigator.clipboard.writeText(text); toast('Copied — paste it exactly as-is.'); }
+  catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast('Copied — paste it exactly as-is.'); }
+    catch(_){ toast('Copy failed — type it carefully, watching I/l and 0/O.', 5000); }
+    ta.remove();
+  }
+}
 async function grantAuditorAccess(){
   const name = document.getElementById('aud-grant-name').value.trim();
   const days = document.getElementById('aud-grant-expiry').value;
@@ -2021,7 +2032,7 @@ function renderAuditorAccess(){
     const badgeCls = status==='Active' ? 'badge-ok' : status==='Expired' ? 'badge-muted' : 'badge-danger';
     return `<tr>
       <td>${escapeHtml(g.name)}</td>
-      <td><code>${escapeHtml(g.code)}</code></td>
+      <td><code>${escapeHtml(g.code)}</code> <button class="btn btn-sm" onclick="copyCode('${escapeHtml(g.code)}')" title="Copy exact code">Copy</button></td>
       <td>${new Date(g.createdAt).toLocaleDateString('en-NG')}</td>
       <td>${g.expiresAt ? new Date(g.expiresAt).toLocaleDateString('en-NG') : 'No expiry'}</td>
       <td><span class="badge ${badgeCls}">${status}</span></td>

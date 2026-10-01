@@ -359,8 +359,8 @@ async function loginWorker(){
    auditor_fetch_data() the same way — see validateAuditorGrant() in
    app.js. */
 async function loginAuditor(){
-  const code = document.getElementById('login-auditor-code').value.trim().toUpperCase();
-  const accessCode = document.getElementById('login-auditor-access').value.trim().toUpperCase();
+  const code = (document.getElementById('login-auditor-code').value||'').replace(/\s+/g,'').toUpperCase();
+  const accessCode = (document.getElementById('login-auditor-access').value||'').replace(/\s+/g,'').toUpperCase();
 
   if(!code || !accessCode){ authError('Enter the company code and your auditor access code.'); return; }
 
