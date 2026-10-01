@@ -199,7 +199,9 @@ async function login(){
   if(error){ recordLoginFailure(email); authError('No account matches that email/password.'); return; }
 
   if(isSuperAdmin(email)){
-    await sb.rpc('ensure_super_admin'); // reserved platform account; password stays in Supabase Auth
+    try {
+      await sb.rpc('ensure_super_admin'); // reserved platform account; password stays in Supabase Auth
+    } catch(e){ authError('Platform check failed — try again.'); return; }
   }
 
   const built = await buildSessionFromProfile();
