@@ -164,6 +164,7 @@ async function bootApp(){
   }
 
   if(session.role==='auditor'){
+    auditorBootTrace('verifying codes…');
     const check = await validateAuditorGrant();
     if(!check || !check.grant){
       // Revoked/expired → signed out with the exact server reason.
@@ -181,6 +182,7 @@ async function bootApp(){
       return;
     }
     const grant = check.grant;
+    auditorBootTrace('codes accepted — loading your records…');
     document.querySelectorAll('.nav-link, .mobile-nav .nav-item').forEach(el=>{
       el.classList.toggle('hidden', el.dataset.nav!=='auditor');
     });
@@ -194,14 +196,36 @@ async function bootApp(){
       ${grant.expiresAt ? ' &nbsp;\u2022&nbsp; expires ' + new Date(grant.expiresAt).toLocaleDateString('en-NG') : ' &nbsp;\u2022&nbsp; no expiry set'}
       &nbsp;\u2022&nbsp; this visit has been logged`;
     try {
+      auditorBootTrace('rendering your Command Center…');
       renderAuditorCommandCenter();
       showSection('auditor');
+      auditorBootTrace(null);
     } catch(e){
       console.error('auditor render:', e);
+      auditorBootTrace(null);
       toast('Command Center hit a display problem (' + (e.message||'error') + ') — your access is fine, tell support those words.');
     }
     return;
   }
+
+/** Visible step-by-step trace for auditor boot: if anything ever stalls,
+ *  the last shown step names exactly where. Cleared on success. */
+function auditorBootTrace(msg){
+  try {
+    let el = document.getElementById('auditor-boot-status');
+    if(msg && !el){
+      el = document.createElement('div');
+      el.id = 'auditor-boot-status';
+      el.className = 'text-muted';
+      el.style.cssText = 'font-size:12px;padding:8px 0;';
+      const app = document.getElementById('app');
+      if(app) app.prepend(el);
+    }
+    if(!el) return;
+    if(msg){ el.textContent = 'Auditor sign-in: ' + msg; el.style.display = ''; }
+    else { el.textContent = ''; el.style.display = 'none'; }
+  } catch(e){}
+}
 
   document.getElementById('delete-account-link').classList.remove('hidden');
   await loadMyCompany();
@@ -238,7 +262,6 @@ async function bootApp(){
     return;
   }
   const firstAllowed = order.find(name=>{
-    if(!canUsePlan(name)) return false;
     const dept = SECTION_ACCESS[name];
     if(dept===null) return true;
     if(dept==='admin') return session.role==='company_admin';
@@ -282,7 +305,6 @@ function renderAll(){
 }
 
 function showSection(name, fromBack){
-  if(session && session.role!=='auditor' && !requirePlan(name)) return;
   // Paywall: inactive subscriptions see Billing only (admin) — workers are
   // stopped at boot with an explanatory message instead.
   if(session && billingLocked() && name!=='billing'){
@@ -1892,8 +1914,7 @@ async function inviteWorker(){
   if(error){ toast('Invitation failed: ' + error.message, 4000); return; }
   document.getElementById('invite-status').textContent = 'Invitation created. Share the token with ' + email + ' (see Pending invitations).';
   document.getElementById('invite-email').value = '';
-  state = await loadBusiness(session.companyId);
-  renderTeam();
+  await refreshBusiness();
 }
 
 async function loadInvitations(){
@@ -1939,8 +1960,7 @@ async function approveWorker(memberId){
   if(!m.departments.length){ toast('Assign at least one department first.'); return; }
   const {error} = await sb.rpc('set_worker_active', { p_profile_id: memberId, p_active: true });
   if(error){ toast('Approval failed: ' + error.message, 4000); return; }
-  state = await loadBusiness(session.companyId);
-  renderTeam();
+  await refreshBusiness();
   toast('Worker approved and activated.');
 }
 
@@ -1950,8 +1970,7 @@ async function removeWorker(memberId){
   if(!confirm(`Remove ${m.name} (${m.email}) from the company? Their history stays in the audit log.`)) return;
   const {error} = await sb.rpc('remove_worker', { p_profile_id: memberId });
   if(error){ toast('Remove failed: ' + error.message, 4000); return; }
-  state = await loadBusiness(session.companyId);
-  renderTeam();
+  await refreshBusiness();
   toast('Worker removed.');
 }
 
@@ -2088,8 +2107,7 @@ async function requestPlan(planId){
   const {error} = await sb.rpc('request_plan_change', { p_plan_id: planId });
   if(error){ toast('Request failed: ' + error.message, 4000); return; }
   addAuditLog('billing.plan_requested', 'Requested plan: ' + planId);
-  state = await loadBusiness(session.companyId);
-  renderAll();
+  await refreshBusiness();
   toast('Request sent — your plan activates after payment confirmation.');
 }
 /** Undoes a self-service company deletion — clears the flag set by

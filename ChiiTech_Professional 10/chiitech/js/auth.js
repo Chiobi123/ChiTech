@@ -485,24 +485,10 @@ function toastOnLogin(msg){
   setTimeout(()=>{ el.classList.add('hidden'); el.style.background=''; el.style.color=''; }, 3500);
 }
 
-/* ---------------- Free / Pro plan gating ----------------
-   Role first, plan second: super_admin is above plans and always passes.
-   Company roles get Free sections everywhere; Pro sections (audit, growth,
-   ai, imports, auditoraccess) need plan 'pro'. The Free team cap (3) is
-   enforced server-side in invite_worker(), so the UI can never bypass it. */
-const PRO_SECTIONS = {};
-function myPlan(){ return (typeof state!=='undefined' && state && state.subscription && state.subscription.planId) || 'free'; }
-function canUsePlan(section){
-  if(!session || session.role==='super_admin') return true;
-  if(!PRO_SECTIONS[section]) return true;
-  return myPlan()==='pro';
-}
-function requirePlan(section){
-  if(canUsePlan(section)) return true;
-  toast('That needs Pro — see Billing to upgrade.', 4000);
-  showSection('billing');
-  return false;
-}
+/* ---------------- Department / role gating ----------------
+   (Retired 2026-10: the Free/Pro tier gate. Every feature is open to every
+   paying company now; only subscription STATUS gates via billingLocked()
+   below. Role checks stay the authority for who sees what.) */
 
 /* ---------------- Pay-to-use gate ----------------
    Every feature is open to every paying company. Only the subscription
@@ -561,8 +547,6 @@ function applyAccessControl(){
     } else {
       allowed = canAccess(dept);
     }
-    // Free/Pro plan gate (super_admin exempt — role first, plan second).
-    if(allowed && !canUsePlan(el.dataset.nav)) allowed = false;
     // Paywall: locked companies navigate Billing only.
     if(allowed && billingLocked() && el.dataset.nav!=='billing') allowed = false;
     el.classList.toggle('hidden', !allowed);
