@@ -135,6 +135,21 @@ async function bootApp(){
   document.getElementById('app').classList.remove('hidden');
 
   if(session.role==='super_admin'){
+    // Forensic fix: never render the console on a cached role alone.
+    // Re-resolve the live identity; a stale/wrong account gets an explicit
+    // banner naming itself instead of a misleading empty console.
+    const live = await buildSessionFromProfile();
+    if(!live || live==='deleted' || live.role!=='super_admin' || live.email!==session.email){
+      session = null; clearSession();
+      try{ await sb.auth.signOut(); }catch(e){}
+      document.getElementById('app').classList.add('hidden');
+      document.getElementById('login-screen').classList.remove('hidden');
+      authError('This console needs the reserved Super Admin sign-in. ' +
+        (live && live.email ? `You are signed in as ${live.email} (${live.role}).` : 'Your session could not be verified.') +
+        ' Sign out fully and sign back in with the reserved account.');
+      return;
+    }
+    session = live; saveSession(session);
     platform = await loadPlatform();
     document.querySelectorAll('.nav-link, .mobile-nav .nav-item').forEach(el=>el.classList.add('hidden'));
     document.getElementById('imp-banner').classList.add('hidden');
@@ -2102,7 +2117,9 @@ async function renderSuperAdmin(){
   document.getElementById('sa-companies').textContent = companies.length;
   document.getElementById('sa-workers').textContent = totalWorkers;
   document.getElementById('sa-sales').textContent = fmtN(totalSales);
-  document.getElementById('sa-table').innerHTML = rows.join('') || `<tr><td colspan="7" class="text-muted">No companies yet.</td></tr>`;
+  document.getElementById('sa-table').innerHTML = rows.join('') || (platform.loadError
+    ? `<tr><td colspan="7" class="text-muted">Could not load — see the error above.</td></tr>`
+    : `<tr><td colspan="7" class="text-muted">No companies returned. If you registered one, sign out fully and sign back in with the reserved Super Admin account.</td></tr>`);
   document.getElementById('sa-mrr').textContent = fmtN(mrr);
   document.getElementById('sa-arpc').textContent = fmtN(companies.length ? mrr/companies.length : 0);
   document.getElementById('sa-founding-count').textContent = foundingCount;
