@@ -197,6 +197,7 @@ async function bootApp(){
   }
 
   document.getElementById('delete-account-link').classList.remove('hidden');
+  await loadMyCompany();
   const company = currentCompany();
   state = await loadBusiness(session.companyId);
   document.getElementById('sidebar-sub').textContent = company ? company.name : 'Business console';
@@ -245,19 +246,27 @@ function deptLabel(id){
 }
 
 
+/** Every section render runs through here so a failure names its section
+ *  instead of silently leaving a blank page. */
+function safeRender(name, fn){
+  try { fn(); }
+  catch(e){ console.error('render:'+name, e); toast(`${name} could not display (${e.message||'error'}) — tell support those exact words.`, 5000); }
+}
+
 function renderAll(){
-  if(session.role==='super_admin'){ renderSuperAdmin(); return; }
-  renderDashboard();
-  renderSales();
-  renderProducts();
-  renderCustomers();
-  renderOrders();
-  renderExpenses();
-  renderTax();
-  renderAudit();
-  renderGrowth();
-  renderBilling();
-  if(session.role==='company_admin'){ renderTeam(); renderAuditorAccess(); }
+  if(session.role==='super_admin'){ safeRender('Platform console', renderSuperAdmin); return; }
+  safeRender('Dashboard', renderDashboard);
+  safeRender('Sales', renderSales);
+  safeRender('Products', renderProducts);
+  safeRender('Customers', renderCustomers);
+  safeRender('Orders', renderOrders);
+  safeRender('Expenses', renderExpenses);
+  safeRender('Tax analysis', renderTax);
+  safeRender('Tax analysis', renderTax);
+  safeRender('Audit trail', renderAudit);
+  safeRender('Growth engine', renderGrowth);
+  safeRender('Billing', renderBilling);
+  if(session.role==='company_admin'){ safeRender('Team', renderTeam); safeRender('Auditor access', renderAuditorAccess); }
 }
 
 function showSection(name, fromBack){
@@ -2160,7 +2169,8 @@ async function renderSuperAdmin(){
     <td>${s.status==='pending'?`<button class="btn btn-sm btn-primary" onclick="confirmPlan('${s.company_id}')">Confirm payment</button>`:''}
     ${s.status!=='cancelled'?` <button class="btn btn-sm" onclick="setSubStatus('${s.company_id}','past_due',0)" style="margin-left:4px;" title="Suspend access immediately">Suspend</button>`:''}
     ${s.status==='cancelled'||s.status==='past_due'?` <button class="btn btn-sm" onclick="setSubStatus('${s.company_id}','active',30)" style="margin-left:4px;" title="Reinstate for 30 days">Reinstate</button>`:''}
-    ${s.status!=='trial'?` <button class="btn btn-sm" onclick="setSubStatus('${s.company_id}','trial',30)" style="margin-left:4px;" title="Start a trial period">Trial</button>`:''}</td>
+    ${s.status!=='trial'?` <button class="btn btn-sm" onclick="setSubStatus('${s.company_id}','trial',30)" style="margin-left:4px;" title="Start a trial period">Trial</button>`:''}
+    <button class="btn btn-sm" onclick="revertToFree('${s.company_id}')" style="margin-left:4px;" title="Back to Free plan, active">To Free</button></td>
   </tr>`; }).join('') || `<tr><td colspan="5" class="text-muted">No subscriptions yet.</td></tr>`;
 }
 
@@ -2190,6 +2200,14 @@ async function setSubStatus(companyId, status, days){
   const {error} = await sb.rpc('set_subscription_status', { p_company_id: companyId, p_status: status, p_renew_days: days });
   if(error){ toast('Update failed: ' + error.message, 4000); return; }
   platform = await loadPlatform(); await renderSuperAdmin(); toast('Subscription updated.');
+}
+/** Revert a company to the Free plan, active. Trials and Pro test grants
+ *  come off; nothing else about the company changes. */
+async function revertToFree(companyId){
+  if(!confirm('Revert this company to the Free plan (active)?')) return;
+  const {error} = await sb.rpc('set_subscription_status', { p_company_id: companyId, p_status: 'active', p_renew_days: 30, p_plan_id: 'free' });
+  if(error){ toast('Revert failed: ' + error.message, 4000); return; }
+  platform = await loadPlatform(); await renderSuperAdmin(); toast('Reverted to Free.');
 }
 
 async function resolveSecurityAlert(id){

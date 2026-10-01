@@ -67,8 +67,19 @@ function clearLoginThrottle(email){ sessionStorage.removeItem(loginAttemptsKey(e
 
 let session = null; // { email, role, companyId, name, departments, grantId?, accessCode? }
 let platform = null;
+let myCompany = null; // own company row for company roles (platform_overview is super_admin-only)
+
+async function loadMyCompany(){
+  myCompany = null;
+  if(!session || !session.companyId) return;
+  try {
+    const {data, error} = await sb.from('companies').select('id,name,code,plan').eq('id', session.companyId).maybeSingle();
+    if(!error && data) myCompany = data;
+  } catch(e){}
+}
 
 function currentCompany(){
+  if(myCompany && (!session || !session.companyId || myCompany.id===session.companyId)) return myCompany;
   if(!session || !session.companyId) return null;
   return platform.companies.find(c=>c.id===session.companyId) || null;
 }
@@ -285,7 +296,7 @@ async function loginWithGoogle(){
 /** Shown when a signed-in OAuth identity has no ChiiTech profile:
  *  no dashboard, no role — onboarding form plus guidance. */
 function showUnlinkedNotice(email){
-  clearSession(); session = null;
+  clearSession(); session = null; myCompany = null;
   try{ document.getElementById('app').classList.add('hidden'); }catch(e){}
   try{ document.getElementById('login-screen').classList.remove('hidden'); }catch(e){}
   try{
@@ -426,6 +437,7 @@ async function deleteMyAccount(){
 async function logout(){
   clearSession();
   session = null;
+  myCompany = null;
   hideOAuthSignup();
   // UI first so sign-out feels instant; the server sign-out finishes behind.
   document.getElementById('app').classList.add('hidden');

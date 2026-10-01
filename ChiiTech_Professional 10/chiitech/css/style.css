@@ -809,9 +809,9 @@ body::before{
    visitor prefers reduced motion. Pure CSS — no images, no libraries. */
 .flower-field{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
 .flower{
-  position:absolute;bottom:-12vmin;width:34vmin;height:34vmin;opacity:.5;
-  filter:blur(1px);
-  animation:bloom 14s ease-in-out infinite alternate;
+  position:absolute;bottom:-12vmin;width:34vmin;height:34vmin;opacity:.42;
+  filter:none;
+  animation:bloom 16s ease-in-out infinite alternate;
 }
 .flower.f2{left:8%;width:26vmin;height:26vmin;opacity:.38;animation-duration:18s;animation-delay:-6s;}
 .flower.f3{left:auto;right:6%;width:42vmin;height:42vmin;opacity:.42;animation-duration:22s;animation-delay:-11s;}
@@ -820,7 +820,9 @@ body::before{
 .flower .petals span{
   position:absolute;left:50%;bottom:50%;width:9vmin;height:20vmin;
   transform-origin:50% 100%;
-  background:radial-gradient(ellipse at 50% 30%,rgba(190,255,215,0.5),rgba(57,255,136,0.28) 55%,rgba(57,255,136,0.05) 75%,transparent 78%);
+  background:
+    linear-gradient(180deg,rgba(255,255,255,0.28) 0%,transparent 22%),
+    radial-gradient(ellipse at 50% 30%,rgba(190,255,215,0.42),rgba(57,255,136,0.24) 55%,rgba(57,255,136,0.04) 75%,transparent 78%);
   border-radius:50% 50% 46% 46%;
   mix-blend-mode:screen;
 }
