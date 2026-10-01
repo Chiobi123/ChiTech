@@ -439,6 +439,7 @@ async function logout(){
   session = null;
   myCompany = null;
   hideOAuthSignup();
+  veilOff();
   // UI first so sign-out feels instant; the server sign-out finishes behind.
   document.getElementById('app').classList.add('hidden');
   document.getElementById('login-screen').classList.remove('hidden');

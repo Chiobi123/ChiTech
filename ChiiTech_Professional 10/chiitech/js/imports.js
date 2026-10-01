@@ -47,20 +47,24 @@ function guessMapping(headers,type){
   return map;
 }
 
-function parseCSV(text){
+function parseDelimited(text){
+  const first = (text.split(/\r?\n/).find(l=>l.trim()!=='')||'');
+  const delim = (first.match(/\t/g)||[]).length >= (first.match(/;/g)||[]).length && (first.match(/\t/g)||[]).length > 0 ? '\t'
+    : (first.match(/;/g)||[]).length > (first.match(/,/g)||[]).length ? ';' : ',';
   const rows=[]; let row=[], cell='', quoted=false;
+  const pushCell=()=>{row.push(cell);cell='';};
   for(let i=0;i<text.length;i++){
     const c=text[i], n=text[i+1];
     if(c==='"'){
       if(quoted && n==='"'){cell+='"';i++;}
       else quoted=!quoted;
-    } else if(c===',' && !quoted){ row.push(cell);cell=''; }
+    } else if(c===delim && !quoted){ pushCell(); }
     else if((c==='\n' || c==='\r') && !quoted){
       if(c==='\r' && n==='\n') i++;
-      row.push(cell);cell=''; if(row.some(x=>String(x).trim()!=='')){rows.push(row);} row=[];
+      pushCell(); if(row.some(x=>String(x).trim()!=='')){rows.push(row);} row=[];
     } else cell+=c;
   }
-  if(cell!=='' || row.length){row.push(cell);if(row.some(x=>String(x).trim()!==''))rows.push(row);}
+  if(cell!=='' || row.length){pushCell();if(row.some(x=>String(x).trim()!==''))rows.push(row);}
   if(!rows.length) return [];
   const headers=rows[0].map(x=>String(x).trim()||'Column');
   return rows.slice(1).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??''])));
@@ -68,7 +72,7 @@ function parseCSV(text){
 
 async function readImportFile(file){
   const ext=file.name.toLowerCase().split('.').pop();
-  if(ext==='csv') return {type:'csv',rows:parseCSV(await file.text())};
+  if(ext==='csv' || ext==='txt' || ext==='tsv') return {type:'csv',rows:parseDelimited(await file.text())};
   if(ext==='json'){
     const raw=JSON.parse(await file.text());
     const rows=Array.isArray(raw)?raw:(Array.isArray(raw.records)?raw.records:(Array.isArray(raw.data)?raw.data:[]));
@@ -86,7 +90,7 @@ async function readImportFile(file){
     const ws=wb.Sheets[wb.SheetNames[0]]; const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
     return {type:'xlsx',rows};
   }
-  throw new Error('Unsupported file type. Use CSV, JSON or Excel.');
+  throw new Error('That file type cannot be read. Use CSV, TXT, JSON or Excel (.xlsx/.xls). From PowerBI choose Export → Excel first; from Word copy the table into Excel and save; from Notepad save as plain CSV text.');
 }
 
 function analyseRows(rows,type,map){
@@ -187,14 +191,21 @@ function businessAnalysis(rows,type,map,amounts){
 
 async function prepareImport(){
   if(!session || session.role!=='company_admin'){toast('Only the company admin can import existing business records.');return;}
-  const file=document.getElementById('import-file').files[0]; const type=document.getElementById('import-type').value;
-  if(!file){toast('Choose a file first.');return;}
+  const file=document.getElementById('import-file').files[0];
+  const pasted=(document.getElementById('import-paste').value||'').trim();
+  const type=document.getElementById('import-type').value;
+  if(!file && !pasted){toast('Choose a file or paste table text first.');return;}
   const status=document.getElementById('import-status'); status.textContent='Reading and staging file…';
   try{
-    const parsed=await readImportFile(file); let rows=parsed.rows.filter(r=>r && typeof r==='object');
-    if(!rows.length) throw new Error('No records were found.');
+    const parsed = file ? await readImportFile(file)
+      : {type:'csv',rows:parseDelimited(pasted)};
+    let rows=parsed.rows.filter(r=>r && typeof r==='object');
+    if(!rows.length) throw new Error('No records were found — the file looks empty, uses an unsupported layout, or the first sheet has no table. Try CSV/Excel export, or paste the table text below.');
     const headers=[...new Set(rows.flatMap(r=>Object.keys(r)))]; const mapping=guessMapping(headers,type);
-    const {data:batch,error:bErr}=await sb.from('import_batches').insert({company_id:session.companyId,file_name:file.name,source_type:parsed.type,row_count:rows.length,columns:headers,created_by:(await sb.auth.getUser()).data.user?.id}).select().single();
+    const mappedCount=Object.keys(mapping).length, expectedCount=Object.keys(IMPORT_ALIASES[type]).length;
+    const ignored=headers.filter(h=>!Object.values(mapping).includes(h));
+    status.textContent=`Read ${rows.length} record${rows.length===1?'':'s'} • mapped ${mappedCount}/${expectedCount} fields${ignored.length?` • ignored: ${ignored.slice(0,6).join(', ')}${ignored.length>6?'…':''}`:' — all columns recognised'}.`;
+    const {data:batch,error:bErr}=await sb.from('import_batches').insert({company_id:session.companyId,file_name:file?file.name:'pasted-text',source_type:parsed.type,row_count:rows.length,columns:headers,created_by:(await sb.auth.getUser()).data.user?.id}).select().single();
     if(bErr) throw bErr;
     const draftBase={batchId:batch.id,fileName:file.name,type,rows,mapping};
     for(let i=0;i<rows.length;i+=250){

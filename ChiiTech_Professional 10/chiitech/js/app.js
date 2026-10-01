@@ -128,6 +128,7 @@ function initials(name){
 async function bootApp(){
   navStack = [];
   currentSection = null;
+  veilOn();
   // Defensive gate: session.role was rebuilt from the profiles table by the
   // caller (boot validation or fresh login). An unknown role renders nothing.
   if(!session || !['super_admin','company_admin','worker','auditor'].includes(session.role)){ logout(); return; }
@@ -168,6 +169,7 @@ async function bootApp(){
       // Revoked/expired → signed out with the exact server reason.
       // Network/DB failure → session kept, retryable message instead.
       if(check && check.transient){
+        veilOff();
         document.getElementById('login-screen').classList.remove('hidden');
         document.getElementById('app').classList.add('hidden');
         toastOnLogin('Could not verify auditor access (' + (check.message || 'connection') + ') — check your connection and try again.');
@@ -223,6 +225,7 @@ async function bootApp(){
   if(session.role!=='super_admin' && billingLocked()){
     if(session.role!=='company_admin'){
       await sb.auth.signOut(); clearSession(); session = null;
+      veilOff();
       toastOnLogin('This company\u2019s subscription is inactive — ask your admin to settle billing.');
       return;
     }
@@ -244,6 +247,11 @@ function deptLabel(id){
   const d = DEPARTMENTS.find(x=>x.id===id);
   return d ? d.label : id;
 }
+
+/** Loading veil: shown while a new account's data loads so the previous
+ *  account's rendered page can never flash through on switch. */
+function veilOn(){ try{ document.getElementById('boot-veil').classList.remove('hidden'); }catch(e){} }
+function veilOff(){ try{ document.getElementById('boot-veil').classList.add('hidden'); }catch(e){} }
 
 
 /** Every section render runs through here so a failure names its section
@@ -295,6 +303,8 @@ function showSection(name, fromBack){
   });
   toggleMobileMenu(false);
   if(state) renderAll();
+  try{ makeExplainersCollapsible(); }catch(e){}
+  veilOff();
 }
 
 /** Returns to whichever section was open before the current one —
@@ -332,7 +342,7 @@ function makeExplainersCollapsible(){
       btn.textContent = open ? 'Show less ▴' : 'Learn more ▾';
       btn.setAttribute('aria-expanded', String(open));
     };
-    el.appendChild(btn);
+    el.after(btn);
   });
 }
 

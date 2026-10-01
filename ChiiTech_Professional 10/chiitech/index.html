@@ -395,7 +395,7 @@
         until you approve the preview and choose the record type.
       </div>
       <div class="card">
-        <div class="card-head"><div class="card-title">1. Upload existing records</div><div class="card-sub">CSV, JSON and XLSX</div></div>
+        <div class="card-head"><div class="card-title">1. Upload existing records</div><div class="card-sub">CSV, TXT, JSON and Excel — or paste table text below</div></div>
         <div class="grid grid-2">
           <div>
             <label class="field-label">Record type</label>
@@ -403,11 +403,13 @@
           </div>
           <div>
             <label class="field-label">File</label>
-            <input id="import-file" class="input" type="file" accept=".csv,.json,.xlsx,.xls">
+            <input id="import-file" class="input" type="file" accept=".csv,.txt,.tsv,.json,.xlsx,.xls">
           </div>
         </div>
         <div style="margin-top:12px;"><button class="btn btn-primary" onclick="prepareImport()">Analyze file</button></div>
-        <div id="import-status" class="text-muted" style="margin-top:12px;font-size:12px;"></div>
+        <div class="field" style="margin-top:12px;"><label>No file? Paste table text (columns separated by commas, tabs or semicolons; first row = headings)</label><textarea id="import-paste" rows="3" placeholder="date, total, payment&#10;2026-09-01, 5000, Cash"></textarea></div>
+        <p class="text-muted" style="font-size:11.5px;">From PowerBI: Export → Excel first. From Word: copy the table into Excel and save. From Notepad: save as plain CSV text.</p>
+        <div id="import-status" class="text-muted" style="margin-top:12px;font-size:12px;">No file analyzed yet.</div>
       </div>
       <div id="import-review" class="hidden">
         <div class="grid grid-4" style="margin-bottom:16px;">
@@ -1132,7 +1134,8 @@
         way to edit anything, ever. By default access has <b>no expiry</b>, so they can log in any time — daily,
         even — to check the business is on track, without ever being able to change a thing. Set an expiry below
         instead if you'd rather this be time-boxed, and revoke access at any time from the table below either way.
-        Every visit is logged.
+        Every visit is logged. Your auditor opens their own <b>Auditor Command Center</b> (a separate locked screen
+        only they can see) — it never appears in your sidebar.
       </div>
 
       <div class="card">
