@@ -861,10 +861,10 @@ body::before{
 @keyframes chartIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
 @media (prefers-reduced-motion: reduce){.chart-canvas-wrap{animation:none;}}
 
-/* ---------- Collapsible explainers (long guidance folds away) ---------- */
+/* ---------- Collapsible explainers (retired) ----------
+   Guidance now shows in full everywhere — folded text hid meaning.
+   Kept as plain blocks; the toggle builder below is no longer called. */
 .section-explainer{position:relative;}
-.section-explainer.foldable{max-height:3.4em;overflow:hidden;transition:max-height .3s ease;}
-.section-explainer.foldable.open{max-height:1200px;}
 .explainer-toggle{
   display:inline-block;margin-top:6px;font-size:11.5px;color:var(--neon);
   cursor:pointer;background:none;border:none;padding:0;

@@ -193,8 +193,13 @@ async function bootApp(){
     banner.innerHTML = `\u{1F512} Read-only auditor access to <b>${escapeHtml(session.companyName||'')}</b>
       ${grant.expiresAt ? ' &nbsp;\u2022&nbsp; expires ' + new Date(grant.expiresAt).toLocaleDateString('en-NG') : ' &nbsp;\u2022&nbsp; no expiry set'}
       &nbsp;\u2022&nbsp; this visit has been logged`;
-    renderAuditorCommandCenter();
-    showSection('auditor');
+    try {
+      renderAuditorCommandCenter();
+      showSection('auditor');
+    } catch(e){
+      console.error('auditor render:', e);
+      toast('Command Center hit a display problem (' + (e.message||'error') + ') — your access is fine, tell support those words.');
+    }
     return;
   }
 
@@ -216,7 +221,6 @@ async function bootApp(){
 
   populateSelects();
   applyAccessControl();
-  makeExplainersCollapsible();
   setupCollapsibleLists();
   makeDivCollapsible('audit-log');
   renderAll();
@@ -303,7 +307,6 @@ function showSection(name, fromBack){
   });
   toggleMobileMenu(false);
   if(state) renderAll();
-  try{ makeExplainersCollapsible(); }catch(e){}
   veilOff();
 }
 
