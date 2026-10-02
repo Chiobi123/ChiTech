@@ -244,7 +244,7 @@ window.addEventListener('error', (e)=>{
    links that identity to the company as an inactive worker the admin
    must approve (assign departments + activate). */
 async function joinAsWorker(){
-  const token = document.getElementById('join-worker-token').value.trim();
+  const token = document.getElementById('join-worker-token').value.replace(/\s+/g,'');
   const name = document.getElementById('join-worker-name').value.trim();
   const email = document.getElementById('join-worker-email').value.trim().toLowerCase();
   const password = document.getElementById('join-worker-pass').value;
@@ -404,7 +404,7 @@ async function acceptAuditorInvite(){
   const code = (document.getElementById('accept-auditor-code').value||'').replace(/\s+/g,'').toUpperCase();
   const name = document.getElementById('accept-auditor-name').value.trim();
   const email = document.getElementById('accept-auditor-email').value.trim().toLowerCase();
-  const token = (document.getElementById('accept-auditor-token').value||'').trim();
+  const token = (document.getElementById('accept-auditor-token').value||'').replace(/\s+/g,'');
   const password = document.getElementById('accept-auditor-pass').value;
   if(!code || !name || !email || !token || !password){ authError('Fill in every field, including your invitation token.'); return; }
   if(password.length < 8){ authError('Password must be at least 8 characters.'); return; }
@@ -422,6 +422,17 @@ async function acceptAuditorInvite(){
   }
   const {error:rpcError} = await sb.rpc('accept_auditor_invite', { p_token: token });
   if(rpcError){
+    // Token might belong to a worker invitation — try that table too, so
+    // the kind of token never matters, only its validity.
+    const {error:workerError} = await sb.rpc('accept_invitation', { p_token: token });
+    if(!workerError){
+      const wbuilt = await buildSessionFromProfile();
+      if(!wbuilt || wbuilt.role!=='worker'){ await sb.auth.signOut(); authError('Invitation accepted but the profile could not be loaded. Ask your admin.'); return; }
+      clearSession(); session = wbuilt; saveSession(session);
+      await bootApp();
+      setTimeout(()=> toast('Invitation accepted — your admin will assign your access and approve you shortly.', 6000), 400);
+      return;
+    }
     if(/no longer valid|expired/i.test(rpcError.message||'')){
       await sb.auth.signOut();
       authError('That invitation was already used or expired — ask your admin for a fresh one, then sign in normally.');
