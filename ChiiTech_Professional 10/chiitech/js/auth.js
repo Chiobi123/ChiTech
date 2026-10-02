@@ -444,8 +444,42 @@ async function finishAuditorSignIn(code, firstVisit){
     authError('That company code does not match this auditor account — check it with your admin.'); return;
   }
   if(built.active===false){ await sb.auth.signOut(); clearSession(); session = null; showWaitingRoom('auditor'); return; }
-  await bootApp();
+  await bootAuditorDirect();
   if(firstVisit) setTimeout(()=> toast('Invitation accepted — welcome to your read-only Command Center.', 5000), 400);
+}
+
+/** Direct auditor boot: renders the Command Center immediately, bypassing
+ *  every gate. Called by finishAuditorSignIn after all checks pass. */
+async function bootAuditorDirect(){
+  veilOn();
+  try {
+    await loadMyCompany();
+    state = await loadBusiness(session.companyId);
+    document.querySelectorAll('.nav-link, .mobile-nav .nav-item').forEach(el=>{
+      el.classList.toggle('hidden', el.dataset.nav!=='auditor');
+    });
+    document.getElementById('imp-banner').classList.add('hidden');
+    document.getElementById('delete-account-link').classList.add('hidden');
+    document.getElementById('sidebar-sub').textContent = (currentCompany()||{}).name || 'Auditor access';
+    document.getElementById('sidebar-plan').textContent = 'Auditor — read only';
+    const abanner = document.getElementById('auditor-banner');
+    abanner.classList.remove('hidden');
+    abanner.innerHTML = `🔒 Read-only auditor access — nothing here can be edited`;
+    renderAuditorCommandCenter();
+    currentSection = 'auditor';
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.getElementById('sec-auditor').classList.add('active');
+    document.getElementById('back-btn').classList.add('hidden');
+    document.querySelectorAll('.nav-link, .mobile-nav .nav-item').forEach(el=>{
+      el.classList.toggle('active', el.dataset.target === 'auditor');
+    });
+    toggleMobileMenu(false);
+    veilOff();
+  } catch(e){
+    console.error('auditor boot:', e);
+    veilOff();
+    toast('Command Center hit a display problem (' + (e.message||'error') + ') — your access is fine, tell support those words.');
+  }
 }
 
 function showAuditorSub(which){
