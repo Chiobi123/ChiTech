@@ -282,8 +282,7 @@ Two handwritten checklists came in as photos: one for not getting hacked, one fo
 through both:
 
 **Implemented:**
-- Passwords are now hashed (SHA-256 + per-user random salt via the browser's Web Crypto API) before being
-  stored, instead of as plain text. Honest caveat below.
+- Supabase Auth owns credentials (hashed server-side, never in this repo).
 - Basic client-side login throttling (5 failed attempts locks that email out for 30 seconds).
 - Input sanitization: every place user-entered text is displayed back on screen is escaped (`escapeHtml()` in
   `app.js`) — already in place from the previous round, reconfirmed here.
@@ -294,17 +293,19 @@ through both:
   before relying on them for a live product, and fill in your real business details, launch dates, and (once
   Paystack is actually connected) real refund terms.
 
-**Not applicable to this build, and why:** items like "protect admin routes," "secure API endpoints," "CORS
-settings," "secure DB access," "rate limiting" (server-side), "SQL/NoSQL injection protection," "check exposed
-files," and "check git for secrets" are all things that only exist once there's a real server and database.
-This is currently a static, client-only frontend — there is no API, no database, and no server to secure.
-They become real, necessary work items the moment the FastAPI/PostgreSQL backend from the PRD gets built, not
-before.
+**Not applicable to this build, and why:** "CORS settings" and server-side
+"rate limiting" live with Supabase's managed Auth/PostgREST (plus client
+throttling in `auth.js`). SQL injection is structurally impossible — every
+read/write goes through parameterized Supabase client calls or RPCs; no SQL
+is ever built from strings. Git was grepped for secrets (only the public
+publishable key ships, safe by design).
 
-**Honest limits of what *was* done:** the password hashing happens in your browser, in code anyone can read
-via dev tools — it stops a casual glance at localStorage from revealing a real password, but it is not
-equivalent to server-side authentication. Department permissions are still enforced by hiding menu items, not
-by a server refusing data. A real launch needs the backend to do these properly.
+**Honest limits of what *was* done:** authentication is Supabase Auth
+(server-side sessions + RLS on all 23 tables, verified live). Department
+visibility is enforced both by hiding navigation AND by database RLS that
+refuses out-of-scope rows — but true server-side read mediation for
+sensitive aggregates remains a hardening step. Passwords are never stored
+by this app at all.
 
 ## How it's built
 
@@ -313,8 +314,7 @@ by a server refusing data. A real launch needs the backend to do these properly.
   including all mobile-responsive rules at the bottom of the file.
 - **`js/data.js`** — the storage layer: the platform-wide company/user directory, and a
   separate data bucket per company (products, sales, expenses, etc.), all via
-  `localStorage`. Replace `loadPlatform`/`loadBusiness`/`save*` with real API calls when
-  you connect the FastAPI/PostgreSQL backend from the PRD — nothing else needs to change.
+  Supabase tables fenced by Row Level Security.
 - **`js/auth.js`** — login, company registration, session handling, and department-based
   access control (`canAccess()`, `SECTION_ACCESS`), plus the auditor grant sign-in
   (`loginAuditor()`).
@@ -350,11 +350,12 @@ Implemented and working in the browser:
 - A mobile hamburger-drawer navigation reaching every section, tested down to 360px wide, with a centred layout on very wide/zoomed-out screens
 - Basic XSS hardening: every place user-entered text (names, notes, categories) gets shown back on screen, it's escaped first — see `escapeHtml()` in `app.js`
 
-Simulated for the prototype (needs real backend/integrations to go live):
-- Authentication (any email/password combination works; passwords are stored in plain text in the browser — a real build must hash them server-side)
-- Department permissions are enforced by hiding UI, not by a server refusing data — a determined user with dev tools open could still see restricted data client-side
+Live backend (Supabase — no longer simulated):
+- Authentication is real (Supabase Auth + RLS); department visibility is enforced in UI and refused in data
+- The AI assistant answers from live company data with an optional server-side LLM layer (`ai-assist` Edge Function) and deterministic fallback
+
+Simulated for the prototype (needs real integrations to go live):
 - Bank/POS statement reconciliation (no bank feed connected yet — the trial balance check is an internal consistency check, not a substitute)
-- The AI assistant's language understanding (swap in an LLM API call — `answerQuestion()` in `app.js` is the single place to change)
 - Real payment collection on the Billing & payouts page, and platform-owner revenue collection on the Super Admin page (both need a licensed Nigerian payment provider such as Paystack or Flutterwave, plus KYC)
 - Installing as a native app on desktop/mobile (this build is web-only, as requested, until you sign off on the web version)
 
