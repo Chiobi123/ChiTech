@@ -182,7 +182,14 @@ async function bootApp(){
 
   if(session.role==='auditor'){
     auditorBootTrace('verifying codes…');
-    const check = await validateAuditorGrant();
+    let check = await validateAuditorGrant();
+    if(check && check.transient){
+      // One automatic retry: a single dropped request must never end an
+      // auditor visit. Only a second failure shows the login screen.
+      auditorBootTrace('connection wobbled — retrying once…');
+      await new Promise(r=>setTimeout(r, 1500));
+      check = await validateAuditorGrant();
+    }
     if(!check || !check.grant){
       // Revoked/expired → signed out with the exact server reason.
       // Network/DB failure → session kept, retryable message instead.
