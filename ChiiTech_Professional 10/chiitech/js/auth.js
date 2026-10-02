@@ -102,9 +102,9 @@ function clearSession(){ sessionStorage.removeItem('chiitech_session'); }
  *  network blip never signs a valid user out. */
 async function validateStoredSession(){
   const stored = loadSession();
-  // Auditors are not Supabase Auth users (code-based grant); their grant is
-  // revalidated fresh on every boot inside bootApp(). Leave them untouched.
-  if(stored && stored.role==='auditor') return {ok:true, session:stored};
+  // Legacy code-grant auditors carry no Supabase Auth session; their grant
+  // is revalidated fresh on every boot inside bootApp(). Leave them alone.
+  if(stored && stored.role==='auditor' && stored.grantId) return {ok:true, session:stored};
   let user = null;
   try {
     const res = await sb.auth.getUser();
@@ -124,7 +124,7 @@ async function validateStoredSession(){
     name: profile.name, departments: profile.departments||[],
     active: profile.active !== false
   };
-  if(fresh.role==='worker' && fresh.active===false){ clearSession(); return {ok:false, reason:'not-approved'}; }
+  if((fresh.role==='worker' || fresh.role==='auditor') && fresh.active===false){ clearSession(); return {ok:false, reason:'not-approved', role:fresh.role}; }
   const same = stored
     && String(stored.email||'').trim().toLowerCase()===String(fresh.email||'').trim().toLowerCase()
     && stored.role===fresh.role
@@ -220,15 +220,15 @@ async function login(){
     await sb.auth.signOut();
     authError('This account has been closed. Contact support if you believe this is a mistake.'); return;
   }
-  if(!built || !['super_admin','company_admin','worker'].includes(built.role)){
+  if(!built || !['super_admin','company_admin','worker','auditor'].includes(built.role)){
     await sb.auth.signOut();
     authError('No account matches that email/password.'); return;
   }
   if(built.active===false){
     await sb.auth.signOut();
-    authError(built.role==='worker'
-      ? 'Your account is waiting for your admin to approve it. Ask them to assign your access first.'
-      : 'This account is paused. Contact support.'); return;
+    if(built.role==='company_admin'){ authError('This account is paused. Contact support.'); return; }
+    showWaitingRoom(built.role);
+    return;
   }
   clearLoginThrottle(email);
   hideOAuthSignup();
@@ -270,15 +270,24 @@ async function joinAsWorker(){
     if(!data.session){ authError('Check your email to confirm your account, then sign in and accept the invitation.'); return; }
   }
 
-  const {data:rpcData, error:rpcError} = await sb.rpc('accept_invitation', { p_token: token });
+  // One token field serves both invitation kinds: worker tokens first,
+  // then auditor tokens. The database decides which (and rejects both).
+  let rpcData = null, rpcError = null, kind = 'worker';
+  ({data:rpcData, error:rpcError} = await sb.rpc('accept_invitation', { p_token: token }));
+  if(rpcError){
+    ({data:rpcData, error:rpcError} = await sb.rpc('accept_auditor_invite', { p_token: token }));
+    kind = 'auditor';
+  }
   if(rpcError){ await sb.auth.signOut(); authError(rpcError.message); return; }
 
   const built = await buildSessionFromProfile();
-  if(!built || built.role!=='worker'){ await sb.auth.signOut(); authError('Invitation accepted but the worker profile could not be loaded. Ask your admin.'); return; }
+  if(!built || (kind==='worker' ? built.role!=='worker' : built.role!=='auditor')){ await sb.auth.signOut(); authError('Invitation accepted but the profile could not be loaded. Ask your admin.'); return; }
   session = built;
   clearSession(); saveSession(session);
   await bootApp();
-  setTimeout(()=> toast('Invitation accepted — your admin will assign your access and approve you shortly.', 6000), 400);
+  setTimeout(()=> toast(kind==='auditor'
+    ? 'Auditor invitation accepted — your admin will approve you shortly, then sign in on the main screen.'
+    : 'Invitation accepted — your admin will assign your access and approve you shortly.', 6000), 400);
 }
 
 /* ---------------- Google sign-in (optional OAuth method) ----------------
@@ -304,6 +313,19 @@ function showUnlinkedNotice(email){
     document.getElementById('oauth-signup').classList.remove('hidden');
   }catch(e){}
   authError(`Signed in with Google as ${email}, but that address isn't linked to any company yet. Register your company above, or ask your admin for a worker invitation and accept it below. Your existing email/password login still works.`);
+}
+
+/** Waiting room: invite accepted but admin hasn't approved yet. The login
+ *  screen stays, showing where to return — no dashboard, no data. */
+function showWaitingRoom(who){
+  clearSession(); session = null;
+  try{ document.getElementById('app').classList.add('hidden'); }catch(e){}
+  try{ document.getElementById('login-screen').classList.remove('hidden'); }catch(e){}
+  try{
+    document.getElementById('waiting-text').textContent =
+      `Your ${who||'worker'} account is created. Ask your company admin to assign your access and approve you, then sign in again on this screen.`;
+  }catch(e){}
+  showAuthView('waiting');
 }
 
 function hideOAuthSignup(){ try{ document.getElementById('oauth-signup').classList.add('hidden'); }catch(e){} }

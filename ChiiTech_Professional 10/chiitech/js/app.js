@@ -87,7 +87,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
       else if(check.reason==='not-approved'){
         session = null; try{ await sb.auth.signOut(); }catch(e){}
-        toastOnLogin('Your account is waiting for your admin to approve it.');
+        showWaitingRoom(check.role);
       }
       else { session = null; try{ await sb.auth.signOut(); }catch(e){} }
     }
@@ -181,6 +181,31 @@ async function bootApp(){
   }
 
   if(session.role==='auditor'){
+    // Two doors in: legacy code-grant (no Auth session) or invited profile
+    // (normal Auth session, approved by admin). Grant codes keep working.
+    if(!session.grantId){
+      await loadMyCompany();
+      state = await loadBusiness(session.companyId);
+      auditorBootTrace(null);
+      document.querySelectorAll('.nav-link, .mobile-nav .nav-item').forEach(el=>{
+        el.classList.toggle('hidden', el.dataset.nav!=='auditor');
+      });
+      document.getElementById('imp-banner').classList.add('hidden');
+      document.getElementById('delete-account-link').classList.add('hidden');
+      document.getElementById('sidebar-sub').textContent = (currentCompany()||{}).name || 'Auditor access';
+      document.getElementById('sidebar-plan').textContent = 'Auditor — read only';
+      const abanner = document.getElementById('auditor-banner');
+      abanner.classList.remove('hidden');
+      abanner.innerHTML = `🔒 Read-only auditor access — nothing here can be edited`;
+      try {
+        renderAuditorCommandCenter();
+        showSection('auditor');
+      } catch(e){
+        console.error('auditor render:', e);
+        toast('Command Center hit a display problem (' + (e.message||'error') + ') — your access is fine, tell support those words.');
+      }
+      return;
+    }
     auditorBootTrace('verifying codes…');
     let check = await validateAuditorGrant();
     if(check && check.transient){
@@ -1146,7 +1171,7 @@ function renderDebtsTable(){
     <td>${d.direction==='i_owe' ? '<span class="badge badge-warn">You owe</span>' : '<span class="badge badge-ok">Owes you</span>'}</td>
     <td>${fmtN(d.amount)}</td>
     <td>${d.dueDate ? new Date(d.dueDate).toLocaleDateString('en-NG') : '—'}${d.status==='open'&&d.dueDate&&new Date(d.dueDate).getTime()<Date.now()?' <span class="badge badge-danger">Overdue</span>':''}</td>
-    <td>${d.status==='open' ? `<span class="badge badge-muted">Open</span> <button class="btn btn-sm" onclick="settleDebt('${d.id}')" style="margin-left:4px;">Settle</button>` : '<span class="badge badge-ok">Settled</span>'}</td>
+    <td>${d.status==='open' ? `<span class="badge badge-muted">Open</span>${session.role==='auditor' ? '' : ` <button class="btn btn-sm" onclick="settleDebt('${d.id}')" style="margin-left:4px;">Settle</button>`}` : '<span class="badge badge-ok">Settled</span>'}</td>
   </tr>`).join('') || `<tr><td colspan="5" class="text-muted">Nothing owed either way. Add the first above.</td></tr>`;
   const admin = session.role==='company_admin';
   document.getElementById('debt-form').style.display = admin ? '' : 'none';
@@ -1912,21 +1937,27 @@ function renderTeam(){
   renderDeptChecklist('invite-depts', []);
   const q = (document.getElementById('team-search').value || '').trim().toLowerCase();
   const members = state.team.filter(m=>!q || (m.name||'').toLowerCase().includes(q) || (m.email||'').toLowerCase().includes(q));
-  document.getElementById('team-table').innerHTML = members.map(m=>`
-    <tr>
+  document.getElementById('team-table').innerHTML = members.map(m=>{
+    const isAuditor = m.role==='auditor';
+    const roleLabel = m.role==='company_admin' ? 'Admin' : isAuditor ? 'Auditor' : 'Worker';
+    const actionBtns = m.role==='company_admin' ? '' :
+      isAuditor ? `<button class="btn btn-sm" onclick="toggleWorkerStatus('${m.id}')" style="margin-left:4px;">${m.active!==false?'Pause':'Reactivate'}</button>${m.active===false?` <button class="btn btn-sm btn-primary" onclick="approveWorker('${m.id}')" style="margin-left:4px;">Approve</button>`:''}`
+      : `<button class="btn btn-sm" onclick="toggleDeptEditor('${m.id}')">Edit access</button> <button class="btn btn-sm" onclick="toggleWorkerStatus('${m.id}')" style="margin-left:4px;">${m.active!==false?'Pause':'Reactivate'}</button>${m.active===false?` <button class="btn btn-sm btn-primary" onclick="approveWorker('${m.id}')" style="margin-left:4px;">Approve</button>`:''} <button class="btn btn-sm" onclick="removeWorker('${m.id}')" style="margin-left:4px;">Remove</button>`;
+    return `<tr>
       <td>${escapeHtml(m.name)}</td><td>${escapeHtml(m.email)}</td>
-      <td>${m.role==='company_admin'?'Admin':'Worker'}</td>
-      <td>${m.departments.includes('all') ? '<span class="dept-badge on">All access</span>'
+      <td>${roleLabel}</td>
+      <td>${isAuditor ? '<span class="dept-badge on">Read-only audit</span>'
+        : m.departments.includes('all') ? '<span class="dept-badge on">All access</span>'
           : m.departments.length ? m.departments.map(d=>`<span class="dept-badge on">${escapeHtml(deptLabel(d))}</span>`).join('')
           : '<span class="text-muted" style="font-size:11px;">No access assigned yet</span>'}</td>
       <td>${m.active!==false ? '<span class="badge badge-ok">Active</span>' : '<span class="badge badge-muted">Paused</span>'}</td>
-      <td>${m.role!=='company_admin' ? `<button class="btn btn-sm" onclick="toggleDeptEditor('${m.id}')">Edit access</button> <button class="btn btn-sm" onclick="toggleWorkerStatus('${m.id}')" style="margin-left:4px;">${m.active!==false?'Pause':'Reactivate'}</button>${m.active===false?` <button class="btn btn-sm btn-primary" onclick="approveWorker('${m.id}')" style="margin-left:4px;">Approve</button>`:''} <button class="btn btn-sm" onclick="removeWorker('${m.id}')" style="margin-left:4px;">Remove</button>` : ''}</td>
+      <td>${actionBtns}</td>
     </tr>
-    ${m.role!=='company_admin' ? `<tr id="dept-editor-${m.id}" class="hidden"><td colspan="6">
+    ${!isAuditor && m.role!=='company_admin' ? `<tr id="dept-editor-${m.id}" class="hidden"><td colspan="6">
       <div id="dept-checklist-${m.id}" class="dept-checklist"></div>
       <button class="btn btn-sm btn-primary" style="margin-top:8px;" onclick="saveWorkerDepartments('${m.id}')">Save access</button>
-    </td></tr>` : ''}
-  `).join('');
+    </td></tr>` : ''}`;
+  }).join('');
   loadInvitations();
 }
 
@@ -1970,23 +2001,25 @@ async function revokeInvitation(id){
   loadInvitations();
 }
 
-/** Approve = save the ticked departments, then activate. Blocked until at
- *  least one department is assigned. */
+/** Approve = save the ticked departments (workers), then activate.
+ *  Auditors need no departments — read-only by role — just activation. */
 async function approveWorker(memberId){
-  const row = document.getElementById('dept-editor-'+memberId);
-  if(row && row.classList.contains('hidden')){ toggleDeptEditor(memberId); toast('Tick departments, save, then approve again.'); return; }
-  const departments = row ? Array.from(row.querySelectorAll('input:checked')).map(i=>i.value) : null;
   const m = state.team.find(x=>x.id===memberId);
   if(!m) return;
-  if(departments && departments.length){
-    m.departments = departments;
-    addAuditLog('team.departments_change', `Set ${m.name}'s access to ${departments.map(deptLabel).join(', ')}`);
+  if(m.role!=='auditor'){
+    const row = document.getElementById('dept-editor-'+memberId);
+    if(row && row.classList.contains('hidden')){ toggleDeptEditor(memberId); toast('Tick departments, save, then approve again.'); return; }
+    const departments = row ? Array.from(row.querySelectorAll('input:checked')).map(i=>i.value) : null;
+    if(departments && departments.length){
+      m.departments = departments;
+      addAuditLog('team.departments_change', `Set ${m.name}'s access to ${departments.map(deptLabel).join(', ')}`);
+    }
+    if(!m.departments.length){ toast('Assign at least one department first.'); return; }
   }
-  if(!m.departments.length){ toast('Assign at least one department first.'); return; }
   const {error} = await sb.rpc('set_worker_active', { p_profile_id: memberId, p_active: true });
   if(error){ toast('Approval failed: ' + error.message, 4000); return; }
   await refreshBusiness();
-  toast('Worker approved and activated.');
+  toast(m.role==='auditor' ? 'Auditor approved and activated.' : 'Worker approved and activated.');
 }
 
 async function removeWorker(memberId){
@@ -2054,6 +2087,37 @@ function revokeAuditorGrant(id){
   toast('Auditor access revoked');
 }
 
+async function inviteAuditorUI(){
+  const email = document.getElementById('invite-auditor-email').value.trim().toLowerCase();
+  if(!email || email.indexOf('@') < 0){ toast('Enter a valid auditor email.'); return; }
+  const {error} = await sb.rpc('invite_auditor', { p_email: email });
+  if(error){ toast('Invitation failed: ' + error.message, 4000); return; }
+  document.getElementById('auditor-invite-status').textContent = 'Invitation created. Share the token with ' + email + ' (see table).';
+  document.getElementById('invite-auditor-email').value = '';
+  loadAuditorInvites();
+}
+
+async function loadAuditorInvites(){
+  const el = document.getElementById('auditor-invite-table');
+  if(!el) return;
+  const {data, error} = await sb.from('auditor_invites').select('id,email,token,status,expires_at,created_at').eq('company_id', session.companyId).order('created_at', {ascending:false});
+  if(error){ el.innerHTML = `<tr><td colspan="4" class="text-muted">Could not load invitations.</td></tr>`; return; }
+  el.innerHTML = (data||[]).map(inv=>`<tr>
+    <td>${escapeHtml(inv.email)}</td>
+    <td>${inv.status==='pending' ? `<code>${escapeHtml(inv.token)}</code> <button class="btn btn-sm" onclick="copyCode('${escapeHtml(inv.token)}')" title="Copy exact token">Copy</button>` : escapeHtml(inv.status)}${inv.status==='pending' && new Date(inv.expires_at) < new Date() ? ' (expired)' : ''}</td>
+    <td>${new Date(inv.expires_at).toLocaleDateString('en-NG')}</td>
+    <td>${inv.status==='pending' ? `<button class="btn btn-sm" onclick="revokeAuditorInvite('${inv.id}')">Revoke</button>` : ''}</td>
+  </tr>`).join('') || `<tr><td colspan="4" class="text-muted">No auditor invitations yet.</td></tr>`;
+}
+
+async function revokeAuditorInvite(id){
+  if(!confirm('Revoke this auditor invitation? The token stops working immediately.')) return;
+  const {error} = await sb.rpc('revoke_auditor_invite', { p_invitation_id: id });
+  if(error){ toast('Revoke failed: ' + error.message, 4000); return; }
+  toast('Auditor invitation revoked.');
+  loadAuditorInvites();
+}
+
 function renderAuditorAccess(){
   const company = currentCompany();
   document.getElementById('auditor-company-code').textContent = company ? company.code : '—';
@@ -2094,6 +2158,7 @@ function renderAuditorAccess(){
   document.getElementById('auditor-visits-table').innerHTML = visits.slice(0,30).map(v=>`
     <tr><td>${escapeHtml(v.auditorName)}</td><td>${new Date(v.time).toLocaleString('en-NG',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short',year:'numeric'})}</td></tr>
   `).join('') || `<tr><td colspan="2" class="text-muted">No auditor visits logged yet.</td></tr>`;
+  loadAuditorInvites();
 }
 
 /* Admin preview of the Auditor Command Center: renders the exact same

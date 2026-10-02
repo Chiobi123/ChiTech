@@ -313,6 +313,7 @@ async function syncCompanySettings(state, companyId){
  *  full stop; that's enforced here, not just by hiding buttons. */
 async function saveBusiness(companyId, state){
   if(!state || !state.__synced) return; // not a real, loaded session (e.g. auditor view)
+  if(typeof session!=='undefined' && session && session.role==='auditor') return; // read-only, never syncs back
   try{
     await Promise.all([
       syncArrayTable(SYNC_DEFS.products, state.products, state.__synced.products, companyId),

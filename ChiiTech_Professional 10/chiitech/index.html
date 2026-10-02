@@ -94,6 +94,14 @@
       <p style="margin-top:14px;"><a href="#" onclick="showAuthView('signin');return false;">&larr; Back to sign in</a></p>
     </div>
 
+    <!-- WAITING ROOM (accepted invite, admin has not approved yet) -->
+    <div id="auth-view-waiting" class="auth-pane">
+      <div class="forgot-title">You have a place to sign in — approval pending</div>
+      <p class="text-muted" style="font-size:12px;" id="waiting-text">Your account is created. Ask your company admin to assign your access and approve you, then sign in again here.</p>
+      <button class="btn btn-primary btn-block" onclick="showAuthView('signin')">Back to sign in</button>
+      <p style="margin-top:14px;"><a href="#" onclick="logout();return false;">Sign out</a></p>
+    </div>
+
     <!-- ACCEPT WORKER INVITATION -->
     <div id="auth-view-invite" class="auth-pane">
       <p class="text-muted" style="font-size:11.5px;margin-bottom:14px;">
@@ -1171,6 +1179,19 @@
         <table>
           <thead><tr><th>Auditor</th><th>Time</th></tr></thead>
           <tbody id="auditor-visits-table"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div class="card-title">Invite auditor by email</div><div class="card-sub">Same pattern as workers: single-use emailed token, then you approve. The old code-based grants below keep working.</div></div>
+        <div class="form-row">
+          <div class="field"><label>Auditor email</label><input id="invite-auditor-email" type="text" placeholder="accountant@firm.com"></div>
+          <div class="field"><label>&nbsp;</label><button class="btn btn-primary" onclick="inviteAuditorUI()">Send invitation</button></div>
+        </div>
+        <div id="auditor-invite-status" class="text-muted" style="margin-top:8px;font-size:12px;">Invitations you send appear below with their tokens.</div>
+        <table style="margin-top:10px;">
+          <thead><tr><th>Email</th><th>Token / Status</th><th>Expires</th><th></th></tr></thead>
+          <tbody id="auditor-invite-table"></tbody>
         </table>
       </div>
     </section>
