@@ -1876,7 +1876,7 @@ async function loadInvitations(){
   if(error){ el.innerHTML = `<tr><td colspan="5" class="text-muted">Could not load invitations.</td></tr>`; return; }
   el.innerHTML = (data||[]).map(inv=>`<tr>
     <td>${escapeHtml(inv.email)}</td>
-    <td>${inv.status==='pending' ? `<code>${escapeHtml(inv.token)}</code> <button class="btn btn-sm" onclick="copyCode('${escapeHtml(inv.token)}')" title="Copy exact token">Copy</button>` : escapeHtml(inv.status)}${inv.status==='pending' && new Date(inv.expires_at) < new Date() ? ' (expired)' : ''}</td>
+    <td>${inv.status==='pending' ? `<code>${escapeHtml(inv.token)}</code> <button class="btn btn-sm" onclick="copyCode('${escapeHtml(inv.token)}')" title="Copy exact token">Copy</button> <button class="btn btn-sm btn-primary" onclick="copyInviteLink('${escapeHtml(inv.token)}')" title="Copy a one-tap link instead of typing" style="margin-left:4px;">Link</button>` : escapeHtml(inv.status)}${inv.status==='pending' && new Date(inv.expires_at) < new Date() ? ' (expired)' : ''}</td>
     <td>${new Date(inv.expires_at).toLocaleDateString('en-NG')}</td>
     <td>${inv.status==='pending' ? `<button class="btn btn-sm" onclick="resendInvitation('${inv.id}')">Resend</button> <button class="btn btn-sm" onclick="revokeInvitation('${inv.id}')" style="margin-left:4px;">Revoke</button>` : ''}</td>
   </tr>`).join('') || `<tr><td colspan="4" class="text-muted">No invitations yet.</td></tr>`;
@@ -1967,7 +1967,7 @@ async function loadAuditorInvites(){
   if(error){ el.innerHTML = `<tr><td colspan="4" class="text-muted">Could not load invitations.</td></tr>`; return; }
   el.innerHTML = (data||[]).map(inv=>`<tr>
     <td>${escapeHtml(inv.email)}</td>
-    <td>${inv.status==='pending' ? `<code>${escapeHtml(inv.token)}</code> <button class="btn btn-sm" onclick="copyCode('${escapeHtml(inv.token)}')" title="Copy exact token">Copy</button>` : escapeHtml(inv.status)}${inv.status==='pending' && new Date(inv.expires_at) < new Date() ? ' (expired)' : ''}</td>
+    <td>${inv.status==='pending' ? `<code>${escapeHtml(inv.token)}</code> <button class="btn btn-sm" onclick="copyCode('${escapeHtml(inv.token)}')" title="Copy exact token">Copy</button> <button class="btn btn-sm btn-primary" onclick="copyInviteLink('${escapeHtml(inv.token)}')" title="Copy a one-tap link instead of typing" style="margin-left:4px;">Link</button>` : escapeHtml(inv.status)}${inv.status==='pending' && new Date(inv.expires_at) < new Date() ? ' (expired)' : ''}</td>
     <td>${new Date(inv.expires_at).toLocaleDateString('en-NG')}</td>
     <td>${inv.status==='pending' ? `<button class="btn btn-sm" onclick="revokeAuditorInvite('${inv.id}')">Revoke</button>` : ''}</td>
   </tr>`).join('') || `<tr><td colspan="4" class="text-muted">No auditor invitations yet.</td></tr>`;

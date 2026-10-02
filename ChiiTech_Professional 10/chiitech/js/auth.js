@@ -276,7 +276,13 @@ async function joinAsWorker(){
     ({data:rpcData, error:rpcError} = await sb.rpc('accept_auditor_invite', { p_token: token }));
     kind = 'auditor';
   }
-  if(rpcError){ await sb.auth.signOut(); authError(rpcError.message); return; }
+  if(rpcError){
+    await sb.auth.signOut();
+    authError(/no longer valid|expired/i.test(rpcError.message||'')
+      ? 'That invitation was already used or expired — ask your admin for a fresh one.'
+      : noSuchInvitation(token));
+    return;
+  }
 
   const built = await buildSessionFromProfile();
   if(!built || (kind==='worker' ? built.role!=='worker' : built.role!=='auditor')){ await sb.auth.signOut(); authError('Invitation accepted but the profile could not be loaded. Ask your admin.'); return; }
@@ -324,6 +330,14 @@ function showWaitingRoom(who, note){
       `Your ${who||'worker'} account is created. Ask your company admin to assign your access and approve you, then sign in again on this screen.`;
   }catch(e){}
   showAuthView('waiting');
+}
+
+/** No invitation row matched the typed token. Say exactly that, show the
+ *  tail of what was typed so it can be compared with the admin's table,
+ *  and point at the one-tap link instead of retyping. */
+function noSuchInvitation(token){
+  const tail = (token||'').slice(-4) || '—';
+  return `No invitation matches “…${tail}”. Most likely: (1) an old/used token — ask your admin for the newest one, (2) a partial copy — open the invitation LINK instead of typing, (3) wrong account type — worker tokens go in Join, auditor tokens here (either works, but the link is safest).`;
 }
 
 function hideOAuthSignup(){ try{ document.getElementById('oauth-signup').classList.add('hidden'); }catch(e){} }
@@ -433,10 +447,8 @@ async function acceptAuditorInvite(){
       setTimeout(()=> toast('Invitation accepted — your admin will assign your access and approve you shortly.', 6000), 400);
       return;
     }
-    if(/no longer valid|expired/i.test(rpcError.message||'')){
-      await sb.auth.signOut();
-      authError('That invitation was already used or expired — ask your admin for a fresh one, then sign in normally.');
-    } else { await sb.auth.signOut(); authError(rpcError.message); }
+    await sb.auth.signOut();
+    authError(noSuchInvitation(token));
     return;
   }
   await finishAuditorSignIn(code, true);
