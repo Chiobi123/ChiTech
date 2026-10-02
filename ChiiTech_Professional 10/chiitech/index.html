@@ -132,17 +132,32 @@
 
     <!-- AUDITOR (external reviewers — invitation + sign-in, like workers) -->
     <div id="auth-view-auditor" class="auth-pane">
-      <p class="text-muted" style="font-size:11.5px;margin-bottom:14px;">
-        For an external accountant or auditor invited by the company admin. First visit:
-        company code, your name, invited email and invitation token, plus a password.
-        Returning visits: email and password only. Read-only, always.
-      </p>
-      <div class="field"><label>Company code</label><input id="login-auditor-code" placeholder="e.g. CHI-1234" style="text-transform:uppercase;"></div>
-      <div class="field"><label>Full name (first visit)</label><input id="login-auditor-name" placeholder="e.g. Adaeze Okafor"></div>
-      <div class="field"><label>Email</label><input id="login-auditor-email" type="text" placeholder="you@firm.com"></div>
-      <div class="field"><label>Invitation token (first visit — or open your invite link)</label><input id="login-auditor-token" placeholder="Paste the token from your invitation"></div>
-      <div class="field"><label>Password</label><input id="login-auditor-pass" type="password" placeholder="Your password"></div>
-      <button class="btn btn-primary btn-block" onclick="loginAuditor()">Sign in as auditor</button>
+      <div class="auth-subtabs">
+        <div class="auth-subtab active" data-sub="aud-signin" onclick="showAuditorSub('signin')">Sign in</div>
+        <div class="auth-subtab" data-sub="aud-accept" onclick="showAuditorSub('accept')">First visit — accept invitation</div>
+      </div>
+      <div id="aud-signin">
+        <p class="text-muted" style="font-size:11.5px;margin-bottom:14px;">
+          Already approved? Sign in with your email and password — plus your company code.
+          Read-only, always.
+        </p>
+        <div class="field"><label>Company code</label><input id="login-auditor-code" placeholder="e.g. CHI-1234" style="text-transform:uppercase;"></div>
+        <div class="field"><label>Email</label><input id="login-auditor-email" type="text" placeholder="you@firm.com"></div>
+        <div class="field"><label>Password</label><input id="login-auditor-pass" type="password" placeholder="Your password"></div>
+        <button class="btn btn-primary btn-block" onclick="loginAuditorReturning()">Sign in as auditor</button>
+      </div>
+      <div id="aud-accept" class="hidden">
+        <p class="text-muted" style="font-size:11.5px;margin-bottom:14px;">
+          Invited by a company admin? Enter the company code, your name, invited email and
+          invitation token, choose a password — then wait for approval.
+        </p>
+        <div class="field"><label>Company code</label><input id="accept-auditor-code" placeholder="e.g. CHI-1234" style="text-transform:uppercase;"></div>
+        <div class="field"><label>Full name</label><input id="accept-auditor-name" placeholder="e.g. Adaeze Okafor"></div>
+        <div class="field"><label>Email (the invited address)</label><input id="accept-auditor-email" type="text" placeholder="you@firm.com"></div>
+        <div class="field"><label>Invitation token</label><input id="accept-auditor-token" placeholder="Paste the token from your invitation"></div>
+        <div class="field"><label>Password</label><input id="accept-auditor-pass" type="password" placeholder="8+ characters"></div>
+        <button class="btn btn-primary btn-block" onclick="acceptAuditorInvite()">Accept invitation</button>
+      </div>
       <p style="margin-top:14px;"><a href="#" onclick="showAuthView('signin');return false;">&larr; Back to sign in</a></p>
     </div>
 

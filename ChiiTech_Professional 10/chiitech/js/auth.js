@@ -376,36 +376,56 @@ async function loginAsWorker(){
   await bootApp();
 }
 
-/* ---------------- Auditor sign-in (invitation model) ----------------
-   Company code + full name + email + invitation token (+ password).
-   First visit with a token accepts the invitation (account created if
-   needed); later visits are plain email/password. The code is verified
-   against the invitation's own company — never trusted on its own. */
-async function loginAuditor(){
+/* ---------------- Auditor sign-in ----------------
+   Two separate doors, never mixed:
+   - loginAuditorReturning: approved auditors, email + password + code.
+   - acceptAuditorInvite: first visit with company code + name + invited
+     email + token + new password. Invitation tokens are single-use and
+     email-bound in the database, so a used token cleanly reports
+     "no longer valid" instead of the confusing "account exists". */
+async function loginAuditorReturning(){
   const code = (document.getElementById('login-auditor-code').value||'').replace(/\s+/g,'').toUpperCase();
-  const name = document.getElementById('login-auditor-name').value.trim();
   const email = document.getElementById('login-auditor-email').value.trim().toLowerCase();
-  const token = (document.getElementById('login-auditor-token').value||'').trim();
   const password = document.getElementById('login-auditor-pass').value;
-  if(!code || !email){ authError('Enter your company code and email.'); return; }
+  if(!code || !email || !password){ authError('Enter your company code, email and password.'); return; }
+  const {error} = await sb.auth.signInWithPassword({ email, password });
+  if(error){ authError('No auditor account matches those details. First visit? Use “First visit — accept invitation” above.'); return; }
+  await finishAuditorSignIn(code);
+}
 
-  if(token){
-    if(!name || !password){ authError('First visit needs your name and a password too.'); return; }
-    const {data:{user:existing}} = await sb.auth.getUser();
-    if(!existing){
-      if(password.length < 8){ authError('Password must be at least 8 characters.'); return; }
-      const {data, error} = await sb.auth.signUp({ email, password });
-      if(error){ authError(error.message); return; }
-      if(!data.session){ authError('Check your email to confirm your account, then sign in with the same token.'); return; }
+async function acceptAuditorInvite(){
+  const code = (document.getElementById('accept-auditor-code').value||'').replace(/\s+/g,'').toUpperCase();
+  const name = document.getElementById('accept-auditor-name').value.trim();
+  const email = document.getElementById('accept-auditor-email').value.trim().toLowerCase();
+  const token = (document.getElementById('accept-auditor-token').value||'').trim();
+  const password = document.getElementById('accept-auditor-pass').value;
+  if(!code || !name || !email || !token || !password){ authError('Fill in every field, including your invitation token.'); return; }
+  if(password.length < 8){ authError('Password must be at least 8 characters.'); return; }
+  const {data:{user:existing}} = await sb.auth.getUser();
+  if(!existing){
+    const {data, error} = await sb.auth.signUp({ email, password });
+    if(error){
+      if(/already|exists|registered/i.test(error.message)){
+        authError('That email already has an account — use “Sign in” above instead (no token needed).');
+      } else authError(error.message);
+      return;
     }
-    const {error:rpcError} = await sb.rpc('accept_auditor_invite', { p_token: token });
-    if(rpcError){ await sb.auth.signOut(); authError(rpcError.message); return; }
-  } else {
-    if(!password){ authError('Enter your password — or paste an invitation token for a first visit.'); return; }
-    const {error} = await sb.auth.signInWithPassword({ email, password });
-    if(error){ authError('No auditor account matches those details.'); return; }
+    if(!data.session){ authError('Check your email to confirm your account, then accept again.'); return; }
   }
+  const {error:rpcError} = await sb.rpc('accept_auditor_invite', { p_token: token });
+  if(rpcError){
+    if(/no longer valid|expired/i.test(rpcError.message||'')){
+      await sb.auth.signOut();
+      authError('That invitation was already used or expired — ask your admin for a fresh one, then sign in normally.');
+    } else { await sb.auth.signOut(); authError(rpcError.message); }
+    return;
+  }
+  await finishAuditorSignIn(code, true);
+}
 
+/** Shared tail: build the auditor session, verify the company code against
+ *  the auditor's own company, enforce approval, boot the Command Center. */
+async function finishAuditorSignIn(code, firstVisit){
   const built = await buildSessionFromProfile();
   if(!built || built==='deleted' || built.role!=='auditor'){ await sb.auth.signOut(); authError('That account is not an auditor account.'); return; }
   clearSession(); session = built; saveSession(session);
@@ -417,6 +437,18 @@ async function loginAuditor(){
   }
   if(built.active===false){ await sb.auth.signOut(); clearSession(); session = null; showWaitingRoom('auditor'); return; }
   await bootApp();
+  if(firstVisit) setTimeout(()=> toast('Invitation accepted — welcome to your read-only Command Center.', 5000), 400);
+}
+
+function showAuditorSub(which){
+  document.querySelectorAll('#auth-view-auditor .auth-subtab').forEach(el=>el.classList.toggle('active', el.dataset.sub===(which==='accept'?'aud-accept':'aud-signin')));
+  document.getElementById('aud-signin').classList.toggle('hidden', which!=='signin');
+  document.getElementById('aud-accept').classList.toggle('hidden', which!=='accept');
+}
+
+/* Legacy alias (retired grant-code flow called this). */
+async function loginAuditor(){
+  return showAuditorSub('signin'), loginAuditorReturning();
 }
 
 /** Switches which login-screen view is showing
