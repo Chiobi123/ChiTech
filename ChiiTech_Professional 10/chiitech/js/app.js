@@ -179,26 +179,9 @@ async function bootApp(){
   }
 
   if(session.role==='auditor'){
-    await loadMyCompany();
-    state = await loadBusiness(session.companyId);
-    auditorBootTrace(null);
-    document.querySelectorAll('.nav-link, .mobile-nav .nav-item').forEach(el=>{
-      el.classList.toggle('hidden', el.dataset.nav!=='auditor');
-    });
-    document.getElementById('imp-banner').classList.add('hidden');
-    document.getElementById('delete-account-link').classList.add('hidden');
-    document.getElementById('sidebar-sub').textContent = (currentCompany()||{}).name || 'Auditor access';
-    document.getElementById('sidebar-plan').textContent = 'Auditor — read only';
-    const abanner = document.getElementById('auditor-banner');
-    abanner.classList.remove('hidden');
-    abanner.innerHTML = `🔒 Read-only auditor access — nothing here can be edited`;
-    try {
-      renderAuditorCommandCenter();
-      showSection('auditor');
-    } catch(e){
-      console.error('auditor render:', e);
-      toast('Command Center hit a display problem (' + (e.message||'error') + ') — your access is fine, tell support those words.');
-    }
+    // Single boot path for auditors (first login AND reload both land
+    // here): the dedicated direct boot. No duplicated logic.
+    await bootAuditorDirect();
     return;
   }
 

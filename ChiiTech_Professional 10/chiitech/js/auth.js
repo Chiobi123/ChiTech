@@ -451,7 +451,8 @@ async function finishAuditorSignIn(code, firstVisit){
 /** Direct auditor boot: renders the Command Center immediately, bypassing
  *  every gate. Called by finishAuditorSignIn after all checks pass.
  *  Uses auditor_self_data() RPC — auditors cannot read their own profiles
- *  row via RLS, so loadBusiness() would throw and bounce them to sign-in. */
+ *  row via RLS, so loadBusiness() would throw and bounce them to sign-in.
+ *  Fully synchronous after the RPC — no async gaps for the login screen. */
 async function bootAuditorDirect(){
   veilOn();
   try {
@@ -473,6 +474,9 @@ async function bootAuditorDirect(){
       state.growth = d.settings.growth || state.growth;
       state.materialityThreshold = d.settings.materialityThreshold!=null ? Number(d.settings.materialityThreshold) : state.materialityThreshold;
     }
+    // Hide login, show app — synchronously, no gaps.
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
     document.querySelectorAll('.nav-link, .mobile-nav .nav-item').forEach(el=>{
       el.classList.toggle('hidden', el.dataset.nav!=='auditor');
     });
