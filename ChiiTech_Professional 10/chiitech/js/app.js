@@ -57,19 +57,17 @@ window.addEventListener('DOMContentLoaded', async () => {
     el.addEventListener('click', ()=> setAuditorAnalysisMode(el.dataset.mode));
   });
 
-  // Invitation links (?cc=..&ac=..) prefill the auditor form — the auditor
-  // never types codes by hand. Prefill only (never auto-submit), and the
-  // values are scrubbed from the URL immediately after reading.
+  // Invitation links (?token=..) prefill the Join screen — the invited
+  // person never types a token by hand. Prefill only (never auto-submit),
+  // and the value is scrubbed from the URL immediately after reading.
   try {
     const url = new URL(window.location.href);
-    const cc = (url.searchParams.get('cc')||'').replace(/\s+/g,'').toUpperCase();
-    const ac = (url.searchParams.get('ac')||'').replace(/\s+/g,'').toUpperCase();
-    if(cc || ac){
-      showAuthView('auditor');
-      if(cc) document.getElementById('login-auditor-code').value = cc;
-      if(ac) document.getElementById('login-auditor-access').value = ac;
-      toastOnLogin('Codes filled from your invitation link — tap Sign in as auditor.');
-      url.searchParams.delete('cc'); url.searchParams.delete('ac');
+    const tok = (url.searchParams.get('token')||'').trim();
+    if(tok){
+      showAuthView('invite');
+      document.getElementById('join-worker-token').value = tok;
+      toastOnLogin('Invitation token filled — complete the form to accept.');
+      url.searchParams.delete('token');
       window.history.replaceState({}, '', url.pathname + window.location.hash);
     }
   } catch(e){}
@@ -181,77 +179,24 @@ async function bootApp(){
   }
 
   if(session.role==='auditor'){
-    // Two doors in: legacy code-grant (no Auth session) or invited profile
-    // (normal Auth session, approved by admin). Grant codes keep working.
-    if(!session.grantId){
-      await loadMyCompany();
-      state = await loadBusiness(session.companyId);
-      auditorBootTrace(null);
-      document.querySelectorAll('.nav-link, .mobile-nav .nav-item').forEach(el=>{
-        el.classList.toggle('hidden', el.dataset.nav!=='auditor');
-      });
-      document.getElementById('imp-banner').classList.add('hidden');
-      document.getElementById('delete-account-link').classList.add('hidden');
-      document.getElementById('sidebar-sub').textContent = (currentCompany()||{}).name || 'Auditor access';
-      document.getElementById('sidebar-plan').textContent = 'Auditor — read only';
-      const abanner = document.getElementById('auditor-banner');
-      abanner.classList.remove('hidden');
-      abanner.innerHTML = `🔒 Read-only auditor access — nothing here can be edited`;
-      try {
-        renderAuditorCommandCenter();
-        showSection('auditor');
-      } catch(e){
-        console.error('auditor render:', e);
-        toast('Command Center hit a display problem (' + (e.message||'error') + ') — your access is fine, tell support those words.');
-      }
-      return;
-    }
-    auditorBootTrace('verifying codes…');
-    let check = await validateAuditorGrant();
-    if(check && check.transient){
-      // One automatic retry: a single dropped request must never end an
-      // auditor visit. Only a second failure shows the login screen.
-      auditorBootTrace('connection wobbled — retrying once…');
-      await new Promise(r=>setTimeout(r, 1500));
-      check = await validateAuditorGrant();
-    }
-    if(!check || !check.grant){
-      // Revoked/expired → signed out with the exact server reason.
-      // Network/DB failure → session kept, retryable message instead.
-      if(check && check.transient){
-        veilOff();
-        document.getElementById('login-screen').classList.remove('hidden');
-        document.getElementById('app').classList.add('hidden');
-        toastOnLogin('Could not verify auditor access (' + (check.message || 'connection') + ') — check your connection and try again.');
-        return;
-      }
-      const why = (check && check.message) || 'This auditor access is no longer valid — ask the company admin for a new code.';
-      logout();
-      setTimeout(()=> toastOnLogin(why), 200);
-      return;
-    }
-    const grant = check.grant;
-    auditorBootTrace('codes accepted — loading your records…');
+    await loadMyCompany();
+    state = await loadBusiness(session.companyId);
+    auditorBootTrace(null);
     document.querySelectorAll('.nav-link, .mobile-nav .nav-item').forEach(el=>{
       el.classList.toggle('hidden', el.dataset.nav!=='auditor');
     });
     document.getElementById('imp-banner').classList.add('hidden');
     document.getElementById('delete-account-link').classList.add('hidden');
-    document.getElementById('sidebar-sub').textContent = session.companyName || 'Auditor access';
-    document.getElementById('sidebar-plan').textContent = 'Auditor \u2014 read only';
-    const banner = document.getElementById('auditor-banner');
-    banner.classList.remove('hidden');
-    banner.innerHTML = `\u{1F512} Read-only auditor access to <b>${escapeHtml(session.companyName||'')}</b>
-      ${grant.expiresAt ? ' &nbsp;\u2022&nbsp; expires ' + new Date(grant.expiresAt).toLocaleDateString('en-NG') : ' &nbsp;\u2022&nbsp; no expiry set'}
-      &nbsp;\u2022&nbsp; this visit has been logged`;
+    document.getElementById('sidebar-sub').textContent = (currentCompany()||{}).name || 'Auditor access';
+    document.getElementById('sidebar-plan').textContent = 'Auditor — read only';
+    const abanner = document.getElementById('auditor-banner');
+    abanner.classList.remove('hidden');
+    abanner.innerHTML = `🔒 Read-only auditor access — nothing here can be edited`;
     try {
-      auditorBootTrace('rendering your Command Center…');
       renderAuditorCommandCenter();
       showSection('auditor');
-      auditorBootTrace(null);
     } catch(e){
       console.error('auditor render:', e);
-      auditorBootTrace(null);
       toast('Command Center hit a display problem (' + (e.message||'error') + ') — your access is fine, tell support those words.');
     }
     return;
@@ -517,59 +462,6 @@ function addAuditLog(action, details){
   saveState();
 }
 function saveState(){ saveBusiness(session.companyId, state); }
-
-/** Called once at the top of every auditor boot (fresh sign-in AND every
- *  page reload, since a revoke has to be re-checked somewhere — there's
- *  no live push in this static build). Both database functions this
- *  calls re-validate the grant fresh (not revoked, not expired) — see
- *  auditor_login()/auditor_fetch_data() in the database — so a revoke
- *  takes effect the moment the auditor's page next loads. Calling
- *  auditor_login() again here (not just at fresh sign-in) is what logs
- *  a visit on every reload, matching this app's original behavior.
- *  Returns null if the grant is gone/revoked/expired — the caller
- *  (bootApp) treats null as "sign this person out now". On success,
- *  `state` is filled in with everything the Command Center needs,
- *  read-only (see the missing `__synced` in data.js's saveBusiness —
- *  that's what makes writes a no-op for this session, not just hidden
- *  buttons). */
-async function validateAuditorGrant(){
-  // Returns {grant} on success, {invalid,message} when revoked/expired,
-  // {transient,message} on network/DB failure (session must be kept).
-  let loginError = null;
-  try {
-    const r = await sb.rpc('auditor_login', {
-      p_company_code: session.companyCode, p_access_code: session.accessCode
-    });
-    loginError = r.error;
-    if(loginError){
-      const msg = loginError.message || '';
-      if(/revoked|expired|recognised|recognized/i.test(msg)) return {invalid:true, message:msg};
-      return {transient:true, message:msg};
-    }
-  } catch(e){ return {transient:true, message:(e && e.message) || 'connection failed'}; }
-
-  let data = null, fetchError = null;
-  try {
-    const r = await sb.rpc('auditor_fetch_data', {
-      p_grant_id: session.grantId, p_access_code: session.accessCode
-    });
-    data = r.data; fetchError = r.error;
-  } catch(e){ fetchError = e; }
-  if(fetchError || !data) return {transient:true, message:((fetchError && fetchError.message) || 'could not load data')};
-
-  state = seedEmptyBusiness();
-  state.products = data.products.map(SYNC_DEFS.products.fromRow);
-  state.sales = data.sales.map(SYNC_DEFS.sales.fromRow);
-  state.expenses = data.expenses.map(SYNC_DEFS.expenses.fromRow);
-  state.sop = data.sop.map(SYNC_DEFS.sop.fromRow);
-  state.auditLog = data.audit_log.map(INSERT_ONLY_DEFS.auditLog.fromRow);
-  state.team = data.team.map(t=>({ name:t.name, role:t.role, departments:t.departments||[] }));
-  state.findings = (data.findings||[]).map(SYNC_DEFS.findings.fromRow);
-  state.materialityThreshold = data.materiality_threshold!=null ? Number(data.materiality_threshold) : 5000;
-  // Deliberately no state.__synced here — saveBusiness() treats that as
-  // "not a real, writable session" and refuses to sync anything back.
-  return { name: session.name, expiresAt: session.expiresAt };
-}
 
 function flagExpense(amount, category){
   const sameCategory = state.expenses.filter(e=>e.category===category).map(e=>e.amount);
@@ -2032,12 +1924,11 @@ async function removeWorker(memberId){
   toast('Worker removed.');
 }
 
-/* ================= AUDITOR ACCESS (admin-side grant management) =================
-   Lets a company_admin issue/revoke standing (by default) read-only access for an
-   external accountant or auditor. Each grant is company-scoped data
-   (state.auditorGrants), not a platform.users account — see loginAuditor()
-   in auth.js for how someone signs in with it, and
-   renderAuditorCommandCenter() above for what they see once they do. */
+/* ================= AUDITOR ACCESS (admin-side invitation management) ======
+   Lets a company_admin invite an external accountant/auditor by email.
+   Invitations live in auditor_invites (token + expiry); the auditor signs
+   in with their own account and lands read-only — see loginAuditor() in
+   auth.js, and renderAuditorCommandCenter() above for what they see. */
 /** Copy an access code exactly — no retyping, no look-alike letter mistakes. */
 async function copyCode(text){  try { await navigator.clipboard.writeText(text); toast('Copied — paste it exactly as-is.'); }
   catch(e){
@@ -2048,45 +1939,13 @@ async function copyCode(text){  try { await navigator.clipboard.writeText(text);
     ta.remove();
   }
 }
-/** Shareable auditor link: company + access codes ride in the URL, the
- *  login page fills them in itself. Send this instead of dictating codes. */
-function copyInviteLink(accessCode){
-  const company = currentCompany();
+/** Shareable invitation link: the token rides in the URL, the Join screen
+ *  fills it in itself. Send this instead of dictating tokens. */
+function copyInviteLink(token){
   const url = window.location.origin + window.location.pathname +
-    '?cc=' + encodeURIComponent(company ? company.code : '') +
-    '&ac=' + encodeURIComponent(accessCode);
+    '?token=' + encodeURIComponent(token);
   copyCode(url);
 }
-async function grantAuditorAccess(){
-  const name = document.getElementById('aud-grant-name').value.trim();
-  const days = document.getElementById('aud-grant-expiry').value;
-
-  if(!name){ toast('Give this access a label — e.g. the auditor\'s name or firm'); return; }
-
-  const code = genAuditorCode();
-  const expiresAt = days==='none' ? null : Date.now() + Number(days)*86400000;
-  const grant = { id: nextId('aud'), name, code, createdAt: Date.now(), expiresAt, createdBy: whoAmI(), revoked:false, lastVisit:null };
-  state.auditorGrants = state.auditorGrants || [];
-  state.auditorGrants.push(grant);
-  addAuditLog('auditor.grant_created', `Granted read-only auditor access to "${name}" (code ${code}${expiresAt ? ', expires '+new Date(expiresAt).toLocaleDateString('en-NG') : ', no expiry — can sign in any time'})`);
-
-  document.getElementById('aud-grant-name').value = '';
-  renderAuditorAccess();
-
-  const company = currentCompany();
-  alert(`Auditor access created for "${name}".\n\nShare BOTH of these with them — they'll need both to sign in:\n\nCompany code: ${company?company.code:'—'}\nAuditor access code: ${code}\n\nThey sign in under "Log in as Auditor" on the ChiiTech login screen. This code is shown here once — you can look it up again on this page any time, or revoke it if it's no longer needed.`);
-}
-
-function revokeAuditorGrant(id){
-  const g = (state.auditorGrants||[]).find(x=>x.id===id);
-  if(!g || g.revoked) return;
-  if(!confirm(`Revoke auditor access for "${g.name}"? If they're currently viewing the Auditor Command Center, they'll be signed out the next time the page reloads or they navigate.`)) return;
-  g.revoked = true;
-  addAuditLog('auditor.grant_revoked', `Revoked auditor access for "${g.name}" (code ${g.code})`);
-  renderAuditorAccess();
-  toast('Auditor access revoked');
-}
-
 async function inviteAuditorUI(){
   const email = document.getElementById('invite-auditor-email').value.trim().toLowerCase();
   if(!email || email.indexOf('@') < 0){ toast('Enter a valid auditor email.'); return; }
@@ -2121,43 +1980,6 @@ async function revokeAuditorInvite(id){
 function renderAuditorAccess(){
   const company = currentCompany();
   document.getElementById('auditor-company-code').textContent = company ? company.code : '—';
-  const now = Date.now();
-
-  document.getElementById('auditor-grants-table').innerHTML = (state.auditorGrants||[]).map(g=>{
-    const expired = g.expiresAt && now > g.expiresAt;
-    const status = g.revoked ? 'Revoked' : expired ? 'Expired' : 'Active';
-    const badgeCls = status==='Active' ? 'badge-ok' : status==='Expired' ? 'badge-muted' : 'badge-danger';
-    return `<tr>
-      <td>${escapeHtml(g.name)}</td>
-      <td><code>${escapeHtml(g.code)}</code> <button class="btn btn-sm" onclick="copyCode('${escapeHtml(g.code)}')" title="Copy exact code">Copy</button> <button class="btn btn-sm btn-primary" onclick="copyInviteLink('${escapeHtml(g.code)}')" title="Copy a link that fills the codes in automatically" style="margin-left:4px;">Copy invite link</button></td>
-      <td>${new Date(g.createdAt).toLocaleDateString('en-NG')}</td>
-      <td>${g.expiresAt ? new Date(g.expiresAt).toLocaleDateString('en-NG') : 'No expiry'}</td>
-      <td><span class="badge ${badgeCls}">${status}</span></td>
-      <td>${g.lastVisit ? new Date(g.lastVisit).toLocaleString('en-NG',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'}) : 'Not yet visited'}</td>
-      <td>${!g.revoked ? `<button class="btn btn-sm" onclick="revokeAuditorGrant('${g.id}')">Revoke</button>` : ''}</td>
-    </tr>`;
-  }).join('') || `<tr><td colspan="7" class="text-muted">No auditor access granted yet.</td></tr>`;
-
-  const visits = [...(state.auditVisitLog||[])];
-
-  // How regularly is the auditor actually checking in? Since access has
-  // no time window by default, the useful question for an admin isn't
-  // "has it expired" but "are they still looking" — so summarise the
-  // last 7 and 30 days rather than just listing timestamps.
-  const last7 = visits.filter(v=>v.time >= now - 7*86400000).length;
-  const last30 = visits.filter(v=>v.time >= now - 30*86400000).length;
-  const daysChecked = new Set(visits.filter(v=>v.time >= now - 30*86400000)
-    .map(v=>new Date(v.time).toDateString())).size;
-  const freqEl = document.getElementById('auditor-visit-summary');
-  if(freqEl){
-    freqEl.textContent = visits.length
-      ? `${last7} visit${last7===1?'':'s'} in the last 7 days • ${last30} in the last 30, across ${daysChecked} separate day${daysChecked===1?'':'s'}`
-      : 'No visits yet';
-  }
-
-  document.getElementById('auditor-visits-table').innerHTML = visits.slice(0,30).map(v=>`
-    <tr><td>${escapeHtml(v.auditorName)}</td><td>${new Date(v.time).toLocaleString('en-NG',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short',year:'numeric'})}</td></tr>
-  `).join('') || `<tr><td colspan="2" class="text-muted">No auditor visits logged yet.</td></tr>`;
   loadAuditorInvites();
 }
 

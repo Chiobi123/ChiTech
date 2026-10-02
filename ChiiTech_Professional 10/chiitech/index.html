@@ -78,7 +78,8 @@
         Don&apos;t have an account? <a href="#" onclick="showAuthView('register');return false;">Create account</a>
       </p>
       <p class="text-muted" style="font-size:11.5px;margin-top:6px;text-align:center;">
-        <a href="#" onclick="showAuthView('invite');return false;">Have a worker invitation?</a>
+        <a href="#" onclick="showAuthView('worker');return false;">Worker sign in</a>
+        &nbsp;&#8226;&nbsp; <a href="#" onclick="showAuthView('invite');return false;">Have a worker invitation?</a>
         &nbsp;&#8226;&nbsp; <a href="#" onclick="showAuthView('auditor');return false;">Auditor access</a>
       </p>
     </div>
@@ -102,6 +103,19 @@
       <p style="margin-top:14px;"><a href="#" onclick="logout();return false;">Sign out</a></p>
     </div>
 
+    <!-- WORKER SIGN IN (returning team members) -->
+    <div id="auth-view-worker" class="auth-pane">
+      <p class="text-muted" style="font-size:11.5px;margin-bottom:14px;">
+        For team members whose company admin has already approved them.
+        First time here? Accept your invitation under “Have a worker invitation?” on the sign-in screen.
+      </p>
+      <div class="field"><label>Work email</label><input id="login-worker-email" type="text" placeholder="you@business.com"></div>
+      <div class="field"><label>Password</label><input id="login-worker-pass" type="password" placeholder="Your password"></div>
+      <button class="btn btn-primary btn-block" onclick="loginAsWorker()">Sign in as worker</button>
+      <button class="btn btn-block" style="margin-top:8px;" onclick="loginWithGoogle()">Continue with Google</button>
+      <p style="margin-top:14px;"><a href="#" onclick="showAuthView('signin');return false;">&larr; Back to sign in</a></p>
+    </div>
+
     <!-- ACCEPT WORKER INVITATION -->
     <div id="auth-view-invite" class="auth-pane">
       <p class="text-muted" style="font-size:11.5px;margin-bottom:14px;">
@@ -116,15 +130,18 @@
       <p style="margin-top:14px;"><a href="#" onclick="showAuthView('signin');return false;">&larr; Back to sign in</a></p>
     </div>
 
-    <!-- AUDITOR (behind a quiet link — external reviewers only) -->
+    <!-- AUDITOR (external reviewers — invitation + sign-in, like workers) -->
     <div id="auth-view-auditor" class="auth-pane">
       <p class="text-muted" style="font-size:11.5px;margin-bottom:14px;">
-        For an external accountant or auditor given ongoing, read-only access by the company admin.
-        You&apos;ll need the company code and a separate auditor access code from them — easiest is
-        opening the invitation link they send you, which fills both in by itself.
+        For an external accountant or auditor invited by the company admin. First visit:
+        company code, your name, invited email and invitation token, plus a password.
+        Returning visits: email and password only. Read-only, always.
       </p>
       <div class="field"><label>Company code</label><input id="login-auditor-code" placeholder="e.g. CHI-1234" style="text-transform:uppercase;"></div>
-      <div class="field"><label>Auditor access code</label><input id="login-auditor-access" placeholder="e.g. AUD-7K3F9" style="text-transform:uppercase;"></div>
+      <div class="field"><label>Full name (first visit)</label><input id="login-auditor-name" placeholder="e.g. Adaeze Okafor"></div>
+      <div class="field"><label>Email</label><input id="login-auditor-email" type="text" placeholder="you@firm.com"></div>
+      <div class="field"><label>Invitation token (first visit — or open your invite link)</label><input id="login-auditor-token" placeholder="Paste the token from your invitation"></div>
+      <div class="field"><label>Password</label><input id="login-auditor-pass" type="password" placeholder="Your password"></div>
       <button class="btn btn-primary btn-block" onclick="loginAuditor()">Sign in as auditor</button>
       <p style="margin-top:14px;"><a href="#" onclick="showAuthView('signin');return false;">&larr; Back to sign in</a></p>
     </div>
@@ -1137,49 +1154,13 @@
         <div><div class="page-title">Auditor access</div><div class="page-sub">Give an external accountant or auditor standing, read-only access</div></div>
       </div>
       <div class="section-explainer">
-        Share your company code — <b id="auditor-company-code">—</b> <button class="btn btn-sm" onclick="copyCode(document.getElementById('auditor-company-code').textContent)" title="Copy exact code">Copy</button> — plus the access code generated below with
-        whoever needs to review your books. They sign in under "Log in as Auditor" on the login screen and see a
-        locked-down, read-only <b>Auditor Command Center</b> — the same audit confidence, trial balance,
-        segregation-of-duties check, Benford's Law check, SOPs and activity log as your own Audit page, with no
-        way to edit anything, ever. By default access has <b>no expiry</b>, so they can log in any time — daily,
-        even — to check the business is on track, without ever being able to change a thing. Set an expiry below
-        instead if you'd rather this be time-boxed, and revoke access at any time from the table below either way.
-        Every visit is logged. Your auditor opens their own <b>Auditor Command Center</b> (a separate locked screen
-        only they can see) — it never appears in your sidebar.
+        Invite your accountant by email below — they get a single-use token, create their own
+        sign-in, and you approve them, exactly like workers. They sign in on the
+        <b>Auditor access</b> screen with your company code — <b id="auditor-company-code">—</b>
+        <button class="btn btn-sm" onclick="copyCode(document.getElementById('auditor-company-code').textContent)" title="Copy exact code">Copy</button> — plus
+        their token, and see a locked-down, read-only <b>Auditor Command Center</b> with no way
+        to edit anything, ever. Revoke or pause them any time from the Team page.
         <div style="margin-top:8px;"><button class="btn btn-sm" onclick="previewAuditorView()">Preview what auditors see</button></div>
-      </div>
-
-      <div class="card">
-        <div class="card-head"><div class="card-title">Grant auditor access</div></div>
-        <div class="form-row">
-          <div class="field"><label>Label</label><input id="aud-grant-name" placeholder="e.g. ABC Accounting — ongoing review"></div>
-          <div class="field"><label>Expires in</label>
-            <select id="aud-grant-expiry">
-              <option value="none" selected>No expiry — sign in any time (revoke manually)</option>
-              <option value="3">3 days</option>
-              <option value="7">7 days</option>
-              <option value="14">14 days</option>
-              <option value="30">30 days</option>
-            </select>
-          </div>
-        </div>
-        <button class="btn btn-primary" onclick="grantAuditorAccess()"><i class="ti ti-plus"></i>&nbsp; Generate access code</button>
-      </div>
-
-      <div class="card">
-        <div class="card-head"><div class="card-title">Access grants</div></div>
-        <table>
-          <thead><tr><th>Label</th><th>Code</th><th>Created</th><th>Expires</th><th>Status</th><th>Last visit</th><th></th></tr></thead>
-          <tbody id="auditor-grants-table"></tbody>
-        </table>
-      </div>
-
-      <div class="card">
-        <div class="card-head"><div class="card-title">Visit log</div><div class="card-sub" id="auditor-visit-summary">Every time someone signs in with an auditor access code</div></div>
-        <table>
-          <thead><tr><th>Auditor</th><th>Time</th></tr></thead>
-          <tbody id="auditor-visits-table"></tbody>
-        </table>
       </div>
 
       <div class="card">

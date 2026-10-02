@@ -23,15 +23,7 @@
                           real signed-in worker's account never has its
                           password touched by anyone but themself; see
                           the note on that in joinAsWorker()).
-     - 'auditor'        → an external accountant/auditor given standing,
-                          read-only access to ONE company's Auditor
-                          Command Center. Not a Supabase Auth user at
-                          all, by design — signs in with a company code
-                          plus a separate auditor access code, validated
-                          fresh by the auditor_login()/auditor_fetch_data()
-                          database functions every time (see
-                          loginAuditor() and validateAuditorGrant() in
-                          app.js). Every sign-in is logged server-side.
+     - 'auditor'        → invited by email, accepts a single-use token with their own Supabase Auth account, approved by the admin. Read-only Command Center (SELECT-only RLS + client write refusal).
 
    `session` (declared below) holds whoever is currently signed in and is
    what the rest of the app checks before showing UI. It's kept in
@@ -102,9 +94,8 @@ function clearSession(){ sessionStorage.removeItem('chiitech_session'); }
  *  network blip never signs a valid user out. */
 async function validateStoredSession(){
   const stored = loadSession();
-  // Legacy code-grant auditors carry no Supabase Auth session; their grant
-  // is revalidated fresh on every boot inside bootApp(). Leave them alone.
-  if(stored && stored.role==='auditor' && stored.grantId) return {ok:true, session:stored};
+  // Auditors sign in with their own Supabase Auth accounts (invitation
+  // model), so they revalidate exactly like every other role below.
   let user = null;
   try {
     const res = await sb.auth.getUser();
@@ -364,37 +355,67 @@ async function finishOAuthLogin(){
   await bootApp();
 }
 
-/* ---------------- Worker sign-in (legacy code-based flow, retired) ----
-   Unified login() above replaces this: the company code is only an
-   identifier now, and profile.company_id (via RLS) is authoritative.
-   Kept as a thin alias so nothing that still calls it breaks. */
-async function loginWorker(){
-  return login();
+/* ---------------- Worker sign-in (dedicated screen) ----------------
+   Email + password only. The profile's company binding (via RLS) is
+   authoritative — no company code needed at sign-in. */
+async function loginAsWorker(){
+  const email = document.getElementById('login-worker-email').value.trim().toLowerCase();
+  const password = document.getElementById('login-worker-pass').value;
+  const throttle = checkLoginThrottle(email);
+  if(throttle.blocked){ authError(`Too many attempts — try again in ${throttle.waitSec}s.`); return; }
+  const {error} = await sb.auth.signInWithPassword({ email, password });
+  if(error){ recordLoginFailure(email); authError('No worker account matches that email/password.'); return; }
+  const built = await buildSessionFromProfile();
+  if(built==='deleted'){ await sb.auth.signOut(); authError('This account has been closed.'); return; }
+  if(!built || built.role!=='worker'){ await sb.auth.signOut(); authError('That account is not a worker account — use the main sign in.'); return; }
+  if(built.active===false){ await sb.auth.signOut(); showWaitingRoom('worker'); return; }
+  clearLoginThrottle(email);
+  hideOAuthSignup();
+  session = built;
+  clearSession(); saveSession(session);
+  await bootApp();
 }
 
-/* ---------------- Auditor sign-in ----------------
-   No Supabase Auth account — a company code plus a one-off auditor
-   access code a company_admin generates on the "Auditor access" page.
-   auditor_login() validates the grant and logs the visit server-side in
-   one call; the access code itself is kept in `session` (not shown
-   anywhere) so later re-fetches (on reload) can re-validate through
-   auditor_fetch_data() the same way — see validateAuditorGrant() in
-   app.js. */
+/* ---------------- Auditor sign-in (invitation model) ----------------
+   Company code + full name + email + invitation token (+ password).
+   First visit with a token accepts the invitation (account created if
+   needed); later visits are plain email/password. The code is verified
+   against the invitation's own company — never trusted on its own. */
 async function loginAuditor(){
   const code = (document.getElementById('login-auditor-code').value||'').replace(/\s+/g,'').toUpperCase();
-  const accessCode = (document.getElementById('login-auditor-access').value||'').replace(/\s+/g,'').toUpperCase();
+  const name = document.getElementById('login-auditor-name').value.trim();
+  const email = document.getElementById('login-auditor-email').value.trim().toLowerCase();
+  const token = (document.getElementById('login-auditor-token').value||'').trim();
+  const password = document.getElementById('login-auditor-pass').value;
+  if(!code || !email){ authError('Enter your company code and email.'); return; }
 
-  if(!code || !accessCode){ authError('Enter the company code and your auditor access code.'); return; }
+  if(token){
+    if(!name || !password){ authError('First visit needs your name and a password too.'); return; }
+    const {data:{user:existing}} = await sb.auth.getUser();
+    if(!existing){
+      if(password.length < 8){ authError('Password must be at least 8 characters.'); return; }
+      const {data, error} = await sb.auth.signUp({ email, password });
+      if(error){ authError(error.message); return; }
+      if(!data.session){ authError('Check your email to confirm your account, then sign in with the same token.'); return; }
+    }
+    const {error:rpcError} = await sb.rpc('accept_auditor_invite', { p_token: token });
+    if(rpcError){ await sb.auth.signOut(); authError(rpcError.message); return; }
+  } else {
+    if(!password){ authError('Enter your password — or paste an invitation token for a first visit.'); return; }
+    const {error} = await sb.auth.signInWithPassword({ email, password });
+    if(error){ authError('No auditor account matches those details.'); return; }
+  }
 
-  const {data, error} = await sb.rpc('auditor_login', { p_company_code: code, p_access_code: accessCode });
-  if(error){ authError(error.message); return; }
-  const grant = data && data[0];
-  if(!grant){ authError('Those codes were not recognised — check both with your admin.'); return; }
-
-  session = { email:null, role:'auditor', companyId:grant.company_id, companyName:grant.company_name,
-    companyCode:code, name:grant.grant_name, departments:[], grantId:grant.grant_id, accessCode,
-    expiresAt:grant.expires_at };
-  clearSession(); saveSession(session);
+  const built = await buildSessionFromProfile();
+  if(!built || built==='deleted' || built.role!=='auditor'){ await sb.auth.signOut(); authError('That account is not an auditor account.'); return; }
+  clearSession(); session = built; saveSession(session);
+  await loadMyCompany();
+  const mine = currentCompany();
+  if(!mine || (mine.code||'').toUpperCase()!==code){
+    await sb.auth.signOut(); clearSession(); session = null;
+    authError('That company code does not match this auditor account — check it with your admin.'); return;
+  }
+  if(built.active===false){ await sb.auth.signOut(); clearSession(); session = null; showWaitingRoom('auditor'); return; }
   await bootApp();
 }
 

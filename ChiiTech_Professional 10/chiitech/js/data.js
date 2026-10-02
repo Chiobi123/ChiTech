@@ -20,29 +20,13 @@
    - admin/worker: real Supabase Auth session, real per-table SELECTs,
      scoped automatically by the Row Level Security policies already on
      every table (see migrations 04/06 in the project).
-   - auditor: never a Supabase Auth user at all (kept code-based, by
-     design) — everything for that view comes from one re-validated-
-     every-time RPC, auditor_fetch_data(). See loginAuditor() and
-     validateAuditorGrant() in the other files for how that's used.
-     Nothing is ever written back for an auditor session — see
-     saveState() below.
+   - auditor: a Supabase Auth user like everyone else (invitation model) — same per-table SELECTs fenced by SELECT-only RLS plus the write refusal in saveBusiness() below. Nothing is ever written back.
    ============================================================ */
 
 const SUPER_ADMIN_EMAIL = 'igbanichiobiebere@gmail.com';
 
 function isSuperAdmin(email){
   return (email||'').trim().toLowerCase() === SUPER_ADMIN_EMAIL;
-}
-
-/** A unique, hard-to-guess code for a single auditor grant — separate
- *  from a company's own code, since this one is meant to be shared with
- *  one external person for one engagement and revoked after. Generated
- *  client-side; the database's own unique constraint on the column is
- *  the real backstop against a collision (astronomically unlikely at
- *  this length, but the insert would simply fail cleanly if it ever
- *  happened, rather than silently overwriting someone else's grant). */
-function genAuditorCode(){
-  return 'AUD-' + Math.random().toString(36).slice(2,7).toUpperCase();
 }
 
 function tsToIso(ms){ return ms ? new Date(ms).toISOString() : null; }
@@ -75,7 +59,7 @@ function seedEmptyBusiness(){
     growth: { mode:'automated', chartStyle:'bar', dashboardChartType:'bar' },
     sop: [], billingHistory: [], payoutConfig: { paystackConnected:false, bankTransfer:null },
     materialityThreshold: 5000, findings: [],
-    team: [], auditorGrants: [], auditVisitLog: [],
+    team: [],
     debts: [], budgets: [], receipts: [], periods: [],
     plans: [], subscription: { planId:'free', status:'active', renewsAt:null },
     meta: { nextId: 100 } // unused now that ids are real uuids — kept only for shape stability
@@ -145,12 +129,6 @@ const SYNC_DEFS = {
       raisedBy:r.raised_by, createdAt:isoToTs(r.created_at), resolvedAt:isoToTs(r.resolved_at),
       resolvedBy:r.resolved_by }) },
 
-  auditorGrants: { table:'auditor_grants',
-    toRow:(o,cid)=>({ id:o.id, company_id:cid, name:o.name, code:o.code,
-      created_at: tsToIso(o.createdAt) || new Date().toISOString(), expires_at: tsToIso(o.expiresAt),
-      created_by:o.createdBy||null, revoked:!!o.revoked, last_visit: tsToIso(o.lastVisit) }),
-    fromRow:r=>({ id:r.id, name:r.name, code:r.code, createdAt:isoToTs(r.created_at),
-      expiresAt:isoToTs(r.expires_at), createdBy:r.created_by, revoked:r.revoked, lastVisit:isoToTs(r.last_visit) }) },
 };
 
 /** Rows in these two arrays are only ever added, never edited or
@@ -171,7 +149,7 @@ const INSERT_ONLY_DEFS = {
    shape app.js has always expected.
    ============================================================ */
 async function loadBusiness(companyId){
-  const [products, customers, sales, expenses, orders, sop, auditLog, auditorGrants, visits, team, settings, findings, debts, budgets, receipts, periods, plans, subscription] = await Promise.all([
+  const [products, customers, sales, expenses, orders, sop, auditLog, team, settings, findings, debts, budgets, receipts, periods, plans, subscription] = await Promise.all([
     sb.from('products').select('*').eq('company_id', companyId),
     sb.from('customers').select('*').eq('company_id', companyId),
     sb.from('sales').select('*').eq('company_id', companyId),
@@ -179,8 +157,6 @@ async function loadBusiness(companyId){
     sb.from('orders').select('*').eq('company_id', companyId),
     sb.from('sop').select('*').eq('company_id', companyId),
     sb.from('audit_log').select('*').eq('company_id', companyId).order('time', {ascending:true}),
-    sb.from('auditor_grants').select('*').eq('company_id', companyId),
-    sb.from('audit_visit_log').select('*').eq('company_id', companyId).order('time', {ascending:false}),
     sb.from('profiles').select('id,email,name,role,departments,active').eq('company_id', companyId),
     sb.from('company_settings').select('*').eq('company_id', companyId).maybeSingle(),
     sb.from('audit_findings').select('*').eq('company_id', companyId).order('created_at', {ascending:false}),
@@ -191,7 +167,7 @@ async function loadBusiness(companyId){
     sb.from('plans').select('*').eq('active', true).order('price'),
     sb.from('subscriptions').select('*').eq('company_id', companyId).maybeSingle(),
   ]);
-  for(const r of [products,customers,sales,expenses,orders,sop,auditLog,auditorGrants,visits,team,settings,findings,debts,budgets,receipts,periods,plans,subscription]){
+  for(const r of [products,customers,sales,expenses,orders,sop,auditLog,team,settings,findings,debts,budgets,receipts,periods,plans,subscription]){
     if(r.error){ console.error('loadBusiness:', r.error); toast('Could not load some data — ' + r.error.message, 4000); }
   }
 
@@ -203,10 +179,6 @@ async function loadBusiness(companyId){
   biz.orders = (orders.data||[]).map(SYNC_DEFS.orders.fromRow);
   biz.sop = (sop.data||[]).map(SYNC_DEFS.sop.fromRow);
   biz.auditLog = (auditLog.data||[]).map(INSERT_ONLY_DEFS.auditLog.fromRow);
-  biz.auditorGrants = (auditorGrants.data||[]).map(SYNC_DEFS.auditorGrants.fromRow);
-  // Read-only: written by the auditor_login() RPC only, never synced
-  // back from here — the admin's page just displays it.
-  biz.auditVisitLog = (visits.data||[]).map(r=>({ id:r.id, grantId:r.grant_id, auditorName:r.auditor_name, time:isoToTs(r.time) }));
   biz.team = (team.data||[]).map(r=>({ id:r.id, email:r.email, name:r.name, role:r.role,
     departments:r.departments||[], active:r.active }));
   biz.findings = (findings.data||[]).map(SYNC_DEFS.findings.fromRow);
@@ -235,7 +207,7 @@ async function loadBusiness(companyId){
   // everything every time.
   biz.__synced = JSON.parse(JSON.stringify({
     products: biz.products, customers: biz.customers, sales: biz.sales, expenses: biz.expenses,
-    orders: biz.orders, sop: biz.sop, auditorGrants: biz.auditorGrants, findings: biz.findings,
+    orders: biz.orders, sop: biz.sop, findings: biz.findings,
     expenseCategories: biz.expenseCategories, taxSettings: biz.taxSettings, growth: biz.growth,
     payoutConfig: biz.payoutConfig, billingHistory: biz.billingHistory, materialityThreshold: biz.materialityThreshold,
   }));
@@ -322,7 +294,6 @@ async function saveBusiness(companyId, state){
       syncArrayTable(SYNC_DEFS.expenses, state.expenses, state.__synced.expenses, companyId),
       syncArrayTable(SYNC_DEFS.orders, state.orders, state.__synced.orders, companyId),
       syncArrayTable(SYNC_DEFS.sop, state.sop, state.__synced.sop, companyId),
-      syncArrayTable(SYNC_DEFS.auditorGrants, state.auditorGrants, state.__synced.auditorGrants, companyId),
       syncArrayTable(SYNC_DEFS.findings, state.findings, state.__synced.findings, companyId),
       syncInsertOnlyTable(INSERT_ONLY_DEFS.auditLog, state.auditLog, state.__syncedAuditLogIds, companyId),
       syncCompanySettings(state, companyId),
@@ -333,7 +304,7 @@ async function saveBusiness(companyId, state){
     // saveState() call only diffs what changes from here on.
     state.__synced = JSON.parse(JSON.stringify({
       products:state.products, customers:state.customers, sales:state.sales, expenses:state.expenses,
-      orders:state.orders, sop:state.sop, auditorGrants:state.auditorGrants, findings:state.findings,
+      orders:state.orders, sop:state.sop, findings:state.findings,
       expenseCategories:state.expenseCategories, taxSettings:state.taxSettings, growth:state.growth,
       payoutConfig:state.payoutConfig, billingHistory:state.billingHistory, materialityThreshold:state.materialityThreshold,
     }));
