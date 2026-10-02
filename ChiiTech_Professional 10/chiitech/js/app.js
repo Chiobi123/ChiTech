@@ -329,6 +329,7 @@ function renderAll(){
 }
 
 function showSection(name, fromBack){
+  if(name!=='auditor-preview') auditorPreview = false;
   // Paywall: inactive subscriptions see Billing only (admin) — workers are
   // stopped at boot with an explanatory message instead.
   if(session && billingLocked() && name!=='billing'){
@@ -1944,11 +1945,11 @@ async function inviteWorker(){
 async function loadInvitations(){
   const el = document.getElementById('invite-table');
   if(!el) return;
-  const {data, error} = await sb.from('worker_invitations').select('id,email,status,expires_at,created_at').eq('company_id', session.companyId).order('created_at', {ascending:false});
-  if(error){ el.innerHTML = `<tr><td colspan="4" class="text-muted">Could not load invitations.</td></tr>`; return; }
+  const {data, error} = await sb.from('worker_invitations').select('id,email,token,status,expires_at,created_at').eq('company_id', session.companyId).order('created_at', {ascending:false});
+  if(error){ el.innerHTML = `<tr><td colspan="5" class="text-muted">Could not load invitations.</td></tr>`; return; }
   el.innerHTML = (data||[]).map(inv=>`<tr>
     <td>${escapeHtml(inv.email)}</td>
-    <td>${escapeHtml(inv.status)}${inv.status==='pending' && new Date(inv.expires_at) < new Date() ? ' (expired)' : ''}</td>
+    <td>${inv.status==='pending' ? `<code>${escapeHtml(inv.token)}</code> <button class="btn btn-sm" onclick="copyCode('${escapeHtml(inv.token)}')" title="Copy exact token">Copy</button>` : escapeHtml(inv.status)}${inv.status==='pending' && new Date(inv.expires_at) < new Date() ? ' (expired)' : ''}</td>
     <td>${new Date(inv.expires_at).toLocaleDateString('en-NG')}</td>
     <td>${inv.status==='pending' ? `<button class="btn btn-sm" onclick="resendInvitation('${inv.id}')">Resend</button> <button class="btn btn-sm" onclick="revokeInvitation('${inv.id}')" style="margin-left:4px;">Revoke</button>` : ''}</td>
   </tr>`).join('') || `<tr><td colspan="4" class="text-muted">No invitations yet.</td></tr>`;
@@ -2093,6 +2094,26 @@ function renderAuditorAccess(){
   document.getElementById('auditor-visits-table').innerHTML = visits.slice(0,30).map(v=>`
     <tr><td>${escapeHtml(v.auditorName)}</td><td>${new Date(v.time).toLocaleString('en-NG',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short',year:'numeric'})}</td></tr>
   `).join('') || `<tr><td colspan="2" class="text-muted">No auditor visits logged yet.</td></tr>`;
+}
+
+/* Admin preview of the Auditor Command Center: renders the exact same
+   read-only view with the admin's own (full) company data, clearly badged
+   as a preview. No session change, no auditor codes needed. */
+let auditorPreview = false;
+function previewAuditorView(){
+  if(!session || session.role!=='company_admin') return;
+  auditorPreview = true;
+  navStack.push(currentSection);
+  currentSection = 'auditor-preview';
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-auditor').classList.add('active');
+  document.getElementById('back-btn').classList.remove('hidden');
+  renderAuditorCommandCenter();
+  toast('Preview — auditors see exactly this, read-only. Back returns you.');
+}
+function endAuditorPreview(){
+  auditorPreview = false;
+  goBack();
 }
 
 /* ================= BILLING & PAYOUTS =================
