@@ -284,7 +284,7 @@ async function joinAsWorker(){
   clearSession(); saveSession(session);
   await bootApp();
   setTimeout(()=> toast(kind==='auditor'
-    ? 'Auditor invitation accepted — your admin will approve you shortly, then sign in on the main screen.'
+    ? 'Auditor invitation accepted — access is active now. Sign in on the main screen.'
     : 'Invitation accepted — your admin will assign your access and approve you shortly.', 6000), 400);
 }
 
@@ -315,12 +315,12 @@ function showUnlinkedNotice(email){
 
 /** Waiting room: invite accepted but admin hasn't approved yet. The login
  *  screen stays, showing where to return — no dashboard, no data. */
-function showWaitingRoom(who){
+function showWaitingRoom(who, note){
   clearSession(); session = null;
   try{ document.getElementById('app').classList.add('hidden'); }catch(e){}
   try{ document.getElementById('login-screen').classList.remove('hidden'); }catch(e){}
   try{
-    document.getElementById('waiting-text').textContent =
+    document.getElementById('waiting-text').textContent = note ||
       `Your ${who||'worker'} account is created. Ask your company admin to assign your access and approve you, then sign in again on this screen.`;
   }catch(e){}
   showAuthView('waiting');
@@ -443,7 +443,7 @@ async function finishAuditorSignIn(code, firstVisit){
     await sb.auth.signOut(); clearSession(); session = null;
     authError('That company code does not match this auditor account — check it with your admin.'); return;
   }
-  if(built.active===false){ await sb.auth.signOut(); clearSession(); session = null; showWaitingRoom('auditor'); return; }
+  if(built.active===false){ await sb.auth.signOut(); clearSession(); session = null; showWaitingRoom('auditor', 'This auditor access is currently suspended. Contact the company admin to reinstate it.'); return; }
   await bootAuditorDirect();
   if(firstVisit) setTimeout(()=> toast('Invitation accepted — welcome to your read-only Command Center.', 5000), 400);
 }

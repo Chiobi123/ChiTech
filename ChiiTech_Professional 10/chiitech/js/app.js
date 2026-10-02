@@ -85,7 +85,8 @@ window.addEventListener('DOMContentLoaded', async () => {
       }
       else if(check.reason==='not-approved'){
         session = null; try{ await sb.auth.signOut(); }catch(e){}
-        showWaitingRoom(check.role);
+        if(check.role==='auditor') showWaitingRoom('auditor', 'This auditor access is currently suspended. Contact the company admin to reinstate it.');
+        else showWaitingRoom(check.role);
       }
       else { session = null; try{ await sb.auth.signOut(); }catch(e){} }
     }
