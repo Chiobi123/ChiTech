@@ -449,12 +449,30 @@ async function finishAuditorSignIn(code, firstVisit){
 }
 
 /** Direct auditor boot: renders the Command Center immediately, bypassing
- *  every gate. Called by finishAuditorSignIn after all checks pass. */
+ *  every gate. Called by finishAuditorSignIn after all checks pass.
+ *  Uses auditor_self_data() RPC — auditors cannot read their own profiles
+ *  row via RLS, so loadBusiness() would throw and bounce them to sign-in. */
 async function bootAuditorDirect(){
   veilOn();
   try {
-    await loadMyCompany();
-    state = await loadBusiness(session.companyId);
+    const {data, error} = await sb.rpc('auditor_self_data');
+    if(error) throw error;
+    const d = data || {};
+    state = seedEmptyBusiness();
+    state.products = (d.products||[]).map(r=>({ id:r.id, name:r.name, category:r.category, cost:Number(r.cost), price:Number(r.price), stock:Number(r.stock), reorder:Number(r.reorder), updatedBy:r.updatedBy }));
+    state.sales = (d.sales||[]).map(r=>({ id:r.id, invoiceNo:r.invoiceNo, time:isoToTs(r.time), items:r.items||[], itemsSummary:r.itemsSummary, subtotal:Number(r.subtotal), discount:Number(r.discount), vat:Number(r.vat), total:Number(r.total), cost:Number(r.cost), customerId:r.customerId, customerName:r.customerName, payment:r.payment, recordedBy:r.recordedBy }));
+    state.expenses = (d.expenses||[]).map(r=>({ id:r.id, time:isoToTs(r.time), category:r.category, note:r.note, amount:Number(r.amount), flag:r.flag, reason:r.reason, loggedBy:r.loggedBy }));
+    state.orders = (d.orders||[]).map(r=>({ id:r.id, channel:r.channel, customerName:r.customerName, items:r.items, total:Number(r.total), status:r.status, placedAt:isoToTs(r.placedAt), notes:r.notes }));
+    state.sop = (d.sop||[]).map(r=>({ id:r.id, area:r.area, description:r.description, frequency:r.frequency, responsible:r.responsible, createdAt:isoToTs(r.createdAt), lastReviewed:isoToTs(r.lastReviewed) }));
+    state.auditLog = (d.auditLog||[]).map(r=>({ id:r.id, time:isoToTs(r.time), action:r.action, details:r.details, prevHash:r.prevHash, hash:r.hash, user:r.user }));
+    state.team = (d.team||[]).map(r=>({ id:r.id, name:r.name, email:r.email, role:r.role, departments:r.departments||[], active:r.active }));
+    state.findings = (d.findings||[]).map(r=>({ id:r.id, title:r.title, description:r.description, severity:r.severity, status:r.status, raisedBy:r.raisedBy, createdAt:isoToTs(r.createdAt), resolvedAt:r.resolvedAt?isoToTs(r.resolvedAt):null, resolvedBy:r.resolvedBy }));
+    if(d.settings){
+      state.expenseCategories = d.settings.expenseCategories || state.expenseCategories;
+      state.taxSettings = d.settings.taxSettings || state.taxSettings;
+      state.growth = d.settings.growth || state.growth;
+      state.materialityThreshold = d.settings.materialityThreshold!=null ? Number(d.settings.materialityThreshold) : state.materialityThreshold;
+    }
     document.querySelectorAll('.nav-link, .mobile-nav .nav-item').forEach(el=>{
       el.classList.toggle('hidden', el.dataset.nav!=='auditor');
     });
