@@ -300,6 +300,24 @@ function renderAll(){
 
 function showSection(name, fromBack){
   if(name!=='auditor-preview') auditorPreview = false;
+  // Auditors are exempt from the paywall: their access is admin-approved
+  // (waiting room + approval), not subscription-gated. Without this the
+  // auditor boot looped: sign-in → bootApp → showSection → billing.
+  if(session && session.role==='auditor' && name==='auditor'){
+    if(!fromBack && currentSection && currentSection!==name){ navStack.push(currentSection); }
+    currentSection = name;
+    document.getElementById('back-btn').classList.toggle('hidden', navStack.length===0);
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    const sec = document.getElementById('sec-'+name);
+    if(sec) sec.classList.add('active');
+    document.querySelectorAll('.nav-link, .mobile-nav .nav-item').forEach(el=>{
+      el.classList.toggle('active', el.dataset.target === name);
+    });
+    toggleMobileMenu(false);
+    if(state) renderAll();
+    veilOff();
+    return;
+  }
   // Paywall: inactive subscriptions see Billing only (admin) — workers are
   // stopped at boot with an explanatory message instead.
   if(session && billingLocked() && name!=='billing'){
