@@ -284,6 +284,7 @@ function safeRender(name, fn){
 
 function renderAll(){
   if(session.role==='super_admin'){ safeRender('Platform console', renderSuperAdmin); return; }
+  if(session.role==='auditor'){ safeRender('Auditor Command Center', renderAuditorCommandCenter); return; }
   safeRender('Dashboard', renderDashboard);
   safeRender('Sales', renderSales);
   safeRender('Products', renderProducts);
@@ -314,7 +315,8 @@ function showSection(name, fromBack){
       el.classList.toggle('active', el.dataset.target === name);
     });
     toggleMobileMenu(false);
-    if(state) renderAll();
+    // Do NOT call renderAll() here — bootApp already rendered the Command
+    // Center. renderAll() would render every section for an auditor.
     veilOff();
     return;
   }
