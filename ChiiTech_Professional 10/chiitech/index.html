@@ -137,6 +137,7 @@
         <div class="auth-subtab" data-sub="aud-accept" onclick="showAuditorSub('accept')">First visit — accept invitation</div>
       </div>
       <div id="aud-signin">
+        <div class="auth-highlight"><span class="badge badge-ok">Returning auditors</span><br>Approved already? Sign in here — no token needed.</div>
         <p class="text-muted" style="font-size:11.5px;margin-bottom:14px;">
           Already approved? Sign in with your email and password — plus your company code.
           Read-only, always.
@@ -147,6 +148,7 @@
         <button class="btn btn-primary btn-block" onclick="loginAuditorReturning()">Sign in as auditor</button>
       </div>
       <div id="aud-accept" class="hidden">
+        <div class="auth-highlight alt"><span class="badge badge-warn">First visit</span><br>Invited but no account yet? Accept here — token + new password.</div>
         <p class="text-muted" style="font-size:11.5px;margin-bottom:14px;">
           Invited by a company admin? Enter the company code, your name, invited email and
           invitation token, choose a password — then wait for approval.

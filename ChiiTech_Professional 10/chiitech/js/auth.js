@@ -257,8 +257,15 @@ async function joinAsWorker(){
   const {data:{user:existing}} = await sb.auth.getUser();
   if(!existing){
     const {data, error} = await sb.auth.signUp({ email, password });
-    if(error){ authError(error.message); return; }
-    if(!data.session){ authError('Check your email to confirm your account, then sign in and accept the invitation.'); return; }
+    if(error){
+      // Account exists but was never linked: sign in with the given
+      // password and continue accepting below — never dead-end.
+      if(/already|exists|registered/i.test(error.message||'')){
+        const {error:signError} = await sb.auth.signInWithPassword({ email, password });
+        if(signError){ authError('That email already has an account — sign in on the main screen first, then accept the invitation here.'); return; }
+      } else { authError(error.message); return; }
+    }
+    else if(!data.session){ authError('Check your email to confirm your account, then sign in and accept the invitation.'); return; }
   }
 
   // One token field serves both invitation kinds: worker tokens first,
@@ -405,12 +412,13 @@ async function acceptAuditorInvite(){
   if(!existing){
     const {data, error} = await sb.auth.signUp({ email, password });
     if(error){
-      if(/already|exists|registered/i.test(error.message)){
-        authError('That email already has an account — use “Sign in” above instead (no token needed).');
-      } else authError(error.message);
-      return;
-    }
-    if(!data.session){ authError('Check your email to confirm your account, then accept again.'); return; }
+      // Account already exists but was never linked: sign in with the
+      // given password and continue accepting below — never dead-end.
+      if(/already|exists|registered/i.test(error.message||'')){
+        const {error:signError} = await sb.auth.signInWithPassword({ email, password });
+        if(signError){ authError('That email already has an account — sign in on the “Sign in” tab instead (no token needed).'); return; }
+      } else { authError(error.message); return; }
+    } else if(!data.session){ authError('Check your email to confirm your account, then accept again.'); return; }
   }
   const {error:rpcError} = await sb.rpc('accept_auditor_invite', { p_token: token });
   if(rpcError){
