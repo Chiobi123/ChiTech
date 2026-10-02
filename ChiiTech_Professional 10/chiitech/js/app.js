@@ -57,6 +57,23 @@ window.addEventListener('DOMContentLoaded', async () => {
     el.addEventListener('click', ()=> setAuditorAnalysisMode(el.dataset.mode));
   });
 
+  // Invitation links (?cc=..&ac=..) prefill the auditor form — the auditor
+  // never types codes by hand. Prefill only (never auto-submit), and the
+  // values are scrubbed from the URL immediately after reading.
+  try {
+    const url = new URL(window.location.href);
+    const cc = (url.searchParams.get('cc')||'').replace(/\s+/g,'').toUpperCase();
+    const ac = (url.searchParams.get('ac')||'').replace(/\s+/g,'').toUpperCase();
+    if(cc || ac){
+      showAuthView('auditor');
+      if(cc) document.getElementById('login-auditor-code').value = cc;
+      if(ac) document.getElementById('login-auditor-access').value = ac;
+      toastOnLogin('Codes filled from your invitation link — tap Sign in as auditor.');
+      url.searchParams.delete('cc'); url.searchParams.delete('ac');
+      window.history.replaceState({}, '', url.pathname + window.location.hash);
+    }
+  } catch(e){}
+
   // Section 1 fix: never render protected content from the cached session
   // alone. Revalidate against Supabase Auth + profiles first; the loading
   // veil stays up until validation passes, so neither the sign-in form nor
@@ -1981,8 +1998,7 @@ async function removeWorker(memberId){
    in auth.js for how someone signs in with it, and
    renderAuditorCommandCenter() above for what they see once they do. */
 /** Copy an access code exactly — no retyping, no look-alike letter mistakes. */
-async function copyCode(text){
-  try { await navigator.clipboard.writeText(text); toast('Copied — paste it exactly as-is.'); }
+async function copyCode(text){  try { await navigator.clipboard.writeText(text); toast('Copied — paste it exactly as-is.'); }
   catch(e){
     const ta = document.createElement('textarea');
     ta.value = text; document.body.appendChild(ta); ta.select();
@@ -1990,6 +2006,15 @@ async function copyCode(text){
     catch(_){ toast('Copy failed — type it carefully, watching I/l and 0/O.', 5000); }
     ta.remove();
   }
+}
+/** Shareable auditor link: company + access codes ride in the URL, the
+ *  login page fills them in itself. Send this instead of dictating codes. */
+function copyInviteLink(accessCode){
+  const company = currentCompany();
+  const url = window.location.origin + window.location.pathname +
+    '?cc=' + encodeURIComponent(company ? company.code : '') +
+    '&ac=' + encodeURIComponent(accessCode);
+  copyCode(url);
 }
 async function grantAuditorAccess(){
   const name = document.getElementById('aud-grant-name').value.trim();
@@ -2032,7 +2057,7 @@ function renderAuditorAccess(){
     const badgeCls = status==='Active' ? 'badge-ok' : status==='Expired' ? 'badge-muted' : 'badge-danger';
     return `<tr>
       <td>${escapeHtml(g.name)}</td>
-      <td><code>${escapeHtml(g.code)}</code> <button class="btn btn-sm" onclick="copyCode('${escapeHtml(g.code)}')" title="Copy exact code">Copy</button></td>
+      <td><code>${escapeHtml(g.code)}</code> <button class="btn btn-sm" onclick="copyCode('${escapeHtml(g.code)}')" title="Copy exact code">Copy</button> <button class="btn btn-sm btn-primary" onclick="copyInviteLink('${escapeHtml(g.code)}')" title="Copy a link that fills the codes in automatically" style="margin-left:4px;">Copy invite link</button></td>
       <td>${new Date(g.createdAt).toLocaleDateString('en-NG')}</td>
       <td>${g.expiresAt ? new Date(g.expiresAt).toLocaleDateString('en-NG') : 'No expiry'}</td>
       <td><span class="badge ${badgeCls}">${status}</span></td>
