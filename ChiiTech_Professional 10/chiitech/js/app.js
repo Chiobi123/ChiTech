@@ -187,23 +187,10 @@ async function bootApp(){
   }
 
 /** Visible step-by-step trace for auditor boot: if anything ever stalls,
- *  the last shown step names exactly where. Cleared on success. */
-function auditorBootTrace(msg){
-  try {
-    let el = document.getElementById('auditor-boot-status');
-    if(msg && !el){
-      el = document.createElement('div');
-      el.id = 'auditor-boot-status';
-      el.className = 'text-muted';
-      el.style.cssText = 'font-size:12px;padding:8px 0;';
-      const app = document.getElementById('app');
-      if(app) app.prepend(el);
-    }
-    if(!el) return;
-    if(msg){ el.textContent = 'Auditor sign-in: ' + msg; el.style.display = ''; }
-    else { el.textContent = ''; el.style.display = 'none'; }
-  } catch(e){}
-}
+ *  the last shown step names exactly where. Cleared on success.
+ *  (Retired from active use — boot is now direct — kept as a no-op so any
+ *  older cached page calling it cannot crash.) */
+function auditorBootTrace(msg){ return; }
 
   document.getElementById('delete-account-link').classList.remove('hidden');
   await loadMyCompany();
@@ -276,11 +263,32 @@ function renderAll(){
   safeRender('Orders', renderOrders);
   safeRender('Expenses', renderExpenses);
   safeRender('Tax analysis', renderTax);
-  safeRender('Tax analysis', renderTax);
   safeRender('Audit trail', renderAudit);
   safeRender('Growth engine', renderGrowth);
   safeRender('Billing', renderBilling);
   if(session.role==='company_admin'){ safeRender('Team', renderTeam); safeRender('Auditor access', renderAuditorAccess); }
+}
+
+/** Render only the visible section — navigation stays instant no matter
+ *  how large the books grow. Full renderAll runs once at boot. */
+function renderSection(name){
+  if(!state || !session) return;
+  try {
+    if(session.role==='super_admin'){ safeRender('Platform console', renderSuperAdmin); return; }
+    if(session.role==='auditor'){ safeRender('Auditor Command Center', renderAuditorCommandCenter); return; }
+    if(name==='dashboard') safeRender('Dashboard', renderDashboard);
+    else if(name==='sales') safeRender('Sales', renderSales);
+    else if(name==='products') safeRender('Products', renderProducts);
+    else if(name==='customers') safeRender('Customers', renderCustomers);
+    else if(name==='orders') safeRender('Orders', renderOrders);
+    else if(name==='expenses') safeRender('Expenses', renderExpenses);
+    else if(name==='tax') safeRender('Tax analysis', renderTax);
+    else if(name==='audit') safeRender('Audit trail', renderAudit);
+    else if(name==='growth') safeRender('Growth engine', renderGrowth);
+    else if(name==='billing') safeRender('Billing', renderBilling);
+    else if(name==='team'||name==='auditoraccess'){ if(session.role==='company_admin'){ safeRender('Team', renderTeam); safeRender('Auditor access', renderAuditorAccess); } }
+    else if(name==='imports'){ if(session.role==='company_admin'){ renderAll(); } }
+  } catch(e){ console.error('renderSection:'+name, e); }
 }
 
 function showSection(name, fromBack){
@@ -327,7 +335,7 @@ function showSection(name, fromBack){
     el.classList.toggle('active', el.dataset.target === name);
   });
   toggleMobileMenu(false);
-  if(state) renderAll();
+  if(state) renderSection(name);
   veilOff();
 }
 
@@ -348,27 +356,9 @@ function toggleMobileMenu(force){
   backdrop.classList.toggle('show', open);
 }
 
-/** Long section explainers fold into a "Learn more" toggle so pages stay
- *  scannable — the guidance is one tap away, never a wall of text. Safe
- *  to call repeatedly; each explainer is processed once. */
-function makeExplainersCollapsible(){
-  document.querySelectorAll('.section-explainer').forEach(el=>{
-    if(el.dataset.folded) return;
-    el.dataset.folded = '1';
-    if(el.textContent.trim().length < 220) return;
-    el.classList.add('foldable');
-    const btn = document.createElement('button');
-    btn.className = 'explainer-toggle';
-    btn.textContent = 'Learn more ▾';
-    btn.setAttribute('aria-expanded', 'false');
-    btn.onclick = ()=>{
-      const open = el.classList.toggle('open');
-      btn.textContent = open ? 'Show less ▴' : 'Learn more ▾';
-      btn.setAttribute('aria-expanded', String(open));
-    };
-    el.after(btn);
-  });
-}
+/* Retired: section explainers now always show in full (owner decision).
+   Kept as a no-op so older cached pages calling it cannot crash. */
+function makeExplainersCollapsible(){ return; }
 
 /** Generic "Show more / Show less" for long tables: collapses a list
  *  into a fixed-height, scrollable box, with a button to expand it to

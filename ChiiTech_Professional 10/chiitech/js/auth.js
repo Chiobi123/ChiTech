@@ -73,6 +73,7 @@ async function loadMyCompany(){
 function currentCompany(){
   if(myCompany && (!session || !session.companyId || myCompany.id===session.companyId)) return myCompany;
   if(!session || !session.companyId) return null;
+  if(!platform || !platform.companies) return null;
   return platform.companies.find(c=>c.id===session.companyId) || null;
 }
 
@@ -504,9 +505,12 @@ async function bootAuditorDirect(){
       state.growth = d.settings.growth || state.growth;
       state.materialityThreshold = d.settings.materialityThreshold!=null ? Number(d.settings.materialityThreshold) : state.materialityThreshold;
     }
-    // Hide login, show app — synchronously, no gaps.
+    // Hide login, show app — synchronously, no gaps. The Command Center
+    // shell (with its loading placeholders) appears instantly; records
+    // fill in below as this same block runs.
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
+    try { await loadMyCompany(); } catch(e){}
     document.querySelectorAll('.nav-link, .mobile-nav .nav-item').forEach(el=>{
       el.classList.toggle('hidden', el.dataset.nav!=='auditor');
     });
@@ -530,6 +534,10 @@ async function bootAuditorDirect(){
   } catch(e){
     console.error('auditor boot:', e);
     veilOff();
+    try{
+      document.getElementById('app').classList.add('hidden');
+      document.getElementById('login-screen').classList.remove('hidden');
+    }catch(_){}
     toast('Command Center hit a display problem (' + (e.message||'error') + ') — your access is fine, tell support those words.');
   }
 }
