@@ -1500,7 +1500,7 @@ function renderAuditorAIAnalysis(score, opinion, openFlags, benfordFlag, overdue
 }
 
 function renderAuditorCommandCenter(){
-  renderAuditGlossary('ac-audit-glossary');
+  safeRender('Audit glossary', ()=>renderAuditGlossary('ac-audit-glossary'));
 
   const score = computeHealthScore();
   animateStatNumber('ac-confidence', score, v=>Math.round(v)+'%');
@@ -1513,13 +1513,13 @@ function renderAuditorCommandCenter(){
   document.getElementById('ac-opinion-card').className = 'stat ' + opinion.cls;
 
   document.getElementById('ac-materiality').textContent = fmtN(state.materialityThreshold);
-  renderFindings('ac-findings-list', false);
+  safeRender('Findings', ()=>renderFindings('ac-findings-list', false));
 
-  renderTrialBalance('ac-trial-balance');
-  renderSoD('ac-sod-table', 'ac-sod');
-  renderBenfordDistribution('ac-benford-chart');
-  renderSOPs('ac-sop-list', 'ac-sop-coverage', true);
-  renderAuditLogRows('ac-audit-log', 30);
+  safeRender('Trial balance', ()=>renderTrialBalance('ac-trial-balance'));
+  safeRender('Duties matrix', ()=>renderSoD('ac-sod-table', 'ac-sod'));
+  safeRender('Benford chart', ()=>renderBenfordDistribution('ac-benford-chart'));
+  safeRender('Procedures', ()=>renderSOPs('ac-sop-list', 'ac-sop-coverage', true));
+  safeRender('Activity log', ()=>renderAuditLogRows('ac-audit-log', 30));
 
   const mode = getAuditorAnalysisMode();
   document.querySelectorAll('#ac-mode-select .chip-opt').forEach(el=>el.classList.toggle('active', el.dataset.mode===mode));
