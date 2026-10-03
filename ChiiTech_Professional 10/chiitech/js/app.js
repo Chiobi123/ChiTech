@@ -232,6 +232,11 @@ function auditorBootTrace(msg){ return; }
     if(dept==='admin') return session.role==='company_admin';
     return canAccess(dept);
   });
+  if(!firstAllowed){
+    veilOff();
+    toast(session.role==='worker' ? 'No sections assigned yet — ask your admin to assign your access.' : 'Nothing to show.');
+    return;
+  }
   showSection(firstAllowed || 'dashboard');
 }
 
@@ -322,7 +327,7 @@ function showSection(name, fromBack){
   // wrong role, even via console calls or stale nav state.
   if(session){
     if(name==='superadmin' && session.role!=='super_admin'){ toast('Platform console is for the site owner only.'); return; }
-    if((name==='team'||name==='billing'||name==='auditoraccess'||name==='imports') && session.role!=='company_admin'){ toast('Only the company admin can open that section.'); return; }
+    if((name==='dashboard'||name==='team'||name==='billing'||name==='auditoraccess'||name==='imports') && session.role!=='company_admin'){ toast(name==='dashboard'?'The dashboard is for the company admin.':'Only the company admin can open that section.'); return; }
     if(name==='auditor' && session.role!=='auditor'){ toast('The Auditor Command Center needs an auditor access code — use Auditor access instead.'); return; }
   }
   if(!fromBack && currentSection && currentSection!==name){ navStack.push(currentSection); }

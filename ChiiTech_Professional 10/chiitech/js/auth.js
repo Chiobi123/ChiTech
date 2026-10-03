@@ -691,7 +691,7 @@ function canAccess(dept){
    'auditor' role, since it's the Command Center built specifically for
    that locked-down, read-only session. */
 const SECTION_ACCESS = {
-  dashboard: null,
+  dashboard: 'admin',
   sales: 'sales',
   products: 'products',
   customers: 'customers',
