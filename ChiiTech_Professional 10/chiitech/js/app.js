@@ -328,7 +328,7 @@ function showSection(name, fromBack){
   if(session){
     if(name==='superadmin' && session.role!=='super_admin'){ toast('Platform console is for the site owner only.'); return; }
     if((name==='dashboard'||name==='team'||name==='billing'||name==='auditoraccess'||name==='imports') && session.role!=='company_admin'){ toast(name==='dashboard'?'The dashboard is for the company admin.':'Only the company admin can open that section.'); return; }
-    if(name==='auditor' && session.role!=='auditor'){ toast('The Auditor Command Center needs an auditor access code — use Auditor access instead.'); return; }
+    if(name==='auditor' && session.role!=='auditor'){ toast('The Auditor Command Center is for approved auditors — see Auditor access instead.'); return; }
   }
   if(!fromBack && currentSection && currentSection!==name){ navStack.push(currentSection); }
   currentSection = name;
