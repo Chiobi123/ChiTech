@@ -478,6 +478,13 @@ async function finishAuditorSignIn(code, firstVisit){
  *  Fully synchronous after the RPC — no async gaps for the login screen. */
 async function bootAuditorDirect(){
   veilOn();
+  // Blackout first: deactivate every section and hide every nav item
+  // synchronously, BEFORE any await — so no admin chrome can appear
+  // for even a frame while the auditor's records load.
+  try {
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.nav-link, .mobile-nav .nav-item').forEach(el=>el.classList.add('hidden'));
+  } catch(e){}
   try {
     const {data, error} = await sb.rpc('auditor_self_data');
     if(error) throw error;
