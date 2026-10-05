@@ -146,28 +146,23 @@ const INSERT_ONLY_DEFS = {
 
 /* ============================================================
    LOAD — real per-company SELECTs, assembled into the same `state`
-   shape app.js has always expected.
+   shape app.js has always expected. Split for speed: CRITICAL tables
+   (dashboard needs) resolve first so first paint lands fast; the rest
+   stream in behind via state.__ready. saveBusiness() waits for __ready,
+   so the diff can never mistake "not loaded yet" for "deleted".
    ============================================================ */
 async function loadBusiness(companyId){
-  const [products, customers, sales, expenses, orders, sop, auditLog, team, settings, findings, debts, budgets, receipts, periods, plans, subscription] = await Promise.all([
+  const [products, customers, sales, expenses, team, settings, plans, subscription] = await Promise.all([
     sb.from('products').select('*').eq('company_id', companyId),
     sb.from('customers').select('*').eq('company_id', companyId),
     sb.from('sales').select('*').eq('company_id', companyId),
     sb.from('expenses').select('*').eq('company_id', companyId),
-    sb.from('orders').select('*').eq('company_id', companyId),
-    sb.from('sop').select('*').eq('company_id', companyId),
-    sb.from('audit_log').select('*').eq('company_id', companyId).order('time', {ascending:true}),
     sb.from('profiles').select('id,email,name,role,departments,active').eq('company_id', companyId),
     sb.from('company_settings').select('*').eq('company_id', companyId).maybeSingle(),
-    sb.from('audit_findings').select('*').eq('company_id', companyId).order('created_at', {ascending:false}),
-    sb.from('debts').select('*').eq('company_id', companyId).order('created_at', {ascending:false}),
-    sb.from('budgets').select('*').eq('company_id', companyId),
-    sb.from('receipts').select('id,record_type,record_id,mime,created_at').eq('company_id', companyId),
-    sb.from('accounting_periods').select('*').eq('company_id', companyId).order('month', {ascending:false}),
     sb.from('plans').select('*').eq('active', true).order('price'),
     sb.from('subscriptions').select('*').eq('company_id', companyId).maybeSingle(),
   ]);
-  for(const r of [products,customers,sales,expenses,orders,sop,auditLog,team,settings,findings,debts,budgets,receipts,periods,plans,subscription]){
+  for(const r of [products,customers,sales,expenses,team,settings,plans,subscription]){
     if(r.error){ console.error('loadBusiness:', r.error); toast('Could not load some data — ' + r.error.message, 4000); }
   }
 
@@ -176,18 +171,16 @@ async function loadBusiness(companyId){
   biz.customers = (customers.data||[]).map(SYNC_DEFS.customers.fromRow);
   biz.sales = (sales.data||[]).map(SYNC_DEFS.sales.fromRow);
   biz.expenses = (expenses.data||[]).map(SYNC_DEFS.expenses.fromRow);
-  biz.orders = (orders.data||[]).map(SYNC_DEFS.orders.fromRow);
-  biz.sop = (sop.data||[]).map(SYNC_DEFS.sop.fromRow);
-  biz.auditLog = (auditLog.data||[]).map(INSERT_ONLY_DEFS.auditLog.fromRow);
   biz.team = (team.data||[]).map(r=>({ id:r.id, email:r.email, name:r.name, role:r.role,
     departments:r.departments||[], active:r.active }));
-  biz.findings = (findings.data||[]).map(SYNC_DEFS.findings.fromRow);
-  biz.debts = (debts.data||[]).map(r=>({ id:r.id, direction:r.direction, party:r.party,
-    amount:Number(r.amount), dueDate:r.due_date, status:r.status, note:r.note,
-    settledAt:r.settled_at?new Date(r.settled_at).getTime():null }));
-  biz.budgets = (budgets.data||[]).map(r=>({ category:r.category, month:r.month, limit:Number(r.limit_amount) }));
-  biz.receipts = (receipts.data||[]).map(r=>({ id:r.id, recordType:r.record_type, recordId:r.record_id, mime:r.mime }));
-  biz.periods = (periods.data||[]).map(r=>({ month:r.month, closedAt:r.closed_at?new Date(r.closed_at).getTime():null }));
+  biz.findings = [];
+  biz.debts = [];
+  biz.budgets = [];
+  biz.receipts = [];
+  biz.periods = [];
+  biz.orders = [];
+  biz.sop = [];
+  biz.auditLog = [];
   biz.plans = (plans.data||[]).map(r=>({ id:r.id, name:r.name, price:Number(r.price), features:r.features||[], active:r.active }));
   const sub = subscription.data;
   biz.subscription = sub ? { planId:sub.plan_id, status:sub.status, renewsAt:sub.renews_at?new Date(sub.renews_at).getTime():null } : { planId:'free', status:'active', renewsAt:null };
@@ -214,7 +207,50 @@ async function loadBusiness(companyId){
   biz.__syncedAuditLogIds = new Set(biz.auditLog.map(a=>a.id));
   biz.__syncedTeam = JSON.parse(JSON.stringify(biz.team));
 
+  // Deferred tables stream in behind first paint. __ready resolves when
+  // they land; saves wait for it so "not loaded yet" is never diffed as
+  // a deletion. Audit trail capped at the 500 most recent rows.
+  biz.__ready = loadDeferredBusiness(biz, companyId);
+
   return biz;
+}
+
+/** Second wave: everything the dashboard doesn't need for first paint. */
+async function loadDeferredBusiness(biz, companyId){
+  try {
+    const [orders, sop, auditLog, findings, debts, budgets, receipts, periods] = await Promise.all([
+      sb.from('orders').select('*').eq('company_id', companyId),
+      sb.from('sop').select('*').eq('company_id', companyId),
+      sb.from('audit_log').select('*').eq('company_id', companyId).order('time', {ascending:false}).limit(500),
+      sb.from('audit_findings').select('*').eq('company_id', companyId).order('created_at', {ascending:false}),
+      sb.from('debts').select('*').eq('company_id', companyId).order('created_at', {ascending:false}),
+      sb.from('budgets').select('*').eq('company_id', companyId),
+      sb.from('receipts').select('id,record_type,record_id,mime,created_at').eq('company_id', companyId),
+      sb.from('accounting_periods').select('*').eq('company_id', companyId).order('month', {ascending:false}),
+    ]);
+    for(const r of [orders,sop,auditLog,findings,debts,budgets,receipts,periods]){
+      if(r.error){ console.error('loadDeferred:', r.error); }
+    }
+    // Audit log arrives newest-first; keep time-ascending in memory.
+    biz.orders = (orders.data||[]).map(SYNC_DEFS.orders.fromRow);
+    biz.sop = (sop.data||[]).map(SYNC_DEFS.sop.fromRow);
+    biz.auditLog = (auditLog.data||[]).map(INSERT_ONLY_DEFS.auditLog.fromRow).reverse();
+    biz.findings = (findings.data||[]).map(SYNC_DEFS.findings.fromRow);
+    biz.debts = (debts.data||[]).map(r=>({ id:r.id, direction:r.direction, party:r.party,
+      amount:Number(r.amount), dueDate:r.due_date, status:r.status, note:r.note,
+      settledAt:r.settled_at?new Date(r.settled_at).getTime():null }));
+    biz.budgets = (budgets.data||[]).map(r=>({ category:r.category, month:r.month, limit:Number(r.limit_amount) }));
+    biz.receipts = (receipts.data||[]).map(r=>({ id:r.id, recordType:r.record_type, recordId:r.record_id, mime:r.mime }));
+    biz.periods = (periods.data||[]).map(r=>({ month:r.month, closedAt:r.closed_at?new Date(r.closed_at).getTime():null }));
+    const snap = JSON.parse(JSON.stringify({
+      orders: biz.orders, sop: biz.sop, findings: biz.findings,
+    }));
+    Object.assign(biz.__synced, snap);
+    biz.__syncedAuditLogIds = new Set(biz.auditLog.map(a=>a.id));
+    if(typeof renderSection==='function' && typeof currentSection!=='undefined' && currentSection){
+      try { renderSection(currentSection); } catch(e){}
+    }
+  } catch(e){ console.error('loadDeferred:', e); }
 }
 
 /* ============================================================
@@ -286,6 +322,10 @@ async function syncCompanySettings(state, companyId){
 async function saveBusiness(companyId, state){
   if(!state || !state.__synced) return; // not a real, loaded session (e.g. auditor view)
   if(typeof session!=='undefined' && session && session.role==='auditor') return; // read-only, never syncs back
+  if(state.__ready){
+    try { await Promise.race([state.__ready, new Promise((_,rej)=>setTimeout(()=>rej(new Error('slow')),15000))]); }
+    catch(e){ /* save against the critical snapshot; deferred merges on arrival */ }
+  }
   try{
     await Promise.all([
       syncArrayTable(SYNC_DEFS.products, state.products, state.__synced.products, companyId),
