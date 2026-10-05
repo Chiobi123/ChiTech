@@ -1995,10 +1995,6 @@ function previewAuditorView(){
   renderAuditorCommandCenter();
   toast('Preview — auditors see exactly this, read-only. Back returns you.');
 }
-function endAuditorPreview(){
-  auditorPreview = false;
-  goBack();
-}
 
 /* ================= BILLING & PAYOUTS =================
    Online collection only (Paystack). Bank-transfer details removed —

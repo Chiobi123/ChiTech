@@ -788,6 +788,25 @@ tbody tr:hover{background:var(--surface-2);}
   input,select,textarea{font-size:16px;}
 }
 
+/* ---------- Small phones: calm the garden, keep controls thumb-sized ---------- */
+@media (max-width:560px){
+  .flower{opacity:.3;}
+  .flower.f1{left:20%;width:44vmin;height:44vmin;}
+  .flower.f2{display:none;}
+  .flower.f3{width:52vmin;height:52vmin;}
+  .mobile-topbar .hamburger{width:44px;height:44px;}
+}
+
+/* ---------- Landscape phones / short screens: reclaim vertical space ---------- */
+@media (max-height:500px) and (orientation:landscape){
+  .mobile-topbar{padding:8px 16px;}
+  .mobile-nav{padding:6px 6px 8px;}
+  .main{padding-top:56px;}
+  .login-card{padding:18px;}
+  .login-wrap{padding:12px;}
+  .stat .value{font-size:18px;}
+}
+
 /* ============================================================
    VISUAL REFRESH — depth, glow and polish on the black /
    neon-green / white identity. Layout and breakpoints above are

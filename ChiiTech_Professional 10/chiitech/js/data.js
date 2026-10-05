@@ -477,15 +477,6 @@ async function loadPlatform(){
   return { companies, users, salesByCompany, securityAlerts, plans, subscriptions };
 }
 
-/** Only used by the Super Admin console's suspend/activate-company and
- *  pause/reactivate-user actions — both are single, well-defined writes,
- *  so this goes straight to the table rather than through the generic
- *  diff-sync (which is built for a whole company's business bucket). */
-async function savePlatform(platform){
-  // Nothing to do here directly: app.js mutates `platform.companies[].plan`
-  // etc. in memory and this used to be a single localStorage write. The
-  // two call sites that need a real write (suspend a company, pause a
-  // user) call supabase directly — see suspendCompany()/toggleUserActive()
-  // in app.js. This function is kept so those call sites don't need to
-  // change, but performs no write of its own beyond what they already do.
-}
+/** Retired no-op (platform writes go straight to Supabase in app.js).
+ *  Kept as an empty shell so any older cached page calling it cannot crash. */
+async function savePlatform(platform){ return; }

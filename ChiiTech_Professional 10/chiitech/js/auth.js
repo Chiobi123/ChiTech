@@ -563,14 +563,8 @@ function showAuthView(view){
   const err = document.getElementById('auth-error');
   if(err) err.classList.add('hidden');
 }
-// Legacy aliases (old markup called these; kept so nothing breaks).
-function showAuthTab(tab){
-  showAuthView({admin:'signin', worker:'signin', join:'invite', auditor:'auditor', forgot:'forgot'}[tab] || 'signin');
-}
-function showAuthSub(sub){
-  showAuthView(sub === 'register' ? 'register' : 'signin');
-}
-
+/* Legacy view aliases retired with the tab markup — all callers use
+   showAuthView() directly. */
 function showAbout(){
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('about-screen').classList.remove('hidden');
