@@ -193,9 +193,8 @@ async function bootApp(){
 function auditorBootTrace(msg){ return; }
 
   document.getElementById('delete-account-link').classList.remove('hidden');
-  await loadMyCompany();
-  const company = currentCompany();
   state = await loadBusiness(session.companyId);
+  const company = currentCompany();
   document.getElementById('sidebar-sub').textContent = company ? company.name : 'Business console';
   document.getElementById('sidebar-plan').textContent = (company ? company.plan : 'Founding') + ' plan';
   document.getElementById('d-avatar').textContent = initials(session.name);
@@ -212,7 +211,6 @@ function auditorBootTrace(msg){ return; }
   applyAccessControl();
   setupCollapsibleLists();
   makeDivCollapsible('audit-log');
-  renderAll();
 
   const order = ['dashboard','sales','products','customers','orders','expenses','tax','audit','growth','ai','team','billing','auditoraccess'];
   if(session.role!=='super_admin' && billingLocked()){

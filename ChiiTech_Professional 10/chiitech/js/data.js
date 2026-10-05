@@ -152,7 +152,7 @@ const INSERT_ONLY_DEFS = {
    so the diff can never mistake "not loaded yet" for "deleted".
    ============================================================ */
 async function loadBusiness(companyId){
-  const [products, customers, sales, expenses, team, settings, plans, subscription] = await Promise.all([
+  const [products, customers, sales, expenses, team, settings, plans, subscription, myCompanyRow] = await Promise.all([
     sb.from('products').select('*').eq('company_id', companyId),
     sb.from('customers').select('*').eq('company_id', companyId),
     sb.from('sales').select('*').eq('company_id', companyId),
@@ -161,10 +161,12 @@ async function loadBusiness(companyId){
     sb.from('company_settings').select('*').eq('company_id', companyId).maybeSingle(),
     sb.from('plans').select('*').eq('active', true).order('price'),
     sb.from('subscriptions').select('*').eq('company_id', companyId).maybeSingle(),
+    sb.from('companies').select('id,name,code,plan').eq('id', companyId).maybeSingle(),
   ]);
-  for(const r of [products,customers,sales,expenses,team,settings,plans,subscription]){
+  for(const r of [products,customers,sales,expenses,team,settings,plans,subscription,myCompanyRow]){
     if(r.error){ console.error('loadBusiness:', r.error); toast('Could not load some data — ' + r.error.message, 4000); }
   }
+  if(myCompanyRow.data) myCompany = myCompanyRow.data;
 
   const biz = seedEmptyBusiness();
   biz.products = (products.data||[]).map(SYNC_DEFS.products.fromRow);

@@ -134,12 +134,14 @@ async function validateStoredSession(){
  *  Returns null if there's no matching profile yet (shouldn't normally
  *  happen — register/join flows always create one in the same step as
  *  the auth account — but is handled rather than left to throw). */
-async function buildSessionFromProfile(){
-  let user = null;
-  try {
-    const res = await sb.auth.getUser();
-    user = res && res.data ? res.data.user : null;
-  } catch(e){ return null; }
+async function buildSessionFromProfile(knownUser){
+  let user = knownUser || null;
+  if(!user){
+    try {
+      const res = await sb.auth.getUser();
+      user = res && res.data ? res.data.user : null;
+    } catch(e){ return null; }
+  }
   if(!user) return null;
   const {data:profile, error} = await sb.from('profiles').select('*').eq('id', user.id).maybeSingle();
   if(error || !profile) return null;
@@ -207,7 +209,7 @@ async function login(){
     } catch(e){ authError('Platform check failed — try again.'); return; }
   }
 
-  const built = await buildSessionFromProfile();
+  const built = await buildSessionFromProfile(data.user);
   if(built==='deleted'){
     await sb.auth.signOut();
     authError('This account has been closed. Contact support if you believe this is a mistake.'); return;
@@ -349,13 +351,13 @@ async function registerCompanyWithOAuth(){
   const companyName = document.getElementById('oauth-company').value.trim();
   const name = document.getElementById('oauth-name').value.trim();
   if(!companyName || !name){ authError('Enter your company name and your name.'); return; }
-  const {data:{user}} = await sb.auth.getUser();
-  if(user && isSuperAdmin(user.email)){ authError('That address is reserved — sign in normally instead.'); return; }
+  const {data:{user:oauthUser}} = await sb.auth.getUser();
+  if(oauthUser && isSuperAdmin(oauthUser.email)){ authError('That address is reserved — sign in normally instead.'); return; }
   const {data:rpcData, error:rpcError} = await sb.rpc('register_company', {
     p_company_name: companyName, p_admin_name: name
   });
   if(rpcError){ authError(rpcError.message); return; }
-  const built = await buildSessionFromProfile();
+  const built = await buildSessionFromProfile(oauthUser);
   if(!built){ authError('Company created but profile lookup failed — sign in again.'); return; }
   clearSession(); session = built; saveSession(session);
   hideOAuthSignup();
@@ -368,7 +370,7 @@ async function registerCompanyWithOAuth(){
 async function finishOAuthLogin(){
   const {data:{user}} = await sb.auth.getUser();
   if(!user){ clearSession(); return; }
-  const built = await buildSessionFromProfile();
+  const built = await buildSessionFromProfile(user);
   if(built === 'deleted'){ await sb.auth.signOut(); hideOAuthSignup(); authError('This account has been closed.'); return; }
   if(!built){ showUnlinkedNotice(user.email || 'unknown address'); return; }
   if(built.active===false){ await sb.auth.signOut(); hideOAuthSignup(); authError('Your account is waiting for your admin to approve it. Ask them to assign your access first.'); return; }
