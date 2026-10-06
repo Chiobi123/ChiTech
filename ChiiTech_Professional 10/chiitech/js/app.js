@@ -93,6 +93,19 @@ window.addEventListener('DOMContentLoaded', async () => {
     else {
       // OAuth return (e.g. Google): linked identities boot straight in with
       // the DB role; unlinked ones get onboarding, never a dashboard.
+      // Supabase returns ?error=...&error_description=... when Google or the
+      // handshake itself refuses — surface it instead of silently landing back.
+      try {
+        const url0 = new URL(window.location.href);
+        if(url0.searchParams.get('error')){
+          const why = url0.searchParams.get('error_description') || url0.searchParams.get('error');
+          url0.searchParams.delete('error'); url0.searchParams.delete('error_description');
+          window.history.replaceState({}, '', url0.pathname + window.location.hash);
+          authError('Google sign-in refused: ' + decodeURIComponent(String(why).replace(/\+/g, ' ')) + ' — check the address matches a listed test user.');
+          try{ await sb.auth.signOut(); }catch(e){}
+          return;
+        }
+      } catch(e){}
       try { await finishOAuthLogin(); } catch(e){}
     }
   } finally {
