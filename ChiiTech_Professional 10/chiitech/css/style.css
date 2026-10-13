@@ -795,6 +795,8 @@ tbody tr:hover{background:var(--surface-2);}
   .flower.f2{display:none;}
   .flower.f3{width:52vmin;height:52vmin;}
   .mobile-topbar .hamburger{width:44px;height:44px;}
+  .login-trust{gap:8px 14px;}
+  .login-trust span{white-space:normal;text-align:center;}
 }
 
 /* ---------- Landscape phones / short screens: reclaim vertical space ---------- */
