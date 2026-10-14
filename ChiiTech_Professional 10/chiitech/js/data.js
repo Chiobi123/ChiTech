@@ -152,6 +152,8 @@ const INSERT_ONLY_DEFS = {
    so the diff can never mistake "not loaded yet" for "deleted".
    ============================================================ */
 async function loadBusiness(companyId){
+  const __now = ()=>((typeof performance!=='undefined' && performance.now) ? performance.now() : Date.now());
+  const __t0 = __now();
   const [products, customers, sales, expenses, team, settings, plans, subscription, myCompanyRow] = await Promise.all([
     sb.from('products').select('*').eq('company_id', companyId),
     sb.from('customers').select('*').eq('company_id', companyId),
@@ -212,6 +214,11 @@ async function loadBusiness(companyId){
   // Deferred tables stream in behind first paint. __ready resolves when
   // they land; saves wait for it so "not loaded yet" is never diffed as
   // a deletion. Audit trail capped at the 500 most recent rows.
+  // RUM (audit Stage A): boot timing + per-table row counts so the
+  // pagination work (P1) is sized on numbers, not guesses.
+  biz.__perf = { t0: __t0, tCrit: __now(),
+    counts: { products:(products.data||[]).length, customers:(customers.data||[]).length,
+      sales:(sales.data||[]).length, expenses:(expenses.data||[]).length } };
   biz.__ready = loadDeferredBusiness(biz, companyId);
 
   return biz;
@@ -249,6 +256,33 @@ async function loadDeferredBusiness(biz, companyId){
     }));
     Object.assign(biz.__synced, snap);
     biz.__syncedAuditLogIds = new Set(biz.auditLog.map(a=>a.id));
+    try{
+      const __t1 = (typeof performance!=='undefined' && performance.now) ? performance.now() : Date.now();
+      Object.assign(biz.__perf.counts, { orders:(orders.data||[]).length, sop:(sop.data||[]).length,
+        auditLog:(auditLog.data||[]).length, findings:(findings.data||[]).length, debts:(debts.data||[]).length,
+        budgets:(budgets.data||[]).length, receipts:(receipts.data||[]).length, periods:(periods.data||[]).length });
+      window.__chiitechPerf = { criticalMs: Math.round(biz.__perf.tCrit - biz.__perf.t0),
+        deferredMs: Math.round(__t1 - biz.__perf.t0), counts: biz.__perf.counts, at: Date.now() };
+      console.info('perf:boot', JSON.stringify(window.__chiitechPerf));
+    }catch(e){}
+    // Server aggregates (migration 40): adopt only if the RPC counts
+    // exactly match the rows just loaded — any mismatch (RPC not yet
+    // deployed, concurrent write between waves) keeps local computation,
+    // so displayed totals can never be corrupted by this path.
+    try{
+      const {data:sum, error:sumErr} = await sb.rpc('company_summary');
+      if(!sumErr && sum
+        && Number(sum.sales_count)===(biz.sales||[]).length
+        && Number(sum.expenses_count)===(biz.expenses||[]).length
+        && Number(sum.products_count)===(biz.products||[]).length
+        && Number(sum.customers_count)===(biz.customers||[]).length
+        && Number(sum.orders_count)===(orders.data||[]).length){
+        biz.summary = { salesTotal:Number(sum.sales_total)||0, salesVatTotal:Number(sum.sales_vat_total)||0,
+          salesCostTotal:Number(sum.sales_cost_total)||0, expensesTotal:Number(sum.expenses_total)||0,
+          at: Date.now() };
+        if(window.__chiitechPerf) window.__chiitechPerf.summaryVerified = true;
+      }
+    }catch(e){}
     if(typeof renderSection==='function' && typeof currentSection!=='undefined' && currentSection){
       try { renderSection(currentSection); } catch(e){}
     }
@@ -375,7 +409,7 @@ async function syncTeam(companyId, team, syncedTeam){
 
 /* Small-business tables (migration 23) use direct writes — low volume,
    admin-driven, no diff-sync needed. Errors toast visibly. */
-async function refreshBusiness(){ state = await loadBusiness(session.companyId); renderAll(); }
+async function refreshBusiness(){ state = await loadBusiness(session.companyId); if(typeof renderSection==='function' && typeof currentSection!=='undefined' && currentSection){ try{ renderSection(currentSection); }catch(e){} } }
 
 /* ============================================================
    PLATFORM — the company directory. For a normal admin/worker this is
@@ -426,10 +460,32 @@ function fileToReceiptDataUrl(file){
 async function attachReceipt(recordType, recordId, file){
   try {
     const dataUrl = await fileToReceiptDataUrl(file);
-    const {error} = await sb.from('receipts').insert({
-      company_id: session.companyId, record_type: recordType, record_id: recordId,
-      image_data: dataUrl, mime: 'image/jpeg' });
-    if(error){ toast('Could not attach photo: ' + error.message, 4000); return; }
+    // Prefer Supabase Storage (migration 39 bucket) so photos stop growing
+    // the database. Every step falls back to the legacy image_data column,
+    // so a missing bucket or failed upload behaves exactly like before.
+    // (Storage success implies migration 39 is applied, which is also
+    // what makes image_data nullable and storage_path selectable.)
+    const receiptId = (typeof crypto!=='undefined' && crypto.randomUUID) ? crypto.randomUUID() : null;
+    let saved = false;
+    if(receiptId){
+      try{
+        const blob = await (await fetch(dataUrl)).blob();
+        const path = `${session.companyId}/${receiptId}.jpg`;
+        const {error:upErr} = await sb.storage.from('receipts').upload(path, blob, { contentType:'image/jpeg', upsert:true });
+        if(!upErr){
+          const {error:insErr} = await sb.from('receipts').insert({
+            id: receiptId, company_id: session.companyId, record_type: recordType, record_id: recordId,
+            image_data: null, mime: 'image/jpeg', storage_path: path });
+          if(!insErr) saved = true;
+        }
+      }catch(e){ /* storage unavailable -> legacy insert below */ }
+    }
+    if(!saved){
+      const {error} = await sb.from('receipts').insert({
+        company_id: session.companyId, record_type: recordType, record_id: recordId,
+        image_data: dataUrl, mime: 'image/jpeg' });
+      if(error){ toast('Could not attach photo: ' + error.message, 4000); return; }
+    }
     addAuditLog('receipt.attached', `Photo attached to ${recordType}.`);
     await refreshBusiness(); toast('Photo attached.');
   } catch(e){ toast('Could not read that photo.', 4000); }

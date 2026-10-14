@@ -10,8 +10,8 @@
      - 'super_admin'   → one reserved account (see SUPER_ADMIN_EMAIL in
                           data.js). Sees every company. Gets that role by
                           matching that exact email — see
-                          bootstrap_super_admin() in the database and the
-                          call to it in loginAdmin() below.
+                          ensure_super_admin() in the database and the
+                          call to it in login() below.
      - 'company_admin' → owns one company. Full access to everything
                           inside it, plus Team & Billing pages.
      - 'worker'         → belongs to one company. Only sees the sections
@@ -584,7 +584,7 @@ function authError(msg){
  *  database — see soft_delete_company()/soft_delete_my_profile() in the
  *  database, which just flag the row as closed. From this point on:
  *  - the person themself can never see or sign back into it (RLS and
- *    the deleted-account checks in loginAdmin()/loginWorker() above
+ *    the deleted-account checks in login()/loginAsWorker() above
  *    both enforce that — not just this button being hidden)
  *  - a super_admin can still find and restore it from the Super Admin
  *    console if asked to

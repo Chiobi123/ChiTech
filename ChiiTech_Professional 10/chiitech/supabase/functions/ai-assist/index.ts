@@ -3,7 +3,8 @@
 // Supabase secrets; nothing secret ever reaches the browser or repo.
 // Auth: caller JWT verified by the platform (verify_jwt) + membership
 // re-checked here against profiles. service_role callers (platform tests)
-// pass an explicit company_id.
+// pass an explicit company_id, and their JWT signature MUST verify
+// against SUPABASE_JWT_SECRET (unsigned tokens are refused).
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -34,6 +35,9 @@ serve(async (req) => {
   if (!body.company_id) {
     return new Response(JSON.stringify({ error: "company_id required" }), { status: 400 });
   }
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.company_id)) {
+    return new Response(JSON.stringify({ error: "company_id must be a uuid" }), { status: 400 });
+  }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -46,7 +50,7 @@ serve(async (req) => {
     global: { headers: { Authorization: `Bearer ${jwt}` } },
   });
   const { data: { user } } = await caller.auth.getUser();
-  if (!user && !isServiceJwt(jwt)) {
+  if (!user && !(await isServiceJwt(jwt))) {
     return new Response(JSON.stringify({ error: "Invalid session" }), { status: 401 });
   }
   if (user) {
@@ -64,6 +68,16 @@ serve(async (req) => {
     .select("questions").eq("company_id", body.company_id).eq("day", today).maybeSingle();
   if (usage && usage.questions >= maxPerDay) {
     return new Response(JSON.stringify({ error: "Daily AI limit reached", fallback: true }), { status: 429 });
+  }
+
+  // Platform-wide daily cap (Groq budget protection across all companies).
+  // Fail-open on read error so chat keeps working; the cap enforces
+  // whenever usage is readable. Tune with AI_MAX_GLOBAL_PER_DAY.
+  const maxGlobalPerDay = Number(Deno.env.get("AI_MAX_GLOBAL_PER_DAY") || "2000");
+  const { data: allUsage } = await admin.from("ai_usage").select("questions").eq("day", today);
+  const globalTotal = (allUsage || []).reduce((a, r) => a + (Number(r.questions) || 0), 0);
+  if (globalTotal >= maxGlobalPerDay) {
+    return new Response(JSON.stringify({ error: "Platform AI limit reached", fallback: true }), { status: 429 });
   }
 
   const persona = `You are ChiiTech's in-app business co-pilot. Talk like a sharp, friendly shop adviser, not a robot.
@@ -129,10 +143,27 @@ If asked about anything outside the business or the app (politics, homework, cod
   });
 });
 
-function isServiceJwt(jwt: string): boolean {
+// Service-role callers (platform tests) authenticate with a real Supabase
+// JWT whose HMAC-SHA256 signature MUST verify against SUPABASE_JWT_SECRET.
+// The previous unsigned payload sniff accepted forged tokens and is gone.
+// Operator setup (one time):
+//   supabase secrets set SUPABASE_JWT_SECRET=<Project Settings -> API -> JWT Secret>
+// Until the secret is set, service-mode calls are refused; normal user
+// sessions are unaffected (they never reach this check with a null user).
+async function isServiceJwt(jwt: string): Promise<boolean> {
   try {
-    const payload = JSON.parse(atob(jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-    return payload.role === "service_role";
+    const secret = Deno.env.get("SUPABASE_JWT_SECRET");
+    if (!secret) return false;
+    const parts = jwt.split(".");
+    if (parts.length !== 3) return false;
+    const b64 = (s: string) => s.replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(b64(parts[1])));
+    if (payload.role !== "service_role") return false;
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["verify"]);
+    const sig = Uint8Array.from(atob(b64(parts[2])), (c) => c.charCodeAt(0));
+    return await crypto.subtle.verify("HMAC", key, sig, enc.encode(`${parts[0]}.${parts[1]}`));
   } catch {
     return false;
   }

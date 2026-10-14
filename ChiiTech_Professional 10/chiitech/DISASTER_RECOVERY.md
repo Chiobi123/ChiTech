@@ -34,12 +34,12 @@ is not possible, full stop.
 
 | Piece | Where it lives | Recovery source |
 |---|---|---|
-| Database schema (every table, RLS policy, function, trigger) | Supabase project `qmypqghktxlscibgxgxo` | `supabase/migrations/` in this project — 13 files, verified byte-for-byte against what's live |
+| Database schema (every table, RLS policy, function, trigger) | Supabase project `qmypqghktxlscibgxgxo` | `supabase/migrations/` in this project — 38 files, applied in filename order |
 | Database **data** (actual products/sales/customers/etc.) | Same Supabase project | **Only** a Supabase backup or your own manual export — not covered by the migrations folder |
 | Frontend (HTML/CSS/JS) | Wherever it's hosted (Netlify/Vercel/etc. — not fixed by this plan) | This project zip's `index.html`, `css/`, `js/` |
 | Supabase project URL + publishable key | `js/supabase-config.js` | Already in this project zip; regenerate from Supabase dashboard if the project itself is rebuilt fresh (a new project = a new URL and key) |
 | Auth accounts (who can log in) | Supabase Auth (`auth.users`) | **Not covered by the migrations folder at all.** If the Supabase project is destroyed and rebuilt fresh, every admin/worker has to sign up again — their `profiles` row rebuilds from a fresh signup, but their old password does not carry over, and old data won't reappear unless it was in a backup |
-| Reserved super-admin access | `bootstrap_super_admin()` in migration 07, keyed to one hardcoded email | Works automatically the moment that email signs up again on a rebuilt project |
+| Reserved super-admin access | `ensure_super_admin()` (called by `login()` in `js/auth.js`), keyed to `SUPER_ADMIN_EMAIL` in `js/data.js` | Works the moment that email signs in again on a rebuilt project (migration 38 retired the legacy `bootstrap_super_admin()`) |
 
 ## 3. Recovery scenarios, in order of how bad they are
 

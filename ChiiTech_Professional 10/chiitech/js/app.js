@@ -286,7 +286,8 @@ function renderAll(){
 }
 
 /** Render only the visible section — navigation stays instant no matter
- *  how large the books grow. Full renderAll runs once at boot. */
+ *  how large the books grow. Mutations re-render only the visible
+ *  section; every section refreshes when navigated to. */
 function renderSection(name){
   if(!state || !session) return;
   try {
@@ -303,7 +304,7 @@ function renderSection(name){
     else if(name==='growth') safeRender('Growth engine', renderGrowth);
     else if(name==='billing') safeRender('Billing', renderBilling);
     else if(name==='team'||name==='auditoraccess'){ if(session.role==='company_admin'){ safeRender('Team', renderTeam); safeRender('Auditor access', renderAuditorAccess); } }
-    else if(name==='imports'){ if(session.role==='company_admin'){ renderAll(); } }
+    else if(name==='imports'){ /* Imports section is static (file input + review UI) — nothing to re-render; data sections refresh on navigation. */ }
   } catch(e){ console.error('renderSection:'+name, e); }
 }
 
@@ -511,7 +512,7 @@ function addProduct(){
   ['p-cost','p-price','p-stock'].forEach(id=>document.getElementById(id).value=0);
   document.getElementById('p-reorder').value=5;
   populateSelects();
-  renderAll();
+  renderSection(currentSection);
   toast('Product added');
 }
 
@@ -526,7 +527,7 @@ function editProductPrice(id){
   p.price = val;
   p.updatedBy = whoAmI();
   addAuditLog('product.price_change', `Changed "${p.name}" price from ${fmtN(old)} to ${fmtN(val)}`);
-  renderAll();
+  renderSection(currentSection);
   toast('Price updated');
 }
 
@@ -554,7 +555,7 @@ function addCustomer(){
   addAuditLog('customer.create', `Added customer "${name}"`);
   document.getElementById('c-name').value=''; document.getElementById('c-phone').value='';
   populateSelects();
-  renderAll();
+  renderSection(currentSection);
   toast('Customer added');
 }
 
@@ -604,7 +605,7 @@ function addOrder(){
   addAuditLog('order.create', `${channel} order from ${customerName}: ${items} = ${fmtN(total)}`);
   ['o-customer','o-items','o-notes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('o-total').value=0;
-  renderAll();
+  renderSection(currentSection);
   toast('Order logged');
 }
 
@@ -764,7 +765,7 @@ function recordSale(){
   cart = [];
   populateSelects();
   renderCart();
-  renderAll();
+  renderSection(currentSection);
   toast(`Sale recorded — ${invoiceNo}`);
 }
 
@@ -804,7 +805,7 @@ function addExpense(){
   document.getElementById('e-note').value='';
   document.getElementById('e-new-category').value='';
   populateExpenseCategories();
-  renderAll();
+  renderSection(currentSection);
   toast(flag ? 'Expense logged — flagged for review' : 'Expense logged');
 }
 
@@ -1124,7 +1125,7 @@ function saveTaxSettings(){
   state.taxSettings.whtRate = Number(document.getElementById('t-wht-rate').value)||0;
   state.taxSettings.whtThreshold = Number(document.getElementById('t-wht-threshold').value)||0;
   addAuditLog('tax.settings_change', `VAT ${state.taxSettings.vatRate}%, WHT ${state.taxSettings.whtRate}% above ${fmtN(state.taxSettings.whtThreshold)}`);
-  renderAll();
+  renderSection(currentSection);
   toast('Tax settings saved');
 }
 
