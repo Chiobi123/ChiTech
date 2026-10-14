@@ -1,4 +1,6 @@
--- ChiiTech migration 38 — drop legacy duplicate functions (audit P2).
+-- ChiiTech migration 41 — drop legacy duplicate functions (audit P2).
+-- (Numbered 41 because 20261014000100_38_service_role_grants.sql already
+-- owns version 38; same timestamp, different suffix. Keep versions unique.)
 -- Verified 2026-10-14 against live frontend code, before dropping:
 --   * bootstrap_super_admin() — zero sb.rpc callers in js/ (only a stale
 --     comment, fixed in the same round). Live login calls

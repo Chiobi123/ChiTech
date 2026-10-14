@@ -34,7 +34,7 @@ is not possible, full stop.
 
 | Piece | Where it lives | Recovery source |
 |---|---|---|
-| Database schema (every table, RLS policy, function, trigger) | Supabase project `qmypqghktxlscibgxgxo` | `supabase/migrations/` in this project — 38 files, applied in filename order |
+| Database schema (every table, RLS policy, function, trigger) | Supabase project `qmypqghktxlscibgxgxo` | `supabase/migrations/` in this project — 41 files, applied in filename order |
 | Database **data** (actual products/sales/customers/etc.) | Same Supabase project | **Only** a Supabase backup or your own manual export — not covered by the migrations folder |
 | Frontend (HTML/CSS/JS) | Wherever it's hosted (Netlify/Vercel/etc. — not fixed by this plan) | This project zip's `index.html`, `css/`, `js/` |
 | Supabase project URL + publishable key | `js/supabase-config.js` | Already in this project zip; regenerate from Supabase dashboard if the project itself is rebuilt fresh (a new project = a new URL and key) |
