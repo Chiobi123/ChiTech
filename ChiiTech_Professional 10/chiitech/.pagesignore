@@ -1,0 +1,10 @@
+# Cloudflare Pages ignore file.
+# The deploy root is the whole chiitech/ folder, which also contains internal
+# documentation and the Supabase source. None of that may be served publicly,
+# so everything except the runtime site (index.html, css/, js/, _headers) is
+# excluded from deployments. Add new internal artifacts here.
+*.md
+*.pdf
+*.zip
+supabase/
+.pgdata/
