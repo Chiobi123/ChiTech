@@ -1,6 +1,32 @@
 # ChiiTech — frontend prototype
 
-## Current round — 2026-09-29: small-business batch (auditor + analyst review)
+## Current round — 2026-10-22: sign-in load time
+
+Sign-in took about 12 seconds on a slow connection. Almost none of that was the
+database — a query against Supabase answers in ~0.25s, and the app only needs a
+handful. The time went into how the page fetched itself. Four changes:
+
+- **Scripts now download in parallel (`defer`).** They sat at the end of `<body>`
+  as classic scripts, so the browser fetched all ten one after another — ten
+  round trips stacked up. `defer` downloads them together and still runs them in
+  the same order, so every global the next file expects is unchanged.
+- **No more third-party CDN.** React + ReactDOM (~140 KB) existed for exactly one
+  widget, the Dashboard health gauge; that widget is now hand-drawn SVG in
+  `js/health-gauge.js` and React is gone. The Supabase client is served from
+  `js/vendor/` (byte-identical to the npm build) instead of cdn.jsdelivr.net, so
+  the page no longer waits on a second DNS lookup + TLS handshake.
+- **`js/` and `css/` are cached permanently.** They're versioned by the `?v=` in
+  `index.html`, so browsers can keep them for a year instead of revalidating nine
+  files against the network on every visit — repeat sign-ins now re-fetch only
+  `index.html`. Bump `?v=` when you change any of them.
+- **The backend connection is warmed up early**, via `preconnect`/`dns-prefetch`
+  in the `<head>`, so DNS + TLS to Supabase happens while the page parses rather
+  than when the user presses "Sign in".
+
+Nothing about the data model, RLS or the auth flow changed. `_headers` also
+dropped `cdn.jsdelivr.net` from its Content-Security-Policy.
+
+## Previous round — 2026-09-29: small-business batch (auditor + analyst review)
 
 - New tables (migration 23, applied + verified live): `accounting_periods`
   (close/reopen with logged reasons + trigger lock), `debts` (owe/owed),
@@ -75,7 +101,7 @@ All four fixes are now in `supabase/migrations/`, verified byte-for-byte the sam
 way as every other migration in that folder. The full 21-step test passes clean
 after them.
 
-## Earlier round: account deletion, disaster recovery, audit materiality/findings, a React island
+## Earlier round: account deletion, disaster recovery, audit materiality/findings, a dashboard gauge
 
 **1. Soft-delete for accounts.** A company_admin can close their whole company's
 account, or a worker their own individual access, from a "Delete account" link in
@@ -112,14 +138,13 @@ compromised), and a short pre-disaster checklist.
   see what the company's own team documented, but (like everywhere else) can never
   write to it themselves.
 
-**5. One React island, not a rewrite.** `js/react-widgets.js` adds a single animated
-health-score gauge to the Dashboard (React 18 + ReactDOM via CDN, no build step,
-plain `React.createElement` since there's no Babel in the page to compile JSX). It
-reads one number handed to it and renders itself — nothing else in the app changed
-to make room for it, and nothing else needs to change to add another one later the
-same way, in a specific container, reading specific data it's given. A full
-framework migration for the rest of the app is a much larger, separate undertaking
-and wasn't attempted here.
+**5. One dashboard gauge, drawn by hand.** `js/health-gauge.js` renders the single
+animated health-score gauge on the Dashboard as inline SVG — a couple of circles and a
+number, animated from the previous score over half a second. It replaced an earlier
+React island (React 18 + ReactDOM pulled from a CDN for this one widget); removing that
+dependency deleted roughly 140 KB of third-party downloads from every visitor's first
+load. `mountHealthGauge(score)` is the whole API: one number in, and it respects
+`prefers-reduced-motion`. Nothing else in the app changed to make room for it.
 
 **1. The auditor is no longer on a clock.** Previously every auditor grant defaulted to a
 7-day window, which is wrong for the actual job — an auditor's value is checking in
@@ -319,6 +344,11 @@ by this app at all.
   access control (`canAccess()`, `SECTION_ACCESS`), plus the auditor grant sign-in
   (`loginAuditor()`).
 - **`js/charts.js`** — the dependency-free chart engine (see "Fixed in this round" above).
+- **`js/health-gauge.js`** — the Dashboard's animated health-score gauge, drawn as inline
+  SVG (replaced the earlier React island; see "One dashboard gauge" above).
+- **`js/vendor/supabase.min.js`** — the Supabase JS client, served from our own origin
+  instead of a third-party CDN. Byte-identical to `@supabase/supabase-js@2.118.0`; to
+  upgrade, re-download the UMD build into this folder and bump the script version.
 - **`js/app.js`** — everything else: recording sales/expenses/orders, the audit
   hash-chain, Benford's Law check, tax calculations, growth forecasts and playbooks,
   team management, auditor grant management (`grantAuditorAccess()`,

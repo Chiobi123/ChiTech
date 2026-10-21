@@ -1,3 +1,6 @@
 # Local scratch + build artifacts (never commit)
 /chiitech/
 *.zip
+
+# wrangler's local cache (account id, page state) — local tooling only
+/.wrangler/

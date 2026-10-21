@@ -4,7 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ChiiTech — AI business assistant &amp; audit companion</title>
-<link rel="stylesheet" href="css/style.css?v=20261002a">
+<!-- Warm up the connection to the backend while the page is still parsing.
+     The browser normally doesn't discover this host until auth.js runs —
+     after every local script has downloaded — which costs a full DNS +
+     TLS handshake on a slow link right when the user presses "Sign in". -->
+<link rel="preconnect" href="https://qmypqghktxlscibgxgxo.supabase.co" crossorigin>
+<link rel="dns-prefetch" href="https://qmypqghktxlscibgxgxo.supabase.co">
+<link rel="stylesheet" href="css/style.css?v=20261022a">
 <!-- Charts are drawn locally in js/charts.js using the native Canvas API —
      no CDN or external chart library required, so this works fully offline
      and isn't at the mercy of a blocked network request. -->
@@ -1352,21 +1358,25 @@
 <input type="file" id="receipt-file" accept="image/*" class="hidden" onchange="submitReceipt(this)">
 
 <!-- Supabase JS client — talks to the real backend (see supabase-config.js
-     for the project URL/key and js/data.js for how it's used). Loaded from
-     Supabase's own CDN; if this fails to load offline, data.js's calls will
-     fail loudly rather than silently falling back to localStorage. -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/supabase-config.js?v=20261002a"></script>
-<script src="js/data.js?v=20261002a"></script>
-<script src="js/auth.js?v=20261002a"></script>
-<script src="js/imports.js?v=20261002a"></script>
-<script src="js/charts.js?v=20261002a"></script>
-<!-- React, loaded from CDN with no build step — used for a couple of
-     small, self-contained interactive widgets (see js/react-widgets.js),
-     not a rewrite of the app. Everything else stays exactly as it was. -->
-<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="js/react-widgets.js?v=20261002a"></script>
-<script src="js/app.js?v=20261002a"></script>
+     for the project URL/key and js/data.js for how it's used). Served from
+     our own origin (js/vendor/) instead of a third-party CDN: it is the
+     single biggest file the sign-in screen needs, and a cross-origin fetch
+     for it used to add DNS + TLS + download time to every cold load. If it
+     fails to load, data.js's calls fail loudly rather than silently
+     falling back to localStorage.
+
+     Every script below is deferred. They are plain classic scripts at the
+     end of <body>, so without `defer` the browser fetched them one at a
+     time — ten round trips stacked on top of each other. With `defer` they
+     download in parallel and still run in exactly this order, so the
+     globals each file expects (supabase → sb → state → app) are unchanged. -->
+<script defer src="js/vendor/supabase.min.js"></script>
+<script defer src="js/supabase-config.js?v=20261022a"></script>
+<script defer src="js/data.js?v=20261022a"></script>
+<script defer src="js/auth.js?v=20261022a"></script>
+<script defer src="js/imports.js?v=20261022a"></script>
+<script defer src="js/charts.js?v=20261022a"></script>
+<script defer src="js/health-gauge.js?v=20261022a"></script>
+<script defer src="js/app.js?v=20261022a"></script>
 </body>
 </html>
