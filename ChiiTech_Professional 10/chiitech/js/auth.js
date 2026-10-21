@@ -228,7 +228,7 @@ async function login(){
   hideOAuthSignup();
   session = built;
   clearSession(); saveSession(session);
-  await bootApp();
+  await bootApp({ identityVerified: true });
   } finally {
     if(btn){ btn.disabled = false; btn.textContent = 'Sign in'; }
   }
@@ -291,7 +291,7 @@ async function joinAsWorker(){
   if(!built || (kind==='worker' ? built.role!=='worker' : built.role!=='auditor')){ await sb.auth.signOut(); authError('Invitation accepted but the profile could not be loaded. Ask your admin.'); return; }
   session = built;
   clearSession(); saveSession(session);
-  await bootApp();
+  await bootApp({ identityVerified: true });
   setTimeout(()=> toast(kind==='auditor'
     ? 'Auditor invitation accepted — access is active now. Sign in on the main screen.'
     : 'Invitation accepted — your admin will assign your access and approve you shortly.', 6000), 400);
@@ -361,7 +361,7 @@ async function registerCompanyWithOAuth(){
   if(!built){ authError('Company created but profile lookup failed — sign in again.'); return; }
   clearSession(); session = built; saveSession(session);
   hideOAuthSignup();
-  await bootApp();
+  await bootApp({ identityVerified: true });
   setTimeout(()=> toast(`Company created! Your company code is ${rpcData[0].company_code}.`, 6000), 400);
 }
 
@@ -376,7 +376,7 @@ async function finishOAuthLogin(){
   if(built.active===false){ await sb.auth.signOut(); hideOAuthSignup(); authError('Your account is waiting for your admin to approve it. Ask them to assign your access first.'); return; }
   clearSession(); session = built; saveSession(session);
   hideOAuthSignup();
-  await bootApp();
+  await bootApp({ identityVerified: true });
 }
 
 /* ---------------- Worker sign-in (dedicated screen) ----------------
@@ -397,7 +397,7 @@ async function loginAsWorker(){
   hideOAuthSignup();
   session = built;
   clearSession(); saveSession(session);
-  await bootApp();
+  await bootApp({ identityVerified: true });
 }
 
 /* ---------------- Auditor sign-in ----------------
@@ -446,7 +446,7 @@ async function acceptAuditorInvite(){
       const wbuilt = await buildSessionFromProfile();
       if(!wbuilt || wbuilt.role!=='worker'){ await sb.auth.signOut(); authError('Invitation accepted but the profile could not be loaded. Ask your admin.'); return; }
       clearSession(); session = wbuilt; saveSession(session);
-      await bootApp();
+      await bootApp({ identityVerified: true });
       setTimeout(()=> toast('Invitation accepted — your admin will assign your access and approve you shortly.', 6000), 400);
       return;
     }

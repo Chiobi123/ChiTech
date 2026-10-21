@@ -22,6 +22,12 @@ handful. The time went into how the page fetched itself. Four changes:
 - **The backend connection is warmed up early**, via `preconnect`/`dns-prefetch`
   in the `<head>`, so DNS + TLS to Supabase happens while the page parses rather
   than when the user presses "Sign in".
+- **No duplicated identity check.** The Super Admin console used to re-fetch the
+  signed-in user and their `profiles` row a second time, immediately after
+  `login()` had already read both — two round trips to prove something the
+  previous call had just proved. `bootApp({ identityVerified: true })` skips
+  that when the caller rebuilt the session from the database in the same flow;
+  every other caller still gets the full re-resolution.
 
 Nothing about the data model, RLS or the auth flow changed. `_headers` also
 dropped `cdn.jsdelivr.net` from its Content-Security-Policy.

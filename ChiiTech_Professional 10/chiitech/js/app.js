@@ -79,7 +79,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   try {
     if(session){
       const check = await validateStoredSession();
-      if(check.ok){ session = check.session; saveSession(session); await bootApp(); }
+      if(check.ok){ session = check.session; saveSession(session); await bootApp({ identityVerified: true }); }
       else if(check.reason==='transient'){
         toastOnLogin('Could not reach the server — check your connection and refresh to try again.');
       }
@@ -154,7 +154,7 @@ function initials(name){
   return (name||'U').split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');
 }
 
-async function bootApp(){
+async function bootApp(opts){
   navStack = [];
   currentSection = null;
   veilOn();
@@ -166,20 +166,27 @@ async function bootApp(){
 
   if(session.role==='super_admin'){
     // Forensic fix: never render the console on a cached role alone.
-    // Re-resolve the live identity; a stale/wrong account gets an explicit
-    // banner naming itself instead of a misleading empty console.
-    const live = await buildSessionFromProfile();
-    if(!live || live==='deleted' || live.role!=='super_admin' || live.email!==session.email){
-      session = null; clearSession();
-      try{ await sb.auth.signOut(); }catch(e){}
-      document.getElementById('app').classList.add('hidden');
-      document.getElementById('login-screen').classList.remove('hidden');
-      authError('This console needs the reserved Super Admin sign-in. ' +
-        (live && live.email ? `You are signed in as ${live.email} (${live.role}).` : 'Your session could not be verified.') +
-        ' Sign out fully and sign back in with the reserved account.');
-      return;
+    // Callers that just rebuilt this session from the profiles table in the
+    // same flow (a fresh sign-in, or the boot revalidation in the
+    // DOMContentLoaded handler) pass { identityVerified: true } — the
+    // identity is already live, and asking for it a second time only adds
+    // two more round trips to a sign-in people are timing in seconds.
+    // Every other caller gets the full re-resolution below.
+    if(!(opts && opts.identityVerified)){
+      const live = await buildSessionFromProfile();
+      if(!live || live==='deleted' || live.role!=='super_admin' || live.email!==session.email){
+        session = null; clearSession();
+        try{ await sb.auth.signOut(); }catch(e){}
+        document.getElementById('app').classList.add('hidden');
+        document.getElementById('login-screen').classList.remove('hidden');
+        authError('This console needs the reserved Super Admin sign-in. ' +
+          (live && live.email ? `You are signed in as ${live.email} (${live.role}).` : 'Your session could not be verified.') +
+          ' Sign out fully and sign back in with the reserved account.');
+        return;
+      }
+      session = live;
     }
-    session = live; saveSession(session);
+    saveSession(session);
     platform = await loadPlatform();
     document.querySelectorAll('.nav-link, .mobile-nav .nav-item').forEach(el=>el.classList.add('hidden'));
     document.getElementById('imp-banner').classList.add('hidden');
