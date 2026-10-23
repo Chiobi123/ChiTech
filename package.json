@@ -1,0 +1,19 @@
+{
+  "name": "chiitech",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ChiiTech static frontend + Supabase migrations. No build step, no dependencies.",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "deploy": "node scripts/deploy.mjs",
+    "db:status": "node scripts/db-status.mjs",
+    "version:bump": "node scripts/bump-version.mjs",
+    "login:cf": "wrangler login",
+    "login:supabase": "supabase login"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
