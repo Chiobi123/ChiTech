@@ -93,16 +93,15 @@ window.addEventListener('DOMContentLoaded', async () => {
     else {
       // OAuth return (e.g. Google): linked identities boot straight in with
       // the DB role; unlinked ones get onboarding, never a dashboard.
-      // Supabase returns ?error=...&error_description=... when Google or the
-      // handshake itself refuses — surface it instead of silently landing back.
+      // Supabase can return the refusal in the query string *or* the fragment,
+      // so read both — otherwise the user lands back on the sign-in screen
+      // with no explanation and assumes the link is broken.
       try {
-        const url0 = new URL(window.location.href);
-        if(url0.searchParams.get('error')){
-          const why = url0.searchParams.get('error_description') || url0.searchParams.get('error');
-          url0.searchParams.delete('error'); url0.searchParams.delete('error_description');
-          window.history.replaceState({}, '', url0.pathname + window.location.hash);
-          authError('Google sign-in refused: ' + decodeURIComponent(String(why).replace(/\+/g, ' ')) + ' — check the address matches a listed test user.');
-          try{ await sb.auth.signOut(); }catch(e){}
+        const refusal = oauthErrorFromUrl();
+        if(refusal){
+          scrubAuthFragment();
+          authError(oauthErrorMessage(refusal.code, refusal.description));
+          try{ await sb.auth.signOut({ scope: 'local' }); }catch(e){}
           return;
         }
       } catch(e){}

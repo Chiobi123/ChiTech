@@ -15,5 +15,14 @@ const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_TTO8Oaxa7Gwoa6lUDz8hZQ_RDCQmhc0
 // sign-in" behavior this app has always had, now backed by a real
 // session token instead of a plain JSON blob.
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: { storage: window.sessionStorage, persistSession: true, autoRefreshToken: true }
+  auth: {
+    storage: window.sessionStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+    // Read the OAuth response that Google/Supabase append to the URL
+    // (#access_token=... or ?code=...). Without this the redirect lands on a
+    // blank sign-in screen because the client never looks at the address bar.
+    detectSessionInUrl: true,
+    flowType: 'implicit'
+  }
 });

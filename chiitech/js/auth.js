@@ -301,12 +301,84 @@ async function joinAsWorker(){
    Uses Supabase Auth OAuth — no Google secrets in this file. Google users
    NEVER auto-receive privileges: after redirect, an identity with no
    profiles row lands on the unlinked-account notice, never a dashboard. */
+
+/** Supabase reports OAuth failures in the URL *fragment* (#error=...), while
+ *  our own redirects use the query string. Read both, so a refusal from
+ *  Google is explained instead of leaving a silent sign-in screen. */
+function oauthErrorFromUrl(){
+  try{
+    const needle = new URLSearchParams((window.location.hash||'').replace(/^#/,''));
+    const query = new URLSearchParams(window.location.search||'');
+    for(const p of [needle, query]){
+      const code = p.get('error') || p.get('error_code');
+      if(code) return { code, description: p.get('error_description') || p.get('error') || code };
+    }
+  }catch(e){}
+  return null;
+}
+
+/** Human-readable reason for an OAuth refusal. The common ones have known
+ *  fixes, so say what to change instead of echoing Google's error code. */
+function oauthErrorMessage(code, description){
+  const why = String(description || code || '').replace(/\+/g,' ');
+  const all = (code||'') + ' ' + why;
+  if(/redirect_uri_mismatch/i.test(all)){
+    return 'Google rejected the return address. In Google Cloud Console the OAuth client must list exactly https://qmypqghktxlscibgxgxo.supabase.co/auth/v1/callback as an authorised redirect URI.';
+  }
+  if(/access_denied/i.test(all)) return 'Google sign-in was cancelled before it finished.';
+  if(/provider is not enabled/i.test(all)) return 'Google sign-in is not enabled on the Supabase project yet (Authentication → Providers → Google).';
+  if(/invalid.*redirect/i.test(all)) return 'Supabase rejected the return address. Add this site to Authentication → URL Configuration → Redirect URLs.';
+  return 'Google sign-in was refused: ' + why;
+}
+
+/** True when this page load is the return leg of an OAuth redirect. */
+function isOAuthReturn(){
+  return /(access_token|refresh_token|code|error|error_description)=/
+    .test((window.location.hash||'') + (window.location.search||''));
+}
+
+/** Strips tokens and OAuth errors from the address bar once they have been
+ *  consumed, so refreshing does not replay a dead token and the URL is safe
+ *  to copy or share. */
+function scrubAuthFragment(){
+  try{
+    if(isOAuthReturn()){
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }catch(e){}
+}
+
+/** Supabase Auth reads the OAuth fragment asynchronously. Asking for the user
+ *  straight away can race the client and look like "nothing happened", so
+ *  wait a few seconds for the session to settle before giving up. */
+async function waitForAuthUser(timeoutMs){
+  const deadline = Date.now() + (timeoutMs || 4000);
+  while(Date.now() < deadline){
+    try{
+      const {data, error} = await sb.auth.getSession();
+      if(!error && data && data.session){
+        const {data:userData} = await sb.auth.getUser();
+        if(userData && userData.user) return userData.user;
+      }
+    }catch(e){}
+    await new Promise(r=>setTimeout(r, 150));
+  }
+  return null;
+}
+
 async function loginWithGoogle(){
+  // Start from a clean identity: a leftover local session or a stale OAuth
+  // fragment makes the chooser reuse the previous Google account.
+  try{ scrubAuthFragment(); }catch(e){}
+  try{ await sb.auth.signOut({ scope: 'local' }); }catch(e){}
   const {error} = await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.origin + window.location.pathname }
+    options: {
+      redirectTo: window.location.origin + window.location.pathname,
+      queryParams: { prompt: 'select_account' }
+    }
   });
-  if(error) authError(error.message);
+  if(error) authError(oauthErrorMessage(error.code, error.message));
 }
 
 /** Shown when a signed-in OAuth identity has no ChiiTech profile:
@@ -368,8 +440,18 @@ async function registerCompanyWithOAuth(){
 /** Google login for already-linked accounts: role comes from the profiles
  *  table only — OAuth never grants a role by itself. */
 async function finishOAuthLogin(){
-  const {data:{user}} = await sb.auth.getUser();
-  if(!user){ clearSession(); return; }
+  const returning = isOAuthReturn();
+  const user = returning ? await waitForAuthUser(4000) : (await sb.auth.getUser()).data.user;
+  if(!user){
+    // Ordinary visit to the sign-in screen: nothing to do, stay quiet.
+    if(!returning) return;
+    // We came back from Google but no session was created. Say so instead of
+    // leaving the user on a sign-in screen that looks like nothing happened.
+    scrubAuthFragment();
+    authError('Google returned you to the app but no session was created. Most likely the address Google sent you to is not this site — check Authentication → URL Configuration → Site URL in Supabase is https://chiitech.pages.dev/.');
+    return;
+  }
+  scrubAuthFragment();
   const built = await buildSessionFromProfile(user);
   if(built === 'deleted'){ await sb.auth.signOut(); hideOAuthSignup(); authError('This account has been closed.'); return; }
   if(!built){ showUnlinkedNotice(user.email || 'unknown address'); return; }
