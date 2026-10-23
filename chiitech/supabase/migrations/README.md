@@ -1,6 +1,19 @@
 # Database migrations
 
-Live history is 21 entries (verified 2026-09-25 against `ChiTech b`,
+## Status (2026-10-23)
+
+This folder holds **41** files, `01` → `41_drop_legacy_functions`.
+
+The live project's migration history was last verified on **2026-09-25 at 21 entries**.
+That means up to 20 migrations may not yet be applied live. Before any schema change,
+query the live project (or read the Supabase migration list) and record the actual count
+in `../../STATE.md`.
+
+Do not assume this folder and the live database agree. Do not `db reset`.
+
+## History notes
+
+Live history at last verification was 21 entries (2026-09-25 against `ChiTech b`,
 ref `qmypqghktxlscibgxgxo`):
 01–18 as named, then 20260922222101_19_super_admin_privacy_and_fraud_signals,
 20260923203256_20_imports_and_security_alerts,

@@ -423,14 +423,24 @@ Simulated for the prototype (needs real integrations to go live):
 
 ## Next steps to make this production-ready
 
-1. Replace `data.js` with real API calls to the FastAPI backend.
+*Refreshed 2026-10-23. The list below used to predate the Supabase migration; items 1 and
+4 are now done, so they are marked as such rather than deleted.*
+
+1. ~~Replace `data.js` with real API calls to a backend.~~ **Done** — `data.js` is now a
+   thin layer over Supabase tables fenced by RLS, not an in-memory mock.
 2. Move the hash-chain and Benford's Law checks server-side so they can't be bypassed
-   by editing the client.
-3. Replace the rule-based AI assistant with an LLM API call, passing it the same
-   business data already used to compute the dashboard.
-4. Add real authentication (JWT + hashed passwords), and proper server-side
-   enforcement of department permissions (today they're enforced in the browser only).
+   by editing the client. **Still open.**
+3. Replace the rule-based assistant with a real LLM call, passing it the same business
+   data the dashboard already uses. **Partly done** — the `ai-assist` Edge Function
+   provides an optional server-side LLM layer; the deterministic fallback is still the
+   default path, and the import analysis has no LLM at all.
+4. ~~Add real authentication and server-side enforcement of department permissions.~~
+   **Done** — Supabase Auth plus RLS; department visibility is refused by data, not just
+   hidden in the UI. Remaining hardening: MFA, auth rate limits, email verification.
 5. Connect a real payment provider (e.g. Paystack, Flutterwave) for the Billing &
-   payouts page before it can move real money.
+   payouts page before it can move real money. **Still open.**
 6. Package as an installable app (PWA manifest + service worker for desktop/mobile
    "Add to Home Screen", or wrap with Capacitor/Electron) once the web version is signed off.
+   **Still open.**
+7. **New:** confirm the live database has all 41 migrations applied. The folder is ahead
+   of the last verified live count (21, as of 2026-09-25). See `STATE.md`.

@@ -39,7 +39,7 @@ is not possible, full stop.
 | Frontend (HTML/CSS/JS) | Wherever it's hosted (Netlify/Vercel/etc. — not fixed by this plan) | This project zip's `index.html`, `css/`, `js/` |
 | Supabase project URL + publishable key | `js/supabase-config.js` | Already in this project zip; regenerate from Supabase dashboard if the project itself is rebuilt fresh (a new project = a new URL and key) |
 | Auth accounts (who can log in) | Supabase Auth (`auth.users`) | **Not covered by the migrations folder at all.** If the Supabase project is destroyed and rebuilt fresh, every admin/worker has to sign up again — their `profiles` row rebuilds from a fresh signup, but their old password does not carry over, and old data won't reappear unless it was in a backup |
-| Reserved super-admin access | `ensure_super_admin()` (called by `login()` in `js/auth.js`), keyed to `SUPER_ADMIN_EMAIL` in `js/data.js` | Works the moment that email signs in again on a rebuilt project (migration 38 retired the legacy `bootstrap_super_admin()`) |
+| Reserved super-admin access | `ensure_super_admin()` (called by `login()` in `js/auth.js`), keyed to `SUPER_ADMIN_EMAIL` in `js/data.js` | Works the moment that email signs in again on a rebuilt project (migration 41 retired the legacy `bootstrap_super_admin()`) |
 
 ## 3. Recovery scenarios, in order of how bad they are
 
@@ -67,7 +67,7 @@ recent backup (or the manual export from Section 1)
 **Impact: high — this is the scenario Section 1 exists to prevent.**
 **Recovery time for structure: under an hour. Data: unrecoverable.**
 1. Create a new Supabase project.
-2. Run every file in `supabase/migrations/` in order (01 through 13)
+2. Run every file in `supabase/migrations/` in filename order (01 through 41)
    — this rebuilds every table, policy, and function exactly as they
    are today. See that folder's own README for the two ways to run
    them.

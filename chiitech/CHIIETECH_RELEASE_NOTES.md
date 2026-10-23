@@ -47,8 +47,8 @@
 ## Deployment order
 
 1. Back up the existing Supabase database.
-2. Run migration `20260923000100_imports_security_superadmin.sql`.
-3. Run migration `20260923000200_security_detection_rules.sql`.
+2. Record which migrations are already applied live (last verified: 21, on 2026-09-25).
+3. Apply every missing migration in filename order (`01` → `41_drop_legacy_functions`).
 4. Deploy the updated frontend files.
 5. Confirm the reserved Super Admin account can sign in.
 6. Test a small import before using a large historical file.

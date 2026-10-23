@@ -6,6 +6,16 @@
 
 The repository is the source of truth for frontend code and Supabase migration history.
 
+**Repository layout (fixed 2026-10-23):** the git root is `ChiiTech_Professional 10/`
+and the site lives in `chiitech/`, which is tracked. Older copies of this project
+tracked a duplicated `ChiiTech_Professional 10/chiitech/` while the real working copy was
+gitignored; that is gone. Read `../AGENTS.md` for the working rules and `../STATE.md`
+for current status.
+
+**Migration count:** 41 files (`01` through `41_drop_legacy_functions`). The last
+*verified* live count was 21 (2026-09-25), so confirm what is actually applied before
+any new schema work.
+
 **Backend:** the existing ChiiTech Supabase project configured in `js/supabase-config.js`.
 
 Do not create a second Supabase project unless the owner explicitly decides to create a staging environment.
@@ -68,7 +78,9 @@ For this release:
 - `20260923000100_imports_security_superadmin.sql`
 - `20260923000200_security_detection_rules.sql`
 
-Review these migrations in the Supabase SQL Editor before execution.
+Everything after them (22–41) is also part of the current schema and must be applied
+in filename order if it is not already live. Review each migration in the Supabase SQL
+Editor before execution.
 
 ## Current architecture changes
 
@@ -150,9 +162,9 @@ These are deliberately described as **review signals**, not automatic fraud dete
 ## Before deploying the current release
 
 1. Back up the existing Supabase database.
-2. Review migration 19.
-3. Review migration 20.
-4. Run migrations against the existing project.
+2. Record which migrations are already applied in the live project.
+3. Review every migration that is not yet applied, in filename order (`01`–`41`).
+4. Run those migrations against the existing project. Never `db reset`.
 5. Verify the Super Admin email in Supabase Auth.
 6. Sign in as Super Admin.
 7. Confirm the platform console loads.
