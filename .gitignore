@@ -1,6 +1,11 @@
 # Local scratch + build artifacts (never commit)
-/chiitech/
 *.zip
+
+# Never commit secrets or local env files
+.env
+.env.local
+*.pem
+*.key
 
 # wrangler's local cache (account id, page state) — local tooling only
 /.wrangler/
