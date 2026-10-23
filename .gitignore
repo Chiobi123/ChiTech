@@ -9,3 +9,6 @@
 
 # wrangler's local cache (account id, page state) — local tooling only
 /.wrangler/
+
+# deploy staging output (built by scripts/deploy.mjs)
+/dist/

@@ -149,12 +149,17 @@ npm run version:bump   # if js/ or css/ changed
 npm run deploy
 ```
 
-Equivalent raw command: `wrangler pages deploy chiitech --project-name chiitech`.
+`npm run deploy` builds a whitelisted `dist/` (only `index.html`, `_headers`, `css/`,
+`js/`), deploys that, and deletes it afterwards. It refuses to run if anything internal
+(`.md`, `.sql`, `.pdf`, `.zip`, `.toml`, `.ts`, `.json`) would be published.
 
-`ci: trigger Pages build with clean output dir (internal files excluded)` documents the
-intent: only `index.html`, `css/`, `js/` and `_headers` may be served. `chiitech/` has a
-Pages catch-all, so a missing file returns the app shell (200) rather than 404 — check
-the response body, not just the status code, when verifying.
+**Never run `wrangler pages deploy chiitech` directly.** `wrangler pages deploy` uploads
+the directory as-is and ignores `.pagesignore`; doing that once already published
+`README.md`, the Supabase migrations and the load tests. `.pagesignore` only governs
+Pages' own git-connected build.
+
+`chiitech/` has a Pages catch-all, so a missing file returns the app shell (200) rather
+than 404 — check the response body, not just the status code, when verifying.
 
 ### 6.4 Load test
 
