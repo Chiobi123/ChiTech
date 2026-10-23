@@ -57,6 +57,10 @@ was gitignored. That is fixed. Never reintroduce a nested project folder.
 If a ZIP and the repository disagree, the repository wins. If the live database and
 the migrations folder disagree, stop and report it before changing anything.
 
+> **They currently disagree.** The live project records 22 migrations while this folder
+> holds 42 files, and several objects were applied directly in the SQL Editor. Read the
+> "Database reality check" in `STATE.md` before touching schema or running `db push`.
+
 ## 4. Hard rules
 
 1. **Never run `supabase db reset`** or any operation that drops/recreates the live

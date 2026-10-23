@@ -1,15 +1,26 @@
 # Database migrations
 
-## Status (2026-10-23)
+## Status (2026-10-23, verified against live)
 
-This folder holds **41** files, `01` → `41_drop_legacy_functions`.
+This folder holds **42** files: `01` → `41_drop_legacy_functions`, plus
+`20261002075526_22_restore_auditor_access.sql`, recovered from the live project.
 
-The live project's migration history was last verified on **2026-09-25 at 21 entries**.
-That means up to 20 migrations may not yet be applied live. Before any schema change,
-query the live project (or read the Supabase migration list) and record the actual count
-in `../../STATE.md`.
+The live project records **22** applied migrations, ending at
+`20261002075526_22_restore_auditor_access`.
 
-Do not assume this folder and the live database agree. Do not `db reset`.
+**The folder and the live history do not correspond, on purpose of accident:**
+
+- Live `20_imports_and_security_alerts` (`20260923203256`) and
+  `21_security_detection_rules` (`20260923203310`) were applied under those versions, but
+  the repo stores different files for them (`20260923000100_…`, `20260923000200_…`).
+  The live SQL is the older permissive super-admin model; the repo SQL is the isolated
+  model. The isolated model **is** what is actually running, applied out of band.
+- Objects from local 22–39 exist live but were never recorded as migrations.
+- Genuinely missing live: the `receipts` storage bucket (39), `company_summary()` (40),
+  and the legacy function drops (41).
+
+**Do not run `supabase db push` or `db reset` against this folder until the history is
+reconciled.** See the "Database reality check" section in `../../STATE.md`.
 
 ## History notes
 
