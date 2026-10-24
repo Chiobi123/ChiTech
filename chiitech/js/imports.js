@@ -254,18 +254,67 @@ async function explainImportWithAI(){
   box.innerHTML = '<div class="text-muted">Asking the AI…</div>';
   try {
     const ctrl = new AbortController();
-    const timer = setTimeout(()=>ctrl.abort(), 15000);
+    const timer = setTimeout(()=>ctrl.abort(), 30000);
     const {data, error} = await sb.functions.invoke('ai-assist', {
-      body: { mode:'import', company_id: session.companyId, analysis: importDraft.analysis },
+      body: { mode:'import_deep', company_id: session.companyId, batch_id: importDraft.batchId },
       signal: ctrl.signal
     });
     clearTimeout(timer);
     if(!error && data && data.answer){
+      if(data.structured){
+        renderStructuredAIReview(box, data.structured);
+        return;
+      }
       box.innerHTML = `<div class="playbook">✦ ${importEsc(data.answer).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>')}</div>`;
       return;
     }
   } catch(e){ /* fall through */ }
   box.innerHTML = '<div class="text-muted">AI unavailable right now — the automated findings above remain the audited baseline.</div>';
+}
+
+/** Render structured AI findings (anomalies, patterns, cross-references, recommendations). */
+function renderStructuredAIReview(box, structured){
+  const sections = [];
+  if(structured.summary){
+    sections.push(`<div class="playbook" style="margin-bottom:12px;"><b>Executive Summary</b><br>${importEsc(structured.summary)}</div>`);
+  }
+  if(structured.anomalies?.length){
+    sections.push(`<div style="margin-bottom:12px;"><b>⚠ Anomalies (${structured.anomalies.length})</b>${structured.anomalies.map(a=>
+      `<div class="playbook" style="margin-top:8px;border-left:3px solid var(--warn);padding-left:8px;">
+        <b>${importEsc(a.type.replace(/_/g,' '))} [${a.severity}]</b><br>
+        ${importEsc(a.evidence)}
+        ${a.rows?.length ? `<br><small>Rows: ${a.rows.join(', ')}</small>` : ''}
+      </div>`).join('')}</div>`);
+  }
+  if(structured.patterns?.length){
+    sections.push(`<div style="margin-bottom:12px;"><b>📊 Patterns (${structured.patterns.length})</b>${structured.patterns.map(p=>
+      `<div class="playbook" style="margin-top:8px;border-left:3px solid var(--info);padding-left:8px;">
+        <b>${importEsc(p.type.replace(/_/g,' '))}</b><br>
+        ${importEsc(p.description)}<br>
+        <small>Evidence: ${importEsc(p.evidence)}</small>
+      </div>`).join('')}</div>`);
+  }
+  if(structured.cross_references?.length){
+    sections.push(`<div style="margin-bottom:12px;"><b>🔗 Cross-References (${structured.cross_references.length})</b>${structured.cross_references.map(c=>
+      `<div class="playbook" style="margin-top:8px;border-left:3px solid var(--accent);padding-left:8px;">
+        <b>${importEsc(c.type.replace(/_/g,' '))}</b><br>
+        ${importEsc(c.description)}<br>
+        <small>Evidence: ${importEsc(c.evidence)}</small>
+      </div>`).join('')}</div>`);
+  }
+  if(structured.recommendations?.length){
+    sections.push(`<div><b>🎯 Prioritized Actions (${structured.recommendations.length})</b>${structured.recommendations
+      .sort((a,b)=>(a.priority||99)-(b.priority||99))
+      .map((r,i)=>`<div class="playbook" style="margin-top:8px;border-left:3px solid var(--ok);padding-left:8px;">
+        <b>${i+1}. ${importEsc(r.action)}</b><br>
+        <small>Reason: ${importEsc(r.reason)}</small>
+      </div>`).join('')}</div>`);
+  }
+  if(!sections.length){
+    box.innerHTML = '<div class="text-muted">AI returned no structured findings — the automated analysis above remains the baseline.</div>';
+  } else {
+    box.innerHTML = sections.join('');
+  }
 }
 
 function normalizedRow(r,d){
