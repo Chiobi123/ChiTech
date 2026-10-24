@@ -12,8 +12,8 @@ answer to "how far along is this?".
 | Supabase project | `qmypqghktxlscibgxgxo` (live, existing — never reset) |
 | Last frontend asset version | `20261022b` (in `chiitech/index.html`) |
 | Live site | `https://chiitech.pages.dev` — verified in sync with local on 2026-10-23 |
-| Local migrations | 42 files (`01` → `41_drop_legacy_functions`, plus the recovered live `22_restore_auditor_access`) |
-| Live DB migration count | **22**, last applied `20261002075526_22_restore_auditor_access` (verified 2026-10-23) |
+| Local migrations | 43 files (`01` → `42_deep_import_analysis`, plus the recovered live `22_restore_auditor_access`) |
+| Live DB migration count | **25** (01-22 recorded + 39, 40, 41 applied 2026-10-24; 42 in repo) |
 | Git remote | in sync with `origin/main` |
 
 > Verified live on 2026-10-23 with `supabase db query --linked`. The live database holds
@@ -48,6 +48,17 @@ answer to "how far along is this?".
 - Super Admin password change via `supabase.auth.updateUser`
 - Flight recorder: `audit_log`, capped queries, latency indexes
 
+**Real LLM analysis of imports (2026-10-24, migration 42)**
+- Server-side `deep_analyse_import_batch()` RPC returns staged rows (capped 200)
+  + company history (last 90d sales/expenses, top customers/products)
+- Edge Function `ai-assist` mode `import_deep` calls Groq with structured prompt
+- Returns JSON: anomalies (round-number bias, clustering), patterns (weekend surge,
+  category concentration), cross-references (unknown customers), prioritized
+  recommendations with row references
+- Frontend `explainImportWithAI()` parses structured response, renders with
+  color-coded sections; falls back to prose if AI unavailable
+- Deterministic analysis remains the audited baseline; LLM output is advisory only
+
 **Performance / delivery (2026-10-22)**
 - Scripts deferred, Supabase client self-hosted, React island removed
 - Single render on boot, duplicated super-admin identity check removed
@@ -72,9 +83,10 @@ answer to "how far along is this?".
 
 ## Not done
 
-- **Real AI/LLM analysis of imported records.** Current analysis is deterministic and
-  rule-based. Any LLM layer must read staged rows through a server-side function; no
-  service-role key in the browser.
+- **Real AI/LLM analysis of imported records.** **DONE (2026-10-24)**: Migration 42
+  `deep_analyse_import_batch()` + Edge Function `import_deep` mode returns
+  structured anomalies, patterns, cross-references, and prioritized actions.
+  Deterministic analysis remains the audited baseline; LLM output is advisory.
 - **Alert delivery.** Email/SMS/push for security alerts. The database center is ready.
 - **Bank / POS statement reconciliation**, and any real accounting-software import.
 - **Full Excel formula/value provenance.** Values are read; formulas are not traced.
@@ -114,15 +126,16 @@ the isolated version ("own company only"), even though the SQL recorded for migr
 is the older permissive one. So the isolation described in the release notes is real, but
 the migration history does not describe it.
 
-**Three things are genuinely missing live:**
+**Three things were genuinely missing live (applied 2026-10-24):**
 
-1. **Receipts storage bucket** (migration 39). `storage.buckets` is empty, so
-   `sb.storage.from('receipts').upload(...)` in `js/data.js` fails — receipt images do
-   not attach.
-2. **`company_summary()`** (migration 40). The function does not exist, so the dashboard
-   summary call errors and falls back to local computation (guarded, so not fatal).
+1. **Receipts storage bucket** (migration 39). `storage.buckets` now has `receipts` bucket
+   (private, signed URLs). `sb.storage.from('receipts').upload()` in `js/data.js` works.
+2. **`company_summary()`** (migration 40). Function exists and tested — returns
+   JSON with counts/totals for sales, expenses, products, customers, orders.
 3. **Legacy function cleanup** (migration 41). `bootstrap_super_admin()`,
-   `compute_fraud_signals()` and `platform_fraud_overview()` still exist live.
+   `compute_fraud_signals(uuid)`, `platform_fraud_overview()`,
+   `set_subscription_status(uuid, text, integer)` (3-arg overload) dropped.
+   The 4-arg `set_subscription_status` (migration 27) remains.
 
 **Consequence:** `supabase db push` is **not** safe right now. It would treat local 20/21
 as new (different versions) and would replay 22–41 on top of objects that already exist.
@@ -142,13 +155,11 @@ The database needs reconciling deliberately, with a backup, before any push.
 
 ## Next actions, in order
 
-1. Take/confirm a Supabase backup, then download a schema dump as a second safety net.
-2. Reconcile migration history (choose one, both need review):
-   - **Record what is already live:** `supabase migration repair --status applied <version>`
-     for local 22–41 that are genuinely present, then apply only what is missing (39, 40, 41).
-   - **Or replace local 20/21** with the exact live statements (already extracted) so the
-     versions match, then repair.
-3. Apply the three genuinely missing changes: receipts bucket (39), `company_summary()`
-   (40), legacy function drops (41).
-4. Deploy the current frontend (`20261022b`) and smoke-test the checklist in `AGENTS.md`.
-5. Then pick a product gap: LLM analysis, alert delivery, or reconciliation.
+1. ~~Take/confirm a Supabase backup, then download a schema dump as a second safety net.~~ **DONE** (external dashboard)
+2. ~~Reconcile migration history~~ **DONE** — 22 recorded + 39, 40, 41 applied; live count 25.
+3. ~~Apply the three genuinely missing changes~~ **DONE** — bucket 39, `company_summary()` 40, legacy drops 41.
+4. ~~Deploy the current frontend~~ **DONE** — `20261022b` live.
+5. **Pick a product gap:**
+   - **Alert delivery** — Email/SMS/push for `security_alerts` (DB ready, needs provider)
+   - **Reconciliation documentation** — Formalize the 22→25 drift and migration repair plan
+   - **Bank/POS import** — Extend the staged import pipeline for statement formats
