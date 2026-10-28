@@ -20,6 +20,14 @@ answer to "how far along is this?".
 > more than the 22 recorded migrations imply: many later objects were applied directly
 > in the SQL Editor and never recorded. See "Database reality check" below.
 
+> Google OAuth fixed 2026-10-28: the deleted credential was replaced with a fresh
+> OAuth client `634119450063-u5gp5fd9c2ar2eucfos64n24hrtpmqhe` (web app, redirect
+> `https://qmypqghktxlscibgxgxo.supabase.co/auth/v1/callback`). Gotcha: Supabase's
+> config API stores the secret under `external_google_secret` — the field
+> `external_google_client_secret` is silently ignored. Verified end-to-end:
+> consent screen → callback → live session on `chiitech.pages.dev`. Consent screen
+> is published (External / In production, unverified).
+
 ## Done
 
 **Core product (working against live Supabase)**
