@@ -9,19 +9,22 @@
      Every colour used anywhere in the app is one of the variables
      below — change a value here to re-theme the whole app at once.
      ============================================================ */
-  --bg:#0A0F0D;
-  --surface:#141B18;
-  --surface-2:#182019;
-  --surface-3:#1E2721;
-  --border:#22302A;
-  --neon:#39FF88;
-  --neon-deep:#12A64C;
-  --neon-dim:rgba(57,255,136,0.12);
-  --text:#F3F6F4;
-  --muted:#9AA69F;
-  --danger:#FF5C5C;
-  --danger-dim:rgba(255,92,92,0.12);
-  --warn:#FFD166;
+  /* Design tokens — professional fintech/audit palette (light).
+     One accent (deep audit green), deep forest ink text, hairline
+     borders. Semantic red/amber reserved for status only. */
+  --bg:#F5F7F5;
+  --surface:#FFFFFF;
+  --surface-2:#EFF3F0;
+  --surface-3:#E5EBE7;
+  --border:#DDE5E0;
+  --neon:#0F7B43;
+  --neon-deep:#0A5C31;
+  --neon-dim:rgba(15,123,67,0.08);
+  --text:#0D1F17;
+  --muted:#5A6B62;
+  --danger:#C0271F;
+  --danger-dim:rgba(192,39,31,0.08);
+  --warn:#8A5A00;
   --radius:14px;
   --radius-sm:10px;
 }
@@ -49,15 +52,15 @@ body::before{
   content:"";
   position:fixed; inset:0; z-index:0; pointer-events:none;
   background:
-    radial-gradient(circle at 12% 18%, rgba(57,255,136,0.09), transparent 38%),
+    radial-gradient(circle at 12% 18%, rgba(15,123,67,0.09), transparent 38%),
     radial-gradient(circle at 88% 12%, rgba(18,166,72,0.10), transparent 40%),
-    radial-gradient(circle at 75% 85%, rgba(57,255,136,0.07), transparent 42%),
+    radial-gradient(circle at 75% 85%, rgba(15,123,67,0.07), transparent 42%),
     radial-gradient(circle at 10% 90%, rgba(18,166,72,0.06), transparent 38%),
     repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 56px),
     repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 56px);
 }
 /* Everything else renders above the decorative layer. */
-.app, .login-wrap, .about-wrap{ position:relative; z-index:1; }
+.app, .auth-layout, .about-wrap{ position:relative; z-index:1; }
 
 a{color:var(--neon);text-decoration:none;}
 
@@ -72,9 +75,9 @@ a{color:var(--neon);text-decoration:none;}
   to{ opacity:1; transform:translateY(0); }
 }
 @keyframes livePulse{
-  0%{ box-shadow:0 0 0 0 rgba(57,255,136,0.45); }
-  70%{ box-shadow:0 0 0 7px rgba(57,255,136,0); }
-  100%{ box-shadow:0 0 0 0 rgba(57,255,136,0); }
+  0%{ box-shadow:0 0 0 0 rgba(15,123,67,0.45); }
+  70%{ box-shadow:0 0 0 7px rgba(15,123,67,0); }
+  100%{ box-shadow:0 0 0 0 rgba(15,123,67,0); }
 }
 @keyframes popIn{
   from{ opacity:0; transform:translateY(6px) scale(0.98); }
@@ -93,15 +96,15 @@ a{color:var(--neon);text-decoration:none;}
 .card, .stat{ transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
 .card:hover, .stat:hover{
   transform:translateY(-2px);
-  box-shadow:0 12px 26px -16px rgba(0,0,0,0.55);
-  border-color:rgba(57,255,136,0.22);
+  box-shadow:0 12px 26px -16px rgba(13,31,23,0.22);
+  border-color:rgba(15,123,67,0.35);
 }
 .stat .value{ transition:color .2s ease; }
 
 .btn{ transition:transform .12s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease; }
 .btn:hover{ transform:translateY(-1px); }
 .btn:active{ transform:translateY(0) scale(0.97); }
-.btn-primary:hover{ box-shadow:0 6px 18px -6px rgba(57,255,136,0.5); }
+.btn-primary:hover{ box-shadow:0 6px 18px -6px rgba(15,123,67,0.35); }
 
 .nav-link{ transition:background .15s ease, color .15s ease, transform .15s ease, border-color .15s ease; }
 .nav-link:hover{ transform:translateX(2px); }
@@ -177,7 +180,7 @@ tr:hover .badge{ transform:translateY(-1px); }
 .nav-link.active{
   background:var(--neon-dim);
   color:var(--neon);
-  border-color:rgba(57,255,136,0.25);
+  border-color:rgba(15,123,67,0.25);
 }
 .nav-icon{width:18px;text-align:center;}
 .sidebar-foot{
@@ -293,10 +296,10 @@ tr:hover .badge{ transform:translateY(-1px); }
 .btn-primary{
   background:var(--neon);
   border-color:var(--neon);
-  color:#052312;
+  color:#FFFFFF;
 }
-.btn-primary:hover{background:#5dffa2;}
-.btn-danger{color:var(--danger);border-color:rgba(255,92,92,0.3);}
+.btn-primary:hover{background:var(--neon-deep);border-color:var(--neon-deep);}
+.btn-danger{color:var(--danger);border-color:rgba(192,39,31,0.35);}
 .btn-block{width:100%;}
 .btn-sm{padding:6px 10px;font-size:12px;}
 
@@ -397,7 +400,7 @@ tbody tr:hover{background:var(--surface-2);}
 }
 .msg{max-width:80%;padding:10px 13px;border-radius:12px;font-size:13px;line-height:1.55;}
 .msg.user{align-self:flex-end;background:var(--surface-3);color:var(--text);}
-.msg.ai{align-self:flex-start;background:rgba(57,255,136,0.08);border:1px solid rgba(57,255,136,0.25);color:var(--text);}
+.msg.ai{align-self:flex-start;background:rgba(15,123,67,0.08);border:1px solid rgba(15,123,67,0.25);color:var(--text);}
 .chat-input-row{display:flex;gap:8px;}
 .suggestion{
   display:inline-block;background:var(--surface-2);border:1px solid var(--border);
@@ -508,7 +511,7 @@ tbody tr:hover{background:var(--surface-2);}
 .info-dot:hover .tooltip, .info-dot:focus .tooltip, .info-dot:focus-visible .tooltip{display:block;}
 .tooltip{
   display:none;position:absolute;bottom:22px;left:50%;transform:translateX(-50%);
-  background:#000;border:1px solid var(--border);color:var(--text);
+  background:var(--surface-3);border:1px solid var(--border);color:var(--text);
   font-size:11px;font-weight:400;padding:8px 10px;border-radius:8px;
   width:220px;max-width:62vw;line-height:1.5;z-index:30;
 }
@@ -543,16 +546,47 @@ tbody tr:hover{background:var(--surface-2);}
 .ti-layout-dashboard::before{content:"\25A6";}
 .ti-box::before{content:"\1F4E6";}
 
-/* ---------- Auth screen ---------- */
-.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:transparent;padding:20px;}
+/* ---------- Auth screen: two-panel fintech layout ----------
+   Left panel states what ChiiTech is — audit-grade financial operations
+   for Nigerian business (real content, no stock imagery). Right panel
+   is the sign-in card. Collapses to a single column at ≤900px. */
+.auth-layout{min-height:100vh;display:grid;grid-template-columns:1.2fr 1fr;background:transparent;}
+.auth-hero{display:flex;align-items:center;padding:52px 56px;border-right:1px solid var(--border);}
+.auth-hero-inner{max-width:540px;margin:0 auto;width:100%;}
+.auth-brand{font-size:14px;font-weight:800;letter-spacing:4px;color:var(--neon);margin-bottom:30px;}
+.auth-headline{font-size:33px;line-height:1.25;font-weight:700;letter-spacing:-0.4px;margin:0 0 14px;}
+.auth-lead{font-size:14px;line-height:1.7;color:var(--muted);margin:0 0 28px;}
+.auth-pillars{list-style:none;margin:0 0 26px;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.auth-pillars li{display:flex;gap:11px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 13px;}
+.auth-pillars svg{width:18px;height:18px;flex:none;color:var(--neon);margin-top:2px;}
+.auth-pillars b{display:block;font-size:12.5px;margin-bottom:2px;}
+.auth-pillars span{font-size:11.5px;color:var(--muted);line-height:1.5;}
+.auth-assurance{display:flex;flex-wrap:wrap;gap:8px;}
+.auth-assurance span{font-size:11px;color:var(--muted);border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:5px 11px;}
+.auth-side{display:flex;align-items:center;justify-content:center;padding:36px 26px;min-width:0;}
+/* Standard Google sign-in button look: white plate, dark text, real G mark. */
+.btn-google{background:#fff;color:#1d2320;border:1px solid var(--border);font-weight:600;box-shadow:0 1px 2px rgba(13,31,23,0.06);}
+.btn-google:hover{background:var(--surface-2);border-color:var(--border);box-shadow:0 1px 2px rgba(13,31,23,0.06);}
+.btn-google .g-icon{width:17px;height:17px;vertical-align:-3.5px;margin-right:9px;}
+@media (max-width:900px){
+  .auth-layout{grid-template-columns:1fr;}
+  .auth-hero{border-right:none;border-bottom:1px solid var(--border);padding:34px 22px 30px;}
+  .auth-hero-inner{max-width:520px;}
+  .auth-brand{margin-bottom:16px;}
+  .auth-headline{font-size:24px;}
+  .auth-lead{font-size:13px;margin-bottom:18px;}
+  .auth-pillars{margin-bottom:0;}
+  .auth-assurance{display:none;}
+  .auth-side{padding:28px 16px 40px;}
+}
 .login-card{width:400px;max-width:100%;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:30px 28px;}
 .login-brand{font-size:24px;font-weight:700;color:var(--neon);margin-bottom:4px;}
 .login-tag{font-size:12.5px;color:var(--muted);margin-bottom:22px;}
 .auth-tabs{display:flex;gap:6px;background:var(--surface-2);padding:4px;border-radius:12px;margin-bottom:20px;}
 .auth-tab{flex:1;text-align:center;padding:9px 0;border-radius:9px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:background .15s ease,color .15s ease;}
 .auth-tab:hover{color:var(--text);background:var(--surface-3);}
-.auth-tab.active{background:var(--neon);color:#052312;}
-.auth-tab.active:hover{background:#5dffa2;color:#052312;}
+.auth-tab.active{background:var(--neon);color:#fff;}
+.auth-tab.active:hover{background:var(--neon-deep);color:#fff;}
 .auth-pane{display:none;}
 .auth-pane.active{display:block;}
 /* The pane fades in when you switch tabs, so it's obvious the form
@@ -566,18 +600,12 @@ tbody tr:hover{background:var(--surface-2);}
 
 /* ---------- Auth path highlight cards ---------- */
 .auth-highlight{
-  border:1px solid rgba(57,255,136,0.35);
-  background:rgba(57,255,136,0.07);
+  border:1px solid rgba(15,123,67,0.35);
+  background:rgba(15,123,67,0.07);
   border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:12px;line-height:1.7;
 }
 .auth-highlight.alt{border-style:dashed;}
 
-/* ---------- Login trust row (one glance: what ChiiTech does) ---------- */
-.login-trust{
-  display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
-  margin-top:18px;font-size:11.5px;color:var(--muted);
-}
-.login-trust span{white-space:nowrap;}
 .auth-subtabs{display:flex;gap:16px;margin-bottom:16px;font-size:12px;}
 .auth-subtab{color:var(--muted);cursor:pointer;padding-bottom:4px;border-bottom:2px solid transparent;}
 .auth-subtab.active{color:var(--neon);border-color:var(--neon);}
@@ -589,12 +617,12 @@ tbody tr:hover{background:var(--surface-2);}
 .code-explainer b{color:var(--text);}
 .code-explainer code{background:var(--surface-3);padding:1px 5px;border-radius:4px;color:var(--neon);}
 .super-badge{
-  display:inline-block;background:linear-gradient(90deg,#39FF88,#12A64C);color:#052312;
+  display:inline-block;background:linear-gradient(90deg,#0F7B43,#0A5C31);color:#FFFFFF;
   font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:0.3px;
 }
 .register-callout{
   margin-top:18px;padding:14px 16px;border-radius:12px;
-  background:var(--neon-dim);border:1px solid rgba(57,255,136,0.3);
+  background:var(--neon-dim);border:1px solid rgba(15,123,67,0.3);
 }
 .register-callout-title{font-weight:700;color:var(--neon);font-size:13px;margin-bottom:4px;}
 .register-callout-body{font-size:11.5px;color:var(--muted);line-height:1.5;}
@@ -634,7 +662,7 @@ tbody tr:hover{background:var(--surface-2);}
 .forgot-title{font-weight:700;font-size:13px;color:var(--neon);margin-bottom:10px;}
 .forgot-result{
   margin-top:12px;padding:12px 14px;border-radius:9px;
-  background:var(--neon-dim);border:1px solid rgba(57,255,136,0.3);font-size:12.5px;line-height:1.6;
+  background:var(--neon-dim);border:1px solid rgba(15,123,67,0.3);font-size:12.5px;line-height:1.6;
 }
 
 /* ---------- About / contact page ---------- */
@@ -673,7 +701,7 @@ tbody tr:hover{background:var(--surface-2);}
 .tier-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
 .tier-VIP{background:rgba(255,209,102,0.15);color:var(--warn);}
 .tier-Regular{background:var(--neon-dim);color:var(--neon);}
-.tier-New{background:rgba(111,183,255,0.15);color:#6FB7FF;}
+.tier-New{background:rgba(47,109,181,0.12);color:#1F5FA8;}
 .tier-AtRisk{background:var(--danger-dim);color:var(--danger);}
 
 /* ---------- Chart controls ---------- */
@@ -682,7 +710,7 @@ tbody tr:hover{background:var(--surface-2);}
   display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:3px;gap:2px;
 }
 .chip-opt{padding:6px 12px;font-size:11.5px;border-radius:7px;color:var(--muted);cursor:pointer;}
-.chip-opt.active{background:var(--neon);color:#052312;font-weight:700;}
+.chip-opt.active{background:var(--neon);color:#fff;font-weight:700;}
 .chart-canvas-wrap{height:220px;position:relative;}
 .chart-canvas-wrap--auto{height:auto !important;display:block;}
 .chi-canvas-box{position:relative;width:100%;}
@@ -698,12 +726,12 @@ tbody tr:hover{background:var(--surface-2);}
 }
 .iso-top{
   position:absolute;top:-9px;left:-9px;right:0;height:9px;
-  background:#7dffb0;
+  background:#35A067;
   clip-path:polygon(0 100%, 100% 100%, 88% 0, 12% 0);
 }
 .iso-side{
   position:absolute;top:0;right:-9px;bottom:0;width:9px;
-  background:#0e7a38;
+  background:#094D28;
   clip-path:polygon(0 0, 100% 12%, 100% 100%, 0 100%);
 }
 .iso-label{font-size:10px;color:var(--muted);}
@@ -736,7 +764,7 @@ tbody tr:hover{background:var(--surface-2);}
   position:fixed;top:14px;right:20px;z-index:60;
   background:var(--surface);border:1px solid var(--warn);color:var(--warn);
   font-size:11.5px;font-weight:600;padding:8px 14px;border-radius:20px;
-  box-shadow:0 6px 18px rgba(0,0,0,0.45);
+  box-shadow:0 6px 18px rgba(13,31,23,0.14);
   display:flex;align-items:center;gap:8px;
 }
 .imp-badge b{color:var(--text);}
@@ -748,7 +776,7 @@ tbody tr:hover{background:var(--surface-2);}
   position:fixed;top:14px;right:20px;z-index:60;
   background:var(--surface);border:1px solid var(--neon-deep);color:var(--neon);
   font-size:11.5px;font-weight:600;padding:8px 14px;border-radius:20px;
-  box-shadow:0 6px 18px rgba(0,0,0,0.45);
+  box-shadow:0 6px 18px rgba(13,31,23,0.14);
   display:flex;align-items:center;gap:8px;
 }
 .auditor-badge b{color:var(--text);}
@@ -759,7 +787,7 @@ tbody tr:hover{background:var(--surface-2);}
   position:fixed;bottom:22px;left:246px;z-index:55;
   background:var(--surface);border:1px solid var(--border);color:var(--text);
   font-size:12px;font-weight:600;padding:9px 16px;border-radius:20px;cursor:pointer;
-  box-shadow:0 6px 18px rgba(0,0,0,0.4);
+  box-shadow:0 6px 18px rgba(13,31,23,0.12);
 }
 .back-btn:hover{border-color:var(--neon-deep);color:var(--neon);}
 @media (max-width:900px){ .back-btn{ left:16px;bottom:78px; } }
@@ -788,15 +816,9 @@ tbody tr:hover{background:var(--surface-2);}
   input,select,textarea{font-size:16px;}
 }
 
-/* ---------- Small phones: calm the garden, keep controls thumb-sized ---------- */
+/* ---------- Small phones: keep controls thumb-sized ---------- */
 @media (max-width:560px){
-  .flower{opacity:.3;}
-  .flower.f1{left:20%;width:44vmin;height:44vmin;}
-  .flower.f2{display:none;}
-  .flower.f3{width:52vmin;height:52vmin;}
   .mobile-topbar .hamburger{width:44px;height:44px;}
-  .login-trust{gap:8px 14px;}
-  .login-trust span{white-space:normal;text-align:center;}
 }
 
 /* ---------- Landscape phones / short screens: reclaim vertical space ---------- */
@@ -805,7 +827,7 @@ tbody tr:hover{background:var(--surface-2);}
   .mobile-nav{padding:6px 6px 8px;}
   .main{padding-top:56px;}
   .login-card{padding:18px;}
-  .login-wrap{padding:12px;}
+  .auth-side{padding:12px;}
   .stat .value{font-size:18px;}
 }
 
@@ -817,72 +839,20 @@ tbody tr:hover{background:var(--surface-2);}
 body::before{
   content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
-    radial-gradient(560px 380px at 12% -4%, rgba(57,255,136,0.10), transparent 65%),
-    radial-gradient(640px 420px at 88% 8%, rgba(57,255,136,0.07), transparent 65%),
-    radial-gradient(700px 520px at 50% 115%, rgba(57,255,136,0.06), transparent 60%);
+    radial-gradient(560px 380px at 12% -4%, rgba(15,123,67,0.05), transparent 65%),
+    radial-gradient(640px 420px at 88% 8%, rgba(15,123,67,0.04), transparent 65%),
+    radial-gradient(700px 520px at 50% 115%, rgba(15,123,67,0.035), transparent 60%);
 }
-#app,.login-wrap,.about-wrap{position:relative;z-index:1;}
+#app,.auth-layout,.about-wrap{position:relative;z-index:1;}
 .login-brand{
-  background:linear-gradient(100deg,#fff 20%,var(--neon) 55%,#fff 85%);
+  background:linear-gradient(100deg,var(--neon-deep),var(--neon));
   -webkit-background-clip:text;background-clip:text;color:transparent;
   letter-spacing:3px;
 }
 .login-card{
-  background:linear-gradient(180deg,rgba(24,32,25,0.96),rgba(16,22,18,0.98));
-  border:1px solid rgba(57,255,136,0.22);
-}
-
-/* ---------- Living flower garden (background only) ----------
-   Layered neon-green blooms, blurred and translucent so they never fight
-   the content. They breathe (slow scale) on a long loop; static when the
-   visitor prefers reduced motion. Pure CSS — no images, no libraries. */
-.flower-field{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
-.flower{
-  position:absolute;bottom:-12vmin;width:34vmin;height:34vmin;opacity:.42;
-  filter:none;
-  animation:bloom 16s ease-in-out infinite alternate;
-}
-.flower.f2{left:8%;width:26vmin;height:26vmin;opacity:.38;animation-duration:18s;animation-delay:-6s;}
-.flower.f3{left:auto;right:6%;width:42vmin;height:42vmin;opacity:.42;animation-duration:22s;animation-delay:-11s;}
-.flower.f1{left:38%;}
-.flower .petals{position:absolute;inset:0;animation:sway 9s ease-in-out infinite alternate;}
-.flower .petals span{
-  position:absolute;left:50%;bottom:50%;width:9vmin;height:20vmin;
-  transform-origin:50% 100%;
-  background:
-    linear-gradient(180deg,rgba(255,255,255,0.28) 0%,transparent 22%),
-    radial-gradient(ellipse at 50% 30%,rgba(190,255,215,0.42),rgba(57,255,136,0.24) 55%,rgba(57,255,136,0.04) 75%,transparent 78%);
-  border-radius:50% 50% 46% 46%;
-  mix-blend-mode:screen;
-}
-.flower .petals span:nth-child(1){transform:rotate(0deg);}
-.flower .petals span:nth-child(2){transform:rotate(45deg);}
-.flower .petals span:nth-child(3){transform:rotate(90deg);}
-.flower .petals span:nth-child(4){transform:rotate(135deg);}
-.flower .petals span:nth-child(5){transform:rotate(180deg);}
-.flower .petals span:nth-child(6){transform:rotate(225deg);}
-.flower .petals span:nth-child(7){transform:rotate(270deg);}
-.flower .petals span:nth-child(8){transform:rotate(315deg);}
-.flower .core{
-  position:absolute;left:50%;bottom:50%;width:7vmin;height:7vmin;transform:translate(-50%,50%);
-  background:radial-gradient(circle,#fff 0%,rgba(255,255,255,0.55) 30%,rgba(57,255,136,0.12) 65%,transparent 72%);
-  border-radius:50%;mix-blend-mode:screen;
-}
-.flower .stem{
-  position:absolute;left:50%;bottom:-14vmin;width:1.2vmin;height:26vmin;transform:translateX(-50%);
-  background:linear-gradient(180deg,transparent,rgba(57,255,136,0.22));
-  border-radius:1vmin;filter:blur(2px);
-}
-@keyframes bloom{
-  from{transform:scale(0.94) translateY(0);}
-  to{transform:scale(1.06) translateY(-2vmin);}
-}
-@keyframes sway{
-  from{transform:rotate(-4deg);}
-  to{transform:rotate(4deg);}
-}
-@media (prefers-reduced-motion: reduce){
-  .flower,.flower .petals{animation:none;}
+  background:var(--surface);
+  border:1px solid var(--border);
+  box-shadow:0 24px 60px -24px rgba(13,31,23,0.25);
 }
 
 /* ---------- Chart life: gentle entrance, drawn once ---------- */
@@ -899,17 +869,17 @@ body::before{
   cursor:pointer;background:none;border:none;padding:0;
 }
 .card{
-  background:linear-gradient(180deg,var(--surface),rgba(20,27,24,0.92));
-  box-shadow:0 10px 28px rgba(0,0,0,0.35);
+  background:var(--surface);
+  box-shadow:0 1px 2px rgba(13,31,23,0.05);
 }
 .card-title{letter-spacing:.2px;}
 .page-title{letter-spacing:.2px;}
 .btn-primary{
-  background:linear-gradient(180deg,#4dff9a,var(--neon-deep));
-  box-shadow:0 6px 18px rgba(57,255,136,0.25),inset 0 1px 0 rgba(255,255,255,0.35);
-  transition:transform .12s ease,box-shadow .15s ease,filter .15s ease;
+  background:var(--neon);
+  box-shadow:0 1px 2px rgba(13,31,23,0.12);
+  transition:transform .12s ease,box-shadow .15s ease,background .15s ease;
 }
-.btn-primary:hover{filter:brightness(1.07);box-shadow:0 8px 24px rgba(57,255,136,0.35),inset 0 1px 0 rgba(255,255,255,0.35);}
+.btn-primary:hover{background:var(--neon-deep);box-shadow:0 4px 12px rgba(15,123,67,0.28);}
 .btn-primary:active{transform:translateY(1px);}
 .btn{transition:transform .12s ease,border-color .15s ease,background .15s ease;}
 .stat{position:relative;overflow:hidden;}
@@ -920,21 +890,21 @@ body::before{
 }
 .stat .value{font-variant-numeric:tabular-nums;}
 table tbody tr{transition:background .12s ease;}
-table tbody tr:hover{background:rgba(57,255,136,0.05);}
+table tbody tr:hover{background:rgba(15,123,67,0.05);}
 .nav-link{transition:background .12s ease,color .12s ease,border-color .15s ease;}
-.nav-link.active{box-shadow:inset 2px 0 0 var(--neon),0 0 18px rgba(57,255,136,0.08);}
+.nav-link.active{box-shadow:inset 2px 0 0 var(--neon);}
 input,select,textarea{transition:border-color .15s ease,box-shadow .15s ease;}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--neon-deep);box-shadow:0 0 0 3px rgba(57,255,136,0.15);}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--neon-deep);box-shadow:0 0 0 3px rgba(15,123,67,0.15);}
 a{color:var(--neon);}
 :focus-visible{outline:2px solid var(--neon);outline-offset:2px;border-radius:6px;}
 .badge{letter-spacing:.2px;}
-.dept-badge.on{box-shadow:0 0 12px rgba(57,255,136,0.18);}
-.flag-pill{box-shadow:0 0 14px rgba(255,92,92,0.18);}
-.mobile-nav .nav-item.active{text-shadow:0 0 12px rgba(57,255,136,0.5);}
+.dept-badge.on{box-shadow:0 0 0 3px rgba(15,123,67,0.15);}
+.flag-pill{box-shadow:0 0 0 3px rgba(192,39,31,0.10);}
+.mobile-nav .nav-item.active{text-shadow:none;}
 ::-webkit-scrollbar{width:10px;height:10px;}
-::-webkit-scrollbar-thumb{background:#24352c;border-radius:8px;border:2px solid var(--bg);}
+::-webkit-scrollbar-thumb{background:#C3CDC7;border-radius:8px;border:2px solid var(--bg);}
 ::-webkit-scrollbar-track{background:transparent;}
-::selection{background:rgba(57,255,136,0.28);}
+::selection{background:rgba(15,123,67,0.18);}
 
 /* ============================================================
    GLASS MORPHISM — frosted surfaces over the living background.
@@ -942,36 +912,36 @@ a{color:var(--neon);}
    never to scrolling content, so phones stay smooth.
    ============================================================ */
 .sidebar{
-  background:rgba(16,24,19,0.72);
+  background:rgba(255,255,255,0.92);
   -webkit-backdrop-filter:blur(18px) saturate(1.2);
   backdrop-filter:blur(18px) saturate(1.2);
-  border-right:1px solid rgba(57,255,136,0.14);
+  border-right:1px solid var(--border);
 }
 .mobile-topbar{
-  background:rgba(10,15,13,0.72);
+  background:rgba(255,255,255,0.94);
   -webkit-backdrop-filter:blur(14px);
   backdrop-filter:blur(14px);
 }
 .login-card{
-  background:linear-gradient(180deg,rgba(24,34,27,0.82),rgba(14,20,16,0.86));
-  -webkit-backdrop-filter:blur(22px) saturate(1.25);
-  backdrop-filter:blur(22px) saturate(1.25);
+  background:var(--surface);
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
 }
 .card{
-  background:linear-gradient(180deg,rgba(24,32,25,0.78),rgba(17,23,19,0.84));
-  -webkit-backdrop-filter:blur(10px);
-  backdrop-filter:blur(10px);
+  background:var(--surface);
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
 }
 .stat,.dept-check,.playbook,.rootcause{
-  background:rgba(24,32,25,0.6);
-  -webkit-backdrop-filter:blur(8px);
-  backdrop-filter:blur(8px);
+  background:var(--surface);
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
 }
 #toast{
-  background:rgba(16,24,19,0.9);
+  background:#0D1F17;color:#F3F6F4;
   -webkit-backdrop-filter:blur(12px);
   backdrop-filter:blur(12px);
-  border:1px solid rgba(57,255,136,0.2);
+  border:1px solid rgba(13,31,23,0.4);
 }
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .sidebar,.mobile-topbar,.login-card,.card,.stat,.dept-check,.playbook,.rootcause,#toast{background:var(--surface);}

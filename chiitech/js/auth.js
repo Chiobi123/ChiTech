@@ -389,9 +389,9 @@ function showUnlinkedNotice(email){
   try{ document.getElementById('login-screen').classList.remove('hidden'); }catch(e){}
   try{
     document.getElementById('oauth-email').textContent = email;
-    document.getElementById('oauth-signup').classList.remove('hidden');
+    showAuthView('oauth');
   }catch(e){}
-  authError(`Signed in with Google as ${email}, but that address isn't linked to any company yet. Register your company above, or ask your admin for a worker invitation and accept it below. Your existing email/password login still works.`);
+  authError(`Signed in with Google as ${email}, but that address isn't linked to a workspace yet. Create your company above, or accept a team invitation — your existing email/password login still works.`);
 }
 
 /** Waiting room: invite accepted but admin hasn't approved yet. The login
@@ -415,7 +415,7 @@ function noSuchInvitation(token){
   return `No invitation matches “…${tail}”. Most likely: (1) an old/used token — ask your admin for the newest one, (2) a partial copy — open the invitation LINK instead of typing, (3) wrong account type — worker tokens go in Join, auditor tokens here (either works, but the link is safest).`;
 }
 
-function hideOAuthSignup(){ try{ document.getElementById('oauth-signup').classList.add('hidden'); }catch(e){} }
+function hideOAuthSignup(){ try{ showAuthView('signin'); }catch(e){} }
 
 /** Google sign-up for owners: creates the company under the current OAuth
  *  identity (no password involved) and signs them in as company_admin. */

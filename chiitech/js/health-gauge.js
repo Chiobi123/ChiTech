@@ -28,7 +28,7 @@
   var raf = null;
 
   function colorFor(pct){
-    return pct >= 70 ? '#39FF88' : pct >= 40 ? '#FFD166' : '#FF5C5C';
+    return pct >= 70 ? '#0F7B43' : pct >= 40 ? '#B27A00' : '#C0271F';
   }
 
   function messageFor(pct){

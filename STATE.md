@@ -10,7 +10,7 @@ answer to "how far along is this?".
 | GitHub | `github.com/Chiobi123/ChiTech` |
 | Frontend host | Cloudflare Pages project `chiitech` (deploy dir `chiitech/`) |
 | Supabase project | `qmypqghktxlscibgxgxo` (live, existing — never reset) |
-| Last frontend asset version | `20261022b` (in `chiitech/index.html`) |
+| Last frontend asset version | `20261101a` (in `chiitech/index.html`) |
 | Live site | `https://chiitech.pages.dev` — verified in sync with local on 2026-10-23 |
 | Local migrations | 43 files (`01` → `42_deep_import_analysis`, plus the recovered live `22_restore_auditor_access`) |
 | Live DB migration count | **25** (01-22 recorded + 39, 40, 41 applied 2026-10-24; 42 in repo) |
@@ -27,6 +27,16 @@ answer to "how far along is this?".
 > `external_google_client_secret` is silently ignored. Verified end-to-end:
 > consent screen → callback → live session on `chiitech.pages.dev`. Consent screen
 > is published (External / In production, unverified).
+
+> UI refresh 2026-11-01: login/landing rebuilt as a two-panel fintech auth page
+> (left: audit/financial positioning; right: the existing auth card — all panes
+> preserved). New Google sign-ups get a dedicated "Set up your workspace" pane
+> (`auth-view-oauth` in `auth.js` → `showAuthView('oauth')`). Whole app re-themed
+> from dark-neon to a light audit-grade palette (paper `#F5F7F5`, white surfaces,
+> deep green accent `#0F7B43`, ink text `#0D1F17`; semantic red/amber for status
+> only). Chart and gauge colours updated in `charts.js`/`health-gauge.js`;
+> legal pages re-tokened. Verified on localhost:8080 at desktop and 360px,
+> no console errors. Not deployed yet.
 
 ## Done
 

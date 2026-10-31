@@ -10,24 +10,18 @@
      TLS handshake on a slow link right when the user presses "Sign in". -->
 <link rel="preconnect" href="https://qmypqghktxlscibgxgxo.supabase.co" crossorigin>
 <link rel="dns-prefetch" href="https://qmypqghktxlscibgxgxo.supabase.co">
-<link rel="stylesheet" href="css/style.css?v=20261023a">
+<link rel="stylesheet" href="css/style.css?v=20261101a">
 <!-- Charts are drawn locally in js/charts.js using the native Canvas API —
      no CDN or external chart library required, so this works fully offline
      and isn't at the mercy of a blocked network request. -->
 </head>
 <body>
-<!-- Living flower garden: decorative neon blooms behind everything. -->
-<div class="flower-field" aria-hidden="true">
-  <div class="flower f1"><div class="stem"></div><div class="petals"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="core"></div></div>
-  <div class="flower f2"><div class="stem"></div><div class="petals"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="core"></div></div>
-  <div class="flower f3"><div class="stem"></div><div class="petals"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><div class="core"></div></div>
-</div>
 <!-- Boot veil: covers everything until session validation resolves, so a
      refresh never flashes the sign-in form or a stale dashboard. Removed
      by the boot handler in app.js. -->
-<div id="boot-veil" style="position:fixed;inset:0;background:#0A0F0D;z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
+<div id="boot-veil" style="position:fixed;inset:0;background:#F5F7F5;z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
   <div style="font-size:26px;font-weight:800;letter-spacing:2px;">CHIITECH</div>
-  <div style="font-size:12.5px;color:#9AA69F;">Loading your workspace…</div>
+  <div style="font-size:12.5px;color:#5A6B62;">Loading your workspace…</div>
 </div>
 <!--
   CHIITECH — page structure, top to bottom:
@@ -46,31 +40,49 @@
 -->
 
 <!-- ===================== LOGIN / REGISTER ===================== -->
-<div id="login-screen" class="login-wrap">
+<!-- Two-panel fintech auth screen: left states what ChiiTech is (audit-
+     grade financial operations for Nigerian business); right is the
+     sign-in card itself. Collapses to a single column ≤900px. -->
+<div id="login-screen" class="auth-layout">
+  <aside class="auth-hero">
+    <div class="auth-hero-inner">
+      <div class="auth-brand">CHIITECH</div>
+      <h1 class="auth-headline">Financial records you can prove.</h1>
+      <p class="auth-lead">ChiiTech runs your day-to-day books — sales, expenses, stock, VAT and
+        withholding tax — on a tamper-evident audit trail, so every figure holds up to banks,
+        investors and external auditors.</p>
+      <ul class="auth-pillars">
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1m4 0h1M9 13h1m4 0h1M9 17h6"/></svg>
+          <div><b>Live books</b><span>Sales, expenses, stock and profit the moment you record them.</span></div>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6l7-3z"/><path d="M9 12l2 2 4-4"/></svg>
+          <div><b>Audit-grade trail</b><span>Hash-chained entries, anomaly flags and a plain-language audit opinion.</span></div>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2V3z"/><path d="M9 8h6M9 12h6"/></svg>
+          <div><b>Tax engine</b><span>VAT and WHT computed from real records, not guesswork at filing.</span></div>
+        </li>
+        <li>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+          <div><b>AI growth engine</b><span>Forecasts, loan-readiness scoring and data-backed next steps.</span></div>
+        </li>
+      </ul>
+      <div class="auth-assurance">
+        <span>Role-based team access</span><span>External auditor console</span>
+        <span>NDPA-aligned privacy</span><span>Export anytime</span>
+      </div>
+    </div>
+  </aside>
+  <main class="auth-side">
   <div class="login-card">
     <div class="login-brand">CHIITECH</div>
-    <div class="login-tag">Run your business smarter. Stay audit-ready.
+    <div class="login-tag">Sign in to your workspace — or create a company account in under a minute.
       &nbsp;<a href="#" onclick="showAbout();return false;" style="font-size:11px;">What is ChiiTech? &rarr;</a>
-    </div>
-    <div class="legal-footer legal-footer-inline">
-      <span class="text-muted" id="build-tag" style="font-size:10.5px;">build 20261003</span>
-      <a href="#" onclick="showLegal('privacy');return false;">Privacy</a>
-      <a href="#" onclick="showLegal('terms');return false;">Terms</a>
-      <a href="#" onclick="showLegal('cookies');return false;">Cookies</a>
-      <a href="#" onclick="showLegal('refund');return false;">Refunds</a>
     </div>
 
     <div id="auth-error" class="auth-error hidden"></div>
-
-    <div id="oauth-signup" class="hidden" style="margin-bottom:14px;">
-      <div class="forgot-title">Finish Google sign-up</div>
-      <p class="text-muted" style="font-size:11.5px;">Signed in with Google as <b id="oauth-email">—</b>.
-        Either register your company now (you become its admin) or accept a worker
-        invitation below.</p>
-      <div class="field"><label>Company name</label><input id="oauth-company" placeholder="e.g. Adaeze Fashion House"></div>
-      <div class="field"><label>Your name</label><input id="oauth-name" placeholder="e.g. Adaeze Okafor"></div>
-      <button class="btn btn-primary btn-block" onclick="registerCompanyWithOAuth()">Register my company</button>
-    </div>
 
     <!-- SIGN IN (the only main view — no codes, roles or setup here) -->
     <div id="auth-view-signin" class="auth-pane active">
@@ -79,7 +91,10 @@
       <button class="btn btn-primary btn-block" id="login-btn" onclick="login()">Sign in</button>
       <p style="margin-top:10px;"><a href="#" onclick="showAuthView('forgot');return false;">Forgot password?</a></p>
       <div class="or-divider"><span>OR</span></div>
-      <button class="btn btn-block" onclick="loginWithGoogle()">Continue with Google</button>
+      <button class="btn btn-block btn-google" onclick="loginWithGoogle()">
+        <svg class="g-icon" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
+      </button>
       <p class="text-muted" style="font-size:12px;margin-top:14px;text-align:center;">
         Don&apos;t have an account? <a href="#" onclick="showAuthView('register');return false;">Create account</a>
       </p>
@@ -88,6 +103,24 @@
         &nbsp;&#8226;&nbsp; <a href="#" onclick="showAuthView('invite');return false;">Have a worker invitation?</a>
         &nbsp;&#8226;&nbsp; <a href="#" onclick="showAuthView('auditor');return false;">Auditor access</a>
       </p>
+    </div>
+
+    <!-- FINISH GOOGLE SIGN-UP (identity with no workspace yet) — a signed-in
+         Google account with no profiles row lands here: two fields, then its
+         own workspace. Never a dashboard it doesn't own. -->
+    <div id="auth-view-oauth" class="auth-pane">
+      <div class="forgot-title">Set up your workspace</div>
+      <p class="text-muted" style="font-size:11.5px;margin-bottom:14px;">
+        Signed in with Google as <b id="oauth-email" style="color:var(--text);">—</b>.
+        Create your company below — you become its admin — or accept a team invitation instead.
+      </p>
+      <div class="field"><label>Company name</label><input id="oauth-company" placeholder="e.g. Adaeze Fashion House"></div>
+      <div class="field"><label>Your name</label><input id="oauth-name" placeholder="e.g. Adaeze Okafor"></div>
+      <button class="btn btn-primary btn-block" onclick="registerCompanyWithOAuth()">Create my workspace</button>
+      <p class="text-muted" style="font-size:12px;margin-top:12px;text-align:center;">
+        Invited to an existing team? <a href="#" onclick="showAuthView('invite');return false;">Accept your invitation</a>
+      </p>
+      <p style="margin-top:12px;text-align:center;"><a href="#" onclick="showAuthView('signin');return false;">&larr; Back to sign in</a></p>
     </div>
 
     <!-- CREATE ACCOUNT (new business owner) -->
@@ -184,10 +217,15 @@
       <p style="margin-top:14px;"><a href="#" onclick="showAuthView('signin');return false;">&larr; Back to sign in</a></p>
     </div>
 
-    <div class="login-trust">
-      <span>✓ Record sales in seconds</span><span>✓ Stay audit-ready</span><span>✓ Grow with your numbers</span>
+    <div class="legal-footer legal-footer-inline">
+      <span class="text-muted" id="build-tag" style="font-size:10.5px;">build 20261003</span>
+      <a href="#" onclick="showLegal('privacy');return false;">Privacy</a>
+      <a href="#" onclick="showLegal('terms');return false;">Terms</a>
+      <a href="#" onclick="showLegal('cookies');return false;">Cookies</a>
+      <a href="#" onclick="showLegal('refund');return false;">Refunds</a>
     </div>
   </div>
+  </main>
 </div>
 
 <!-- ===================== ABOUT (reachable from the login screen) ===================== -->
@@ -1371,12 +1409,12 @@
      download in parallel and still run in exactly this order, so the
      globals each file expects (supabase → sb → state → app) are unchanged. -->
 <script defer src="js/vendor/supabase.min.js"></script>
-<script defer src="js/supabase-config.js?v=20261023a"></script>
-<script defer src="js/data.js?v=20261023a"></script>
-<script defer src="js/auth.js?v=20261023a"></script>
-<script defer src="js/imports.js?v=20261023a"></script>
-<script defer src="js/charts.js?v=20261023a"></script>
-<script defer src="js/health-gauge.js?v=20261023a"></script>
-<script defer src="js/app.js?v=20261023a"></script>
+<script defer src="js/supabase-config.js?v=20261101a"></script>
+<script defer src="js/data.js?v=20261101a"></script>
+<script defer src="js/auth.js?v=20261101a"></script>
+<script defer src="js/imports.js?v=20261101a"></script>
+<script defer src="js/charts.js?v=20261101a"></script>
+<script defer src="js/health-gauge.js?v=20261101a"></script>
+<script defer src="js/app.js?v=20261101a"></script>
 </body>
 </html>

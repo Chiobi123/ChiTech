@@ -885,11 +885,11 @@ function renderGettingStarted(){
   const remaining = steps.filter(s=>!s.done);
   if(!remaining.length || session.role==='worker'){ el.innerHTML=''; return; }
   el.innerHTML = `
-    <div class="card" style="border-color:rgba(57,255,136,0.3);">
+    <div class="card" style="border-color:rgba(15,123,67,0.3);">
       <div class="card-head"><div class="card-title">Getting started (${steps.length-remaining.length}/${steps.length})</div></div>
       ${steps.map((s,i)=>`
         <div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;${s.done?'opacity:0.5;':''}">
-          <span style="width:18px;height:18px;border-radius:5px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;${s.done?'background:var(--neon);color:#052312;border-color:var(--neon);':''}">${s.done?'\u2713':''}</span>
+          <span style="width:18px;height:18px;border-radius:5px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;${s.done?'background:var(--neon);color:#fff;border-color:var(--neon);':''}">${s.done?'\u2713':''}</span>
           <span style="flex:1;${s.done?'text-decoration:line-through;':''}">${s.label}</span>
           ${!s.done?`<button class="btn btn-sm" data-step="${i}">Go</button>`:''}
         </div>
@@ -1574,7 +1574,7 @@ function exportAuditReport(format){
     const win = window.open('', '_blank');
     win.document.write(`
       <html><head><title>ChiiTech Audit Report — ${escapeHtml(currentCompany()?.name||'')}</title>
-      <style>body{font-family:Arial,sans-serif;padding:32px;color:#111;} h1{color:#12A64C;} table{width:100%;border-collapse:collapse;margin-top:14px;} td,th{border:1px solid #ddd;padding:8px;font-size:13px;text-align:left;}</style>
+      <style>body{font-family:Arial,sans-serif;padding:32px;color:#111;} h1{color:#0F7B43;} table{width:100%;border-collapse:collapse;margin-top:14px;} td,th{border:1px solid #ddd;padding:8px;font-size:13px;text-align:left;}</style>
       </head><body>
       <h1>ChiiTech Audit Report</h1>
       <p><b>Company:</b> ${escapeHtml(currentCompany()?.name||'')} &nbsp; <b>Generated:</b> ${new Date().toLocaleString()}</p>
