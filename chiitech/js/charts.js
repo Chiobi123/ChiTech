@@ -40,16 +40,16 @@
    ============================================================ */
 
 const CHIITECH_CHART_COLORS = {
-  neon: '#0F7B43',
-  neonDeep: '#0A5C31',
-  neonSoft: 'rgba(15,123,67,0.14)',
-  grid: '#E2E8E4',
-  text: '#5A6B62',
-  textStrong: '#0D1F17',
-  danger: '#C0271F',
-  warn: '#B27A00',
-  blue: '#2F6DB5',
-  purple: '#7A5AB8',
+  neon: '#2ED47A',
+  neonDeep: '#22B265',
+  neonSoft: 'rgba(46,212,122,0.16)',
+  grid: '#263754',
+  text: '#8DA0BC',
+  textStrong: '#E9EEF7',
+  danger: '#FF6B6B',
+  warn: '#F5C542',
+  blue: '#6FA8E8',
+  purple: '#A78BFA',
 };
 
 /** Rotating palette used when a chart has more than one series/segment. */
@@ -139,7 +139,7 @@ function chiObserve(canvas, redraw){
 /**
  * chiBar('canvas-id', {
  *   labels: ['Mon','Tue',...],
- *   series: [{label:'Sales', data:[1,2,3], color:'#0F7B43'}, ...],
+ *   series: [{label:'Sales', data:[1,2,3], color:'#2ED47A'}, ...],
  *   stacked: false,     // true = bars stack on top of each other
  *   currency: true       // true = format values as ₦ on hover/axis
  * })
