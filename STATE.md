@@ -10,7 +10,7 @@ answer to "how far along is this?".
 | GitHub | `github.com/Chiobi123/ChiTech` |
 | Frontend host | Cloudflare Pages project `chiitech` (deploy dir `chiitech/`) |
 | Supabase project | `qmypqghktxlscibgxgxo` (live, existing — never reset) |
-| Last frontend asset version | `20261101b` (in `chiitech/index.html`) |
+| Last frontend asset version | `20261101d` (in `chiitech/index.html`) |
 | Live site | `https://chiitech.pages.dev` — verified in sync with local on 2026-10-23 |
 | Local migrations | 43 files (`01` → `42_deep_import_analysis`, plus the recovered live `22_restore_auditor_access`) |
 | Live DB migration count | **25** (01-22 recorded + 39, 40, 41 applied 2026-10-24; 42 in repo) |
@@ -32,13 +32,17 @@ answer to "how far along is this?".
 > (left: audit/financial positioning; right: the existing auth card — all panes
 > preserved). New Google sign-ups get a dedicated "Set up your workspace" pane
 > (`auth-view-oauth` in `auth.js` → `showAuthView('oauth')`). Whole app re-themed
-> to a mature dark navy palette (owner chose dark over light): bg `#0A1220`,
-> surfaces `#101A2C`, hairline `#263754`, one bright accent emerald `#2ED47A`
-> with dark ink text on buttons, text `#E9EEF7`, muted `#8DA0BC`; semantic red
-> `#FF6B6B`/amber `#F5C542` for status only. Chart and gauge colours updated in
-> `charts.js`/`health-gauge.js`; legal pages re-tokened; boot veil navy. Two
-> commits: light pass `8e872d7`, final dark pass on top. Verified on
-> localhost:8080 at desktop and 360px, no console errors. Not deployed yet.
+> dark, then re-cut to match the owner's reference art (2026-11-01): indigo-black
+> bg `#080A16`, surfaces `#101020`/`#161628`/`#1D1D33`, hairline `#262640`, ONE
+> violet accent `#8B7CF6` (deep `#6A5AE0`) with white text on accent fills, text
+> `#EFEDF7`, muted `#9A96B0`; semantic red `#F16A6A`/amber `#E8BE4F` for status
+> only. Auth card now uses 24px radius, pill inputs/CTA and a violet gradient
+> primary button; the hero carries a circuit-trace "flow" motif (static rails +
+> travelling pulse, reduced-motion aware) instead of a bitmap. Chart and gauge
+> colours updated in `charts.js`/`health-gauge.js`; legal pages re-tokened; boot
+> veil indigo. Commits: light pass `8e872d7`, dark pass `916b75f`, reference pass
+> on top. Verified on localhost:8080 at 360/414/560/768/900/1024/1440 — no
+> horizontal overflow, card reachable, pillars 2-up. Not deployed yet.
 
 ## Done
 

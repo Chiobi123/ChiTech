@@ -9,22 +9,23 @@
      Every colour used anywhere in the app is one of the variables
      below — change a value here to re-theme the whole app at once.
      ============================================================ */
-  /* Design tokens — mature dark navy fintech/audit palette.
-     Branded dark (saturated navy, not flat black), one bright accent
-     (emerald) for actions/links, semantic red/amber for status only. */
-  --bg:#0A1220;
-  --surface:#101A2C;
-  --surface-2:#16223A;
-  --surface-3:#1D2B47;
-  --border:#263754;
-  --neon:#2ED47A;
-  --neon-deep:#22B265;
-  --neon-dim:rgba(46,212,122,0.12);
-  --text:#E9EEF7;
-  --muted:#8DA0BC;
-  --danger:#FF6B6B;
-  --danger-dim:rgba(255,107,107,0.12);
-  --warn:#F5C542;
+  /* Design tokens — deep indigo-black fintech palette.
+     Near-black indigo base with ONE restrained violet accent for
+     actions/links; semantic red/amber for status only. Nothing else
+     is coloured, so the screen stays calm at a glance. */
+  --bg:#080A16;
+  --surface:#101020;
+  --surface-2:#161628;
+  --surface-3:#1D1D33;
+  --border:#262640;
+  --neon:#8B7CF6;
+  --neon-deep:#6A5AE0;
+  --neon-dim:rgba(139,124,246,0.10);
+  --text:#EFEDF7;
+  --muted:#9A96B0;
+  --danger:#F16A6A;
+  --danger-dim:rgba(241,106,106,0.10);
+  --warn:#E8BE4F;
   --radius:14px;
   --radius-sm:10px;
 }
@@ -40,25 +41,14 @@ body{
 }
 
 /* ---------- Decorative background ----------
-   A quiet, textured backdrop instead of flat black: a faint grid (like
-   graph paper) plus a few soft glows in the brand green. Pure CSS
-   gradients only (no images, no network request) — and, importantly,
-   fully STATIC. An earlier version animated this layer continuously,
-   which forces the browser to repaint a full-viewport gradient every
-   frame for as long as the page is open — that was the direct cause of
-   the typing/general lag reported. A background should cost nothing at
-   idle; it's painted once and left alone. */
-body::before{
-  content:"";
-  position:fixed; inset:0; z-index:0; pointer-events:none;
-  background:
-    radial-gradient(circle at 12% 18%, rgba(46,212,122,0.09), transparent 38%),
-    radial-gradient(circle at 88% 12%, rgba(18,166,72,0.10), transparent 40%),
-    radial-gradient(circle at 75% 85%, rgba(46,212,122,0.07), transparent 42%),
-    radial-gradient(circle at 10% 90%, rgba(18,166,72,0.06), transparent 38%),
-    repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 56px),
-    repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 56px);
-}
+   The backdrop itself is defined once, near the bottom of this file
+   ("VISUAL REFRESH"): a few soft violet glows, pure CSS gradients only
+   (no images, no network request) and, importantly, fully STATIC. An
+   earlier version animated it continuously, which forces the browser
+   to repaint a full-viewport gradient every frame for as long as the
+   page is open — that was the direct cause of the typing/general lag
+   reported. A background should cost nothing at idle; it's painted
+   once and left alone. */
 /* Everything else renders above the decorative layer. */
 .app, .auth-layout, .about-wrap{ position:relative; z-index:1; }
 
@@ -75,9 +65,9 @@ a{color:var(--neon);text-decoration:none;}
   to{ opacity:1; transform:translateY(0); }
 }
 @keyframes livePulse{
-  0%{ box-shadow:0 0 0 0 rgba(46,212,122,0.45); }
-  70%{ box-shadow:0 0 0 7px rgba(46,212,122,0); }
-  100%{ box-shadow:0 0 0 0 rgba(46,212,122,0); }
+  0%{ box-shadow:0 0 0 0 rgba(139,124,246,0.45); }
+  70%{ box-shadow:0 0 0 7px rgba(139,124,246,0); }
+  100%{ box-shadow:0 0 0 0 rgba(139,124,246,0); }
 }
 @keyframes popIn{
   from{ opacity:0; transform:translateY(6px) scale(0.98); }
@@ -97,14 +87,14 @@ a{color:var(--neon);text-decoration:none;}
 .card:hover, .stat:hover{
   transform:translateY(-2px);
   box-shadow:0 12px 26px -16px rgba(0,0,0,0.22);
-  border-color:rgba(46,212,122,0.35);
+  border-color:rgba(139,124,246,0.35);
 }
 .stat .value{ transition:color .2s ease; }
 
 .btn{ transition:transform .12s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease; }
 .btn:hover{ transform:translateY(-1px); }
 .btn:active{ transform:translateY(0) scale(0.97); }
-.btn-primary:hover{ box-shadow:0 6px 18px -6px rgba(46,212,122,0.35); }
+.btn-primary:hover{ box-shadow:0 6px 18px -6px rgba(139,124,246,0.35); }
 
 .nav-link{ transition:background .15s ease, color .15s ease, transform .15s ease, border-color .15s ease; }
 .nav-link:hover{ transform:translateX(2px); }
@@ -180,7 +170,7 @@ tr:hover .badge{ transform:translateY(-1px); }
 .nav-link.active{
   background:var(--neon-dim);
   color:var(--neon);
-  border-color:rgba(46,212,122,0.25);
+  border-color:rgba(139,124,246,0.25);
 }
 .nav-icon{width:18px;text-align:center;}
 .sidebar-foot{
@@ -249,7 +239,7 @@ tr:hover .badge{ transform:translateY(-1px); }
   overflow:hidden;
 }
 /* A thin coloured accent along the top edge of every stat card, tinted
-   to match the card's own state (green = good, amber = watch, red =
+   to match the card's own state (violet = accent, amber = watch, red =
    problem) so the dashboard reads at a glance before you read a single
    number. Static gradient — painted once, costs nothing. */
 .stat::before{
@@ -296,7 +286,7 @@ tr:hover .badge{ transform:translateY(-1px); }
 .btn-primary{
   background:var(--neon);
   border-color:var(--neon);
-  color:#05231A;
+  color:#FFFFFF;
 }
 .btn-primary:hover{background:var(--neon-deep);border-color:var(--neon-deep);}
 .btn-danger{color:var(--danger);border-color:rgba(255,107,107,0.4);}
@@ -400,7 +390,7 @@ tbody tr:hover{background:var(--surface-2);}
 }
 .msg{max-width:80%;padding:10px 13px;border-radius:12px;font-size:13px;line-height:1.55;}
 .msg.user{align-self:flex-end;background:var(--surface-3);color:var(--text);}
-.msg.ai{align-self:flex-start;background:rgba(46,212,122,0.08);border:1px solid rgba(46,212,122,0.25);color:var(--text);}
+.msg.ai{align-self:flex-start;background:rgba(139,124,246,0.08);border:1px solid rgba(139,124,246,0.25);color:var(--text);}
 .chat-input-row{display:flex;gap:8px;}
 .suggestion{
   display:inline-block;background:var(--surface-2);border:1px solid var(--border);
@@ -553,8 +543,22 @@ tbody tr:hover{background:var(--surface-2);}
 .auth-layout{min-height:100vh;display:grid;grid-template-columns:1.2fr 1fr;background:transparent;}
 .auth-hero{display:flex;align-items:center;padding:52px 56px;border-right:1px solid var(--border);}
 .auth-hero-inner{max-width:540px;margin:0 auto;width:100%;}
-.auth-brand{font-size:14px;font-weight:800;letter-spacing:4px;color:var(--neon);margin-bottom:30px;}
-.auth-headline{font-size:33px;line-height:1.25;font-weight:700;letter-spacing:-0.4px;margin:0 0 14px;}
+.auth-brand{font-size:14px;font-weight:800;letter-spacing:4px;color:var(--neon);margin-bottom:18px;}
+.auth-headline{font-size:36px;line-height:1.22;font-weight:700;letter-spacing:-0.6px;margin:0 0 14px;}
+
+/* ---------- Auth hero flow motif ----------
+   The growth arrows from the reference art, drawn as circuit traces:
+   faint rails with a short pulse travelling along each one. Static
+   geometry, tiny animation, no images and no canvas. */
+.auth-flow{max-width:300px;margin:2px 0 26px;}
+.auth-flow svg{display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(0 0 12px rgba(139,124,246,0.35));}
+.flow-pulse path{stroke-dasharray:9 210;stroke-dashoffset:0;animation:flowRun 7s linear infinite;}
+.flow-pulse .p2{animation-duration:9s;animation-delay:-3s;opacity:.75;}
+.flow-pulse .p3{animation-duration:11s;animation-delay:-6s;opacity:.55;}
+@keyframes flowRun{to{stroke-dashoffset:-219;}}
+@media (prefers-reduced-motion: reduce){
+  .flow-pulse path{animation:none;stroke-dasharray:none;opacity:.35;}
+}
 .auth-lead{font-size:14px;line-height:1.7;color:var(--muted);margin:0 0 28px;}
 .auth-pillars{list-style:none;margin:0 0 26px;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .auth-pillars li{display:flex;gap:11px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 13px;}
@@ -570,23 +574,30 @@ tbody tr:hover{background:var(--surface-2);}
 .btn-google .g-icon{width:17px;height:17px;vertical-align:-3.5px;margin-right:9px;}
 @media (max-width:900px){
   .auth-layout{grid-template-columns:1fr;}
-  .auth-hero{border-right:none;border-bottom:1px solid var(--border);padding:34px 22px 30px;}
+  .auth-hero{border-right:none;border-bottom:1px solid var(--border);padding:26px 20px 22px;}
   .auth-hero-inner{max-width:520px;}
-  .auth-brand{margin-bottom:16px;}
-  .auth-headline{font-size:24px;}
-  .auth-lead{font-size:13px;margin-bottom:18px;}
-  .auth-pillars{margin-bottom:0;}
+  .auth-brand{margin-bottom:14px;}
+  .auth-headline{font-size:24px;line-height:1.28;margin-bottom:10px;}
+  .auth-lead{font-size:13px;margin-bottom:16px;}
+  .auth-flow{max-width:220px;margin:0 0 18px;}
+  .auth-pillars{margin-bottom:0;gap:10px;}
   .auth-assurance{display:none;}
-  .auth-side{padding:28px 16px 40px;}
+  .auth-side{padding:20px 16px 32px;}
 }
-.login-card{width:400px;max-width:100%;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:30px 28px;}
+.login-card{width:400px;max-width:100%;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:30px 28px;}
+/* Pill fields and CTA, as in the reference sign-in screen. */
+.login-card input:not([type=checkbox]):not([type=radio]):not([type=file]){
+  border-radius:999px;padding:11px 16px;
+}
+.login-card .btn{border-radius:999px;}
+.login-card .btn-block{padding:11px 16px;font-size:13.5px;}
 .login-brand{font-size:24px;font-weight:700;color:var(--neon);margin-bottom:4px;}
 .login-tag{font-size:12.5px;color:var(--muted);margin-bottom:22px;}
 .auth-tabs{display:flex;gap:6px;background:var(--surface-2);padding:4px;border-radius:12px;margin-bottom:20px;}
 .auth-tab{flex:1;text-align:center;padding:9px 0;border-radius:9px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:background .15s ease,color .15s ease;}
 .auth-tab:hover{color:var(--text);background:var(--surface-3);}
-.auth-tab.active{background:var(--neon);color:#05231A;}
-.auth-tab.active:hover{background:var(--neon-deep);color:#05231A;}
+.auth-tab.active{background:var(--neon-deep);color:#FFFFFF;}
+.auth-tab.active:hover{background:#5B4AD4;color:#FFFFFF;}
 .auth-pane{display:none;}
 .auth-pane.active{display:block;}
 /* The pane fades in when you switch tabs, so it's obvious the form
@@ -600,8 +611,8 @@ tbody tr:hover{background:var(--surface-2);}
 
 /* ---------- Auth path highlight cards ---------- */
 .auth-highlight{
-  border:1px solid rgba(46,212,122,0.35);
-  background:rgba(46,212,122,0.07);
+  border:1px solid rgba(139,124,246,0.35);
+  background:rgba(139,124,246,0.07);
   border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:12px;line-height:1.7;
 }
 .auth-highlight.alt{border-style:dashed;}
@@ -617,12 +628,12 @@ tbody tr:hover{background:var(--surface-2);}
 .code-explainer b{color:var(--text);}
 .code-explainer code{background:var(--surface-3);padding:1px 5px;border-radius:4px;color:var(--neon);}
 .super-badge{
-  display:inline-block;background:linear-gradient(90deg,#2ED47A,#18A85E);color:#05231A;
+  display:inline-block;background:linear-gradient(90deg,var(--neon),var(--neon-deep));color:#FFFFFF;
   font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:0.3px;
 }
 .register-callout{
   margin-top:18px;padding:14px 16px;border-radius:12px;
-  background:var(--neon-dim);border:1px solid rgba(46,212,122,0.3);
+  background:var(--neon-dim);border:1px solid rgba(139,124,246,0.3);
 }
 .register-callout-title{font-weight:700;color:var(--neon);font-size:13px;margin-bottom:4px;}
 .register-callout-body{font-size:11.5px;color:var(--muted);line-height:1.5;}
@@ -662,7 +673,7 @@ tbody tr:hover{background:var(--surface-2);}
 .forgot-title{font-weight:700;font-size:13px;color:var(--neon);margin-bottom:10px;}
 .forgot-result{
   margin-top:12px;padding:12px 14px;border-radius:9px;
-  background:var(--neon-dim);border:1px solid rgba(46,212,122,0.3);font-size:12.5px;line-height:1.6;
+  background:var(--neon-dim);border:1px solid rgba(139,124,246,0.3);font-size:12.5px;line-height:1.6;
 }
 
 /* ---------- About / contact page ---------- */
@@ -710,7 +721,7 @@ tbody tr:hover{background:var(--surface-2);}
   display:flex;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:3px;gap:2px;
 }
 .chip-opt{padding:6px 12px;font-size:11.5px;border-radius:7px;color:var(--muted);cursor:pointer;}
-.chip-opt.active{background:var(--neon);color:#05231A;font-weight:700;}
+.chip-opt.active{background:var(--neon-deep);color:#FFFFFF;font-weight:700;}
 .chart-canvas-wrap{height:220px;position:relative;}
 .chart-canvas-wrap--auto{height:auto !important;display:block;}
 .chi-canvas-box{position:relative;width:100%;}
@@ -819,6 +830,19 @@ tbody tr:hover{background:var(--surface-2);}
 /* ---------- Small phones: keep controls thumb-sized ---------- */
 @media (max-width:560px){
   .mobile-topbar .hamburger{width:44px;height:44px;}
+  /* The sign-in card must reach the first screen, not sit below a tall
+     hero. Compact the left panel rather than hiding any of its copy. */
+  .auth-hero{padding:18px 16px 16px;}
+  .auth-brand{margin-bottom:10px;letter-spacing:3px;}
+  .auth-headline{font-size:20px;margin-bottom:10px;}
+  .auth-flow{display:none;}
+  .auth-lead{font-size:12px;line-height:1.6;margin-bottom:14px;}
+  .auth-pillars{gap:8px;}
+  .auth-pillars li{gap:8px;padding:9px 10px;}
+  .auth-pillars svg{width:15px;height:15px;}
+  .auth-pillars b{font-size:11.5px;}
+  .auth-pillars span{font-size:10.5px;line-height:1.45;}
+  .auth-side{padding:18px 12px 32px;}
 }
 
 /* ---------- Landscape phones / short screens: reclaim vertical space ---------- */
@@ -832,16 +856,16 @@ tbody tr:hover{background:var(--surface-2);}
 }
 
 /* ============================================================
-   VISUAL REFRESH — depth, glow and polish on the black /
-   neon-green / white identity. Layout and breakpoints above are
+   VISUAL REFRESH — depth, glow and polish on the indigo-black /
+   violet / soft-white identity. Layout and breakpoints above are
    untouched; this layer only adds atmosphere and finish.
    ============================================================ */
 body::before{
   content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
-    radial-gradient(560px 380px at 12% -4%, rgba(45,90,180,0.12), transparent 65%),
-    radial-gradient(640px 420px at 88% 8%, rgba(45,90,180,0.09), transparent 65%),
-    radial-gradient(700px 520px at 50% 115%, rgba(46,212,122,0.05), transparent 60%);
+    radial-gradient(560px 380px at 12% -4%, rgba(124,92,246,0.12), transparent 65%),
+    radial-gradient(640px 420px at 88% 8%, rgba(124,92,246,0.09), transparent 65%),
+    radial-gradient(700px 520px at 50% 115%, rgba(139,124,246,0.05), transparent 60%);
 }
 #app,.auth-layout,.about-wrap{position:relative;z-index:1;}
 .login-brand{
@@ -852,7 +876,7 @@ body::before{
 .login-card{
   background:var(--surface);
   border:1px solid var(--border);
-  box-shadow:0 24px 60px -24px rgba(0,0,0,0.25);
+  box-shadow:0 30px 70px -28px rgba(0,0,0,0.55);
 }
 
 /* ---------- Chart life: gentle entrance, drawn once ---------- */
@@ -875,11 +899,12 @@ body::before{
 .card-title{letter-spacing:.2px;}
 .page-title{letter-spacing:.2px;}
 .btn-primary{
-  background:var(--neon);
-  box-shadow:0 1px 2px rgba(0,0,0,0.12);
+  background:linear-gradient(100deg,#7161EA,#5646CE);
+  border-color:transparent;
+  box-shadow:0 1px 2px rgba(0,0,0,0.12),0 10px 24px -14px rgba(139,124,246,0.6);
   transition:transform .12s ease,box-shadow .15s ease,background .15s ease;
 }
-.btn-primary:hover{background:var(--neon-deep);box-shadow:0 4px 12px rgba(46,212,122,0.28);}
+.btn-primary:hover{background:linear-gradient(100deg,#6A5AE0,#4F3EC9);box-shadow:0 4px 18px rgba(139,124,246,0.32);}
 .btn-primary:active{transform:translateY(1px);}
 .btn{transition:transform .12s ease,border-color .15s ease,background .15s ease;}
 .stat{position:relative;overflow:hidden;}
@@ -890,21 +915,21 @@ body::before{
 }
 .stat .value{font-variant-numeric:tabular-nums;}
 table tbody tr{transition:background .12s ease;}
-table tbody tr:hover{background:rgba(46,212,122,0.05);}
+table tbody tr:hover{background:rgba(139,124,246,0.04);}
 .nav-link{transition:background .12s ease,color .12s ease,border-color .15s ease;}
 .nav-link.active{box-shadow:inset 2px 0 0 var(--neon);}
 input,select,textarea{transition:border-color .15s ease,box-shadow .15s ease;}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--neon);box-shadow:0 0 0 3px rgba(46,212,122,0.28);}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--neon);box-shadow:0 0 0 3px rgba(139,124,246,0.18);}
 a{color:var(--neon);}
 :focus-visible{outline:2px solid var(--neon);outline-offset:2px;border-radius:6px;}
 .badge{letter-spacing:.2px;}
-.dept-badge.on{box-shadow:0 0 0 3px rgba(46,212,122,0.15);}
+.dept-badge.on{box-shadow:0 0 0 3px rgba(139,124,246,0.15);}
 .flag-pill{box-shadow:0 0 0 3px rgba(255,107,107,0.15);}
 .mobile-nav .nav-item.active{text-shadow:none;}
 ::-webkit-scrollbar{width:10px;height:10px;}
-::-webkit-scrollbar-thumb{background:#2C3E63;border-radius:8px;border:2px solid var(--bg);}
+::-webkit-scrollbar-thumb{background:#2A2A44;border-radius:8px;border:2px solid var(--bg);}
 ::-webkit-scrollbar-track{background:transparent;}
-::selection{background:rgba(46,212,122,0.30);}
+::selection{background:rgba(139,124,246,0.22);}
 
 /* ============================================================
    GLASS MORPHISM — frosted surfaces over the living background.
@@ -912,13 +937,13 @@ a{color:var(--neon);}
    never to scrolling content, so phones stay smooth.
    ============================================================ */
 .sidebar{
-  background:rgba(11,19,35,0.90);
+  background:rgba(16,16,28,0.90);
   -webkit-backdrop-filter:blur(18px) saturate(1.2);
   backdrop-filter:blur(18px) saturate(1.2);
   border-right:1px solid var(--border);
 }
 .mobile-topbar{
-  background:rgba(9,16,30,0.92);
+  background:rgba(12,12,22,0.92);
   -webkit-backdrop-filter:blur(14px);
   backdrop-filter:blur(14px);
 }
@@ -938,7 +963,7 @@ a{color:var(--neon);}
   backdrop-filter:none;
 }
 #toast{
-  background:#050B18;color:#E9EEF7;
+  background:#08080F;color:#EFEDF7;
   -webkit-backdrop-filter:blur(12px);
   backdrop-filter:blur(12px);
   border:1px solid rgba(0,0,0,0.4);
