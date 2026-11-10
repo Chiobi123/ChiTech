@@ -573,16 +573,46 @@ tbody tr:hover{background:var(--surface-2);}
 .btn-google:hover{background:var(--surface-2);border-color:var(--border);box-shadow:0 1px 2px rgba(0,0,0,0.06);}
 .btn-google .g-icon{width:17px;height:17px;vertical-align:-3.5px;margin-right:9px;}
 @media (max-width:900px){
-  .auth-layout{grid-template-columns:1fr;}
-  .auth-hero{border-right:none;border-bottom:1px solid var(--border);padding:26px 20px 22px;}
+  .auth-layout{grid-template-columns:1fr;grid-template-rows:auto auto;min-height:100vh;min-height:100svh;}
+  .auth-hero{border-right:none;border-bottom:1px solid var(--border);padding:20px 20px 16px;}
   .auth-hero-inner{max-width:520px;}
-  .auth-brand{margin-bottom:14px;}
-  .auth-headline{font-size:24px;line-height:1.28;margin-bottom:10px;}
-  .auth-lead{font-size:13px;margin-bottom:16px;}
-  .auth-flow{max-width:220px;margin:0 0 18px;}
-  .auth-pillars{margin-bottom:0;gap:10px;}
+  .auth-brand{margin-bottom:10px;}
+  .auth-headline{font-size:22px;line-height:1.25;margin-bottom:8px;}
+  .auth-lead{font-size:12.5px;line-height:1.55;margin-bottom:12px;}
+  .auth-flow{max-width:180px;margin:0 0 12px;}
+  .auth-pillars{margin-bottom:0;gap:8px;}
+  .auth-pillars li{padding:9px 10px;}
+  .auth-pillars b{font-size:11.5px;}
+  .auth-pillars span{font-size:10.5px;line-height:1.4;}
   .auth-assurance{display:none;}
-  .auth-side{padding:20px 16px 32px;}
+  .auth-side{padding:16px 16px 24px;}
+  .login-card{padding:22px 20px;}
+  .login-tag{margin-bottom:14px;}
+  .field{margin-bottom:10px;}
+  .or-divider{margin:10px 0;}
+}
+/* Single-column layouts on short screens (small tablets, 1024x768-class
+   laptops below): trim the hero so the card still lands above the fold. */
+@media (max-width:900px) and (max-height:960px){
+  .auth-hero{padding:10px 20px 8px;}
+  .auth-flow{display:none;}
+  .auth-brand{margin-bottom:6px;}
+  .auth-headline{font-size:20px;margin-bottom:6px;}
+  .auth-lead{font-size:12px;line-height:1.45;margin-bottom:8px;}
+  .auth-pillars li{padding:6px 9px;}
+  .auth-side{padding:12px 16px 16px;}
+  .login-card{padding:16px 20px;}
+  .login-tag{margin-bottom:10px;}
+  .field{margin-bottom:8px;}
+  .or-divider{margin:8px 0;}
+}
+@media (min-width:901px) and (max-height:820px){
+  .auth-hero{padding:28px 44px;}
+  .auth-brand{margin-bottom:12px;}
+  .auth-flow{max-width:220px;margin:0 0 16px;}
+  .auth-headline{font-size:30px;}
+  .auth-lead{margin-bottom:18px;}
+  .auth-pillars{margin-bottom:16px;}
 }
 .login-card{width:400px;max-width:100%;background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:30px 28px;}
 /* Pill fields and CTA, as in the reference sign-in screen. */
@@ -650,6 +680,46 @@ tbody tr:hover{background:var(--surface-2);}
 .list-wrap::-webkit-scrollbar{width:8px;}
 .list-wrap::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:4px;}
 .list-wrap::-webkit-scrollbar-track{background:transparent;}
+
+/* ================= DASHBOARD =================
+   Desktop reads as a control panel instead of a long scroll: the header,
+   the onboarding card and the KPI row stay full width, and the cards below
+   pair up two across, like the reference dashboard. Scoped to
+   .section.active — an #id rule on its own would beat
+   .section{display:none} and leave this section visible forever. */
+@media (min-width:901px){
+  #sec-dashboard.section.active{
+    display:grid;grid-template-columns:1fr 1fr;gap:16px;
+  }
+  #sec-dashboard > .topbar,
+  #sec-dashboard > #getting-started-card,
+  #sec-dashboard > .grid-4,
+  #sec-dashboard > .grid-2{grid-column:1/-1;}
+  #sec-dashboard > .topbar{margin-bottom:0;}
+  /* cards carry a default bottom margin; inside a grid it doubles the gap */
+  #sec-dashboard > *{margin-bottom:0;}
+  /* …and these two wrappers have an inline margin-bottom, which only
+     !important can override */
+  #sec-dashboard > .grid-4,
+  #sec-dashboard > .grid-2{margin-bottom:0 !important;}
+  /* Compact stat cards */
+  #sec-dashboard .stat{padding:12px 16px;border-radius:var(--radius-sm);}
+  #sec-dashboard .stat .label{font-size:11px;text-transform:uppercase;letter-spacing:0.4px;color:var(--muted);margin-bottom:4px;}
+  #sec-dashboard .stat .value{font-size:18px;}
+  #sec-dashboard .card{padding:16px;border-radius:var(--radius);}
+  #sec-dashboard .card-head .card-title{font-size:13px;}
+  #sec-dashboard .card-sub{font-size:11px;color:var(--muted);}
+  #sec-dashboard .grid-2 .forgot-title{font-size:11px;margin-bottom:4px;}
+  #sec-dashboard .grid-2 .value{font-size:13px;}
+}
+@media (max-width:900px) and (min-height:800px){
+  /* Tall phones: single column but keep pillars visible */
+  .auth-pillars{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0;}
+  .auth-pillars li{align-items:flex-start;gap:5px;padding:6px 8px;border-radius:999px;}
+  .auth-pillars svg{width:11px;height:11px;margin:0 2px 2px 0;}
+  .auth-pillars b{font-size:9.5px;margin:0 0 1px;}
+  .auth-pillars span{display:block;font-size:9px;line-height:1.3;}
+}
 .payout-status{
   display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:4px;
 }
@@ -827,22 +897,70 @@ tbody tr:hover{background:var(--surface-2);}
   input,select,textarea{font-size:16px;}
 }
 
-/* ---------- Small phones: keep controls thumb-sized ---------- */
+/* ---------- Small phones: everything on one screen ----------
+   The hero and the sign-in card have to be visible together without
+   scrolling on a phone. The hero is compacted to a header (the pillars
+   become one-line chips, their detail text drops), and the card loses
+   every non-essential gap. Nothing is removed from the sign-in form. */
 @media (max-width:560px){
   .mobile-topbar .hamburger{width:44px;height:44px;}
-  /* The sign-in card must reach the first screen, not sit below a tall
-     hero. Compact the left panel rather than hiding any of its copy. */
-  .auth-hero{padding:18px 16px 16px;}
-  .auth-brand{margin-bottom:10px;letter-spacing:3px;}
-  .auth-headline{font-size:20px;margin-bottom:10px;}
+  .auth-hero{padding:8px 14px;border-bottom:none;}
+  .auth-brand{font-size:11px;letter-spacing:2.5px;margin-bottom:4px;}
+  .auth-headline{font-size:17px;line-height:1.18;margin-bottom:4px;}
+  .auth-lead{font-size:10.5px;line-height:1.4;margin-bottom:6px;}
   .auth-flow{display:none;}
-  .auth-lead{font-size:12px;line-height:1.6;margin-bottom:14px;}
-  .auth-pillars{gap:8px;}
-  .auth-pillars li{gap:8px;padding:9px 10px;}
-  .auth-pillars svg{width:15px;height:15px;}
-  .auth-pillars b{font-size:11.5px;}
-  .auth-pillars span{font-size:10.5px;line-height:1.45;}
-  .auth-side{padding:18px 12px 32px;}
+  .auth-pillars{display:flex;flex-wrap:wrap;gap:5px;margin:0;}
+  .auth-pillars li{align-items:center;gap:4px;padding:3px 8px;border-radius:999px;}
+  .auth-pillars svg{width:11px;height:11px;margin:0;}
+  .auth-pillars b{font-size:9.5px;margin:0;}
+  .auth-pillars span{display:none;}
+  .auth-side{padding:8px 12px 12px;}
+  .login-card{padding:14px 16px;border-radius:18px;}
+  .login-brand{font-size:18px;}
+  .login-tag{font-size:10.5px;line-height:1.4;margin-bottom:8px;}
+  .login-tag a{font-size:10px !important;}
+  .login-card .field{margin-bottom:8px;}
+  .login-card label{font-size:10.5px;margin-bottom:3px;}
+  .login-card input:not([type=checkbox]):not([type=radio]):not([type=file]){padding:8px 14px;}
+  .login-card .btn{min-height:36px;}
+  .login-card .btn-block{padding:9px 14px;font-size:12.5px;}
+  .login-card p{margin:6px 0;}
+  .login-card .g-icon{width:15px;height:15px;}
+  .or-divider{margin:8px 0;font-size:10px;}
+}
+/* Taller phones have room for the pillar detail text; keep the one-screen
+   rule by only restoring it when the viewport can actually hold it. */
+@media (max-width:560px) and (min-height:800px){
+  .auth-pillars{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .auth-pillars li{align-items:flex-start;gap:7px;padding:8px 10px;border-radius:10px;}
+  .auth-pillars svg{width:13px;height:13px;margin-top:2px;}
+  .auth-pillars b{font-size:11px;margin-bottom:1px;}
+  .auth-pillars span{display:block;font-size:10px;line-height:1.4;}
+}
+/* ---------- 320px-wide phones (2016 iPhone SE and the like) ----------
+   One step tighter so the last size that used to scroll fits too: the two
+   sign-in fields share a row and every gap in the card comes down. */
+@media (max-width:340px){
+  .auth-hero{padding:6px 12px;}
+  .auth-brand{font-size:10px;letter-spacing:2px;margin-bottom:3px;}
+  .auth-headline{font-size:16px;line-height:1.15;margin-bottom:3px;}
+  .auth-lead{font-size:10px;line-height:1.35;margin-bottom:5px;}
+  .auth-pillars{gap:4px;}
+  .auth-pillars li{padding:4px 6px;gap:5px;}
+  .auth-pillars b{font-size:9.5px;}
+  .auth-side{padding:6px 8px 10px;}
+  .login-card{padding:10px 12px;border-radius:16px;}
+  .login-brand{font-size:15px;letter-spacing:2px;margin-bottom:3px;}
+  .login-tag{font-size:10px;line-height:1.3;margin-bottom:4px;}
+  .login-card label{font-size:10px;margin-bottom:2px;}
+  .login-card input:not([type=checkbox]):not([type=radio]):not([type=file]){padding:7px 12px;}
+  .login-card .field{margin-bottom:5px;}
+  .login-card .btn-block{padding:8px 12px;min-height:34px;}
+  .or-divider{margin:5px 0;font-size:9.5px;}
+  .login-card p{margin:4px 0 !important;}
+  .legal-footer{margin-top:2px;font-size:10px;}
+  #auth-view-signin.active{display:grid;grid-template-columns:1fr 1fr;gap:0 8px;align-content:start;}
+  #auth-view-signin > *:not(.field){grid-column:1/-1;}
 }
 
 /* ---------- Landscape phones / short screens: reclaim vertical space ---------- */
@@ -853,6 +971,45 @@ tbody tr:hover{background:var(--surface-2);}
   .login-card{padding:18px;}
   .auth-side{padding:12px;}
   .stat .value{font-size:18px;}
+}
+/* Landscape — the viewport is only ~390px tall. Stacking the hero over the
+   card pushed the card 430px below the fold, so both panels are trimmed to
+   the short height and the card's own fields pair up. Applies at every
+   width: a wide-but-short window has the same problem. */
+@media (max-height:500px) and (orientation:landscape){
+  .auth-hero{border-bottom:none;padding:8px 14px;align-items:flex-start;}
+  .auth-hero-inner{max-width:none;}
+  .auth-flow{display:none;}
+  .auth-brand{font-size:11px;letter-spacing:2.5px;margin-bottom:5px;}
+  .auth-headline{font-size:17px;line-height:1.2;margin-bottom:5px;}
+  .auth-lead{font-size:11px;line-height:1.35;margin-bottom:7px;}
+  .auth-pillars{grid-template-columns:1fr 1fr;gap:3px;}
+  .auth-pillars li{padding:3px 6px;gap:5px;}
+  .auth-pillars b{font-size:10px;margin:0;}
+  .auth-pillars span{display:none;}
+  .auth-assurance{display:none;}
+  .auth-side{padding:6px 10px;align-items:flex-start;}
+  .login-card{padding:10px 14px;border-radius:16px;}
+  .login-brand{font-size:14px;letter-spacing:2px;margin-bottom:3px;}
+  .login-tag{font-size:10.5px;line-height:1.3;margin-bottom:4px;}
+  .field{margin-bottom:5px;}
+  .login-card input:not([type=checkbox]):not([type=radio]):not([type=file]){padding:6px 13px;}
+  .login-card .btn-block{padding:8px 14px;font-size:12.5px;min-height:33px;}
+  .or-divider{margin:4px 0;font-size:10px;}
+  /* two of these paragraphs carry an inline margin-top; only !important
+     can pull them in on a 375px-tall screen */
+  .login-card p{margin:3px 0 !important;}
+  .legal-footer{margin-top:2px;font-size:10.5px;}
+  /* Email and password side by side — the card, not the hero, is what
+     overflows a 375px-tall landscape viewport. */
+  #auth-view-signin.active{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;align-content:start;}
+  #auth-view-signin > *:not(.field){grid-column:1/-1;}
+}
+/* On phones the two panels would otherwise stack down the short viewport:
+   put them side by side, the way desktop does. */
+@media (max-height:500px) and (orientation:landscape) and (max-width:900px){
+  .auth-layout{grid-template-columns:1fr minmax(300px,360px);}
+  .auth-hero{border-right:1px solid var(--border);}
 }
 
 /* ============================================================

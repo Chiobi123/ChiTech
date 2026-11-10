@@ -10,7 +10,7 @@ answer to "how far along is this?".
 | GitHub | `github.com/Chiobi123/ChiTech` |
 | Frontend host | Cloudflare Pages project `chiitech` (deploy dir `chiitech/`) |
 | Supabase project | `qmypqghktxlscibgxgxo` (live, existing — never reset) |
-| Last frontend asset version | `20261101d` (in `chiitech/index.html`) |
+| Last frontend asset version | `20261101f` (in `chiitech/index.html`) |
 | Live site | `https://chiitech.pages.dev` — verified in sync with local on 2026-10-23 |
 | Local migrations | 43 files (`01` → `42_deep_import_analysis`, plus the recovered live `22_restore_auditor_access`) |
 | Live DB migration count | **25** (01-22 recorded + 39, 40, 41 applied 2026-10-24; 42 in repo) |
@@ -43,6 +43,27 @@ answer to "how far along is this?".
 > veil indigo. Commits: light pass `8e872d7`, dark pass `916b75f`, reference pass
 > on top. Verified on localhost:8080 at 360/414/560/768/900/1024/1440 — no
 > horizontal overflow, card reachable, pillars 2-up. Not deployed yet.
+>
+> One-screen auth 2026-11-01 (asset `20261101e` → `20261101f`): the hero and the
+> sign-in card are sized to fit one viewport with no scrolling. Verified by iframe
+> measurement at 320x568, 360x640, 375x667, 390x844, 412x915, 430x932, 600x900,
+> 768x1024, 800x900, 1024x768, 1280x720, 1366x768, 1440x900, and in landscape at
+> 667x375, 768x400, 844x390, 896x412, 932x430, 1024x500 — every one `scrollHeight
+> <= viewport`, no horizontal overflow anywhere. How it fits: ≤900px is one column
+> with a compact hero (pillars become chips, their detail text drops and returns at
+> ≥800px tall); ≤340px and short landscape put email + password on one row and
+> tighten every gap in the card; landscape puts the hero and the card side by side
+> the way desktop does. Desktop stays two-panel (descriptions left, card right).
+> Not deployed yet.
+>
+> Admin dashboard layout 2026-11-01 (same asset): at ≥901px the dashboard section
+> becomes a 2-column grid — header, onboarding card and the KPI row full width,
+> the cards below paired two across, 16px gaps everywhere, compact stat cards
+> (11px uppercase labels, 18px values). Scoped to
+> `#sec-dashboard.section.active`: a bare `#id` rule would have beaten
+> `.section{display:none}` and left the dashboard visible over every other
+> screen. Verified at 1440x900 (two columns, correct spans) and 390x844 (still
+> single column, no overflow); console clean.
 
 ## Done
 
