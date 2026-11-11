@@ -42,7 +42,7 @@ answer to "how far along is this?".
 > colours updated in `charts.js`/`health-gauge.js`; legal pages re-tokened; boot
 > veil indigo. Commits: light pass `8e872d7`, dark pass `916b75f`, reference pass
 > on top. Verified on localhost:8080 at 360/414/560/768/900/1024/1440 — no
-> horizontal overflow, card reachable, pillars 2-up. Not deployed yet.
+> horizontal overflow, card reachable, pillars 2-up.
 >
 > One-screen auth 2026-11-01 (asset `20261101e` → `20261101f`): the hero and the
 > sign-in card are sized to fit one viewport with no scrolling. Verified by iframe
@@ -54,7 +54,12 @@ answer to "how far along is this?".
 > ≥800px tall); ≤340px and short landscape put email + password on one row and
 > tighten every gap in the card; landscape puts the hero and the card side by side
 > the way desktop does. Desktop stays two-panel (descriptions left, card right).
-> Not deployed yet.
+>
+> **Deployed 2026-11-11** — `npm run deploy` published asset `20261101f` to
+> Cloudflare Pages (https://a9f52e51.chiitech.pages.dev); verified live: the
+> served `index.html` references `?v=20261101f`. Covers the re-theme, the
+> one-screen auth and the panelled admin dashboard. PRD (`chiitech/PRD.md`) and
+> workflow (`chiitech/WORKFLOW.md`) docs committed as `2c34657`.
 >
 > Admin dashboard layout 2026-11-01 (same asset): at ≥901px the dashboard section
 > becomes a 2-column grid — header, onboarding card and the KPI row full width,
@@ -203,7 +208,8 @@ The database needs reconciling deliberately, with a backup, before any push.
 1. ~~Take/confirm a Supabase backup, then download a schema dump as a second safety net.~~ **DONE** (external dashboard)
 2. ~~Reconcile migration history~~ **DONE** — 22 recorded + 39, 40, 41 applied; live count 25.
 3. ~~Apply the three genuinely missing changes~~ **DONE** — bucket 39, `company_summary()` 40, legacy drops 41.
-4. ~~Deploy the current frontend~~ **DONE** — `20261022b` live.
+4. ~~Deploy the current frontend~~ **DONE** — `20261022b` live, then `20261101f`
+   live 2026-11-11 (re-theme + one-screen auth + panelled dashboard).
 5. **Pick a product gap:**
    - **Alert delivery** — Email/SMS/push for `security_alerts` (DB ready, needs provider)
    - **Reconciliation documentation** — Formalize the 22→25 drift and migration repair plan
