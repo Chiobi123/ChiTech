@@ -222,6 +222,6 @@ Branch: `feature/premium-dashboards-cleanup`.
 - Moved Auditor summary KPIs directly beneath its read-only overview.
 - Fixed Business Admin gross-profit calculation and selected-period end boundary; future-dated records are excluded, and negative gross profit is represented accurately in the charts.
 - Removed alert UI, client payload mapping, resolver and import side-effect. Super Admin plan distribution now charts company counts, not estimated plan-value totals under a revenue label.
-- Added migration `20261116170000_43_retire_security_alerts.sql`. It archives historical alert rows privately, removes alert triggers/functions/table, and replaces `platform_overview()` without the alert payload.
+- Added migration `20261116220000_43_retire_security_alerts.sql`. It archives historical alert rows privately, removes alert triggers/functions/table, and replaces `platform_overview()` without the alert payload.
 - **Not deployed.** Live schema must be checked against this migration and backed up before application. No production database changes have been made.
 - Authenticated browser tests for all roles and full live event verification remain outstanding.
