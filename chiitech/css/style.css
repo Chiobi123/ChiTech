@@ -1451,3 +1451,71 @@ pre{max-width:100%;overflow:auto;background:#0B120E;color:#DCE8E0;border-radius:
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;}
 }
+
+
+/* ============================================================
+   FINAL THEME TOKENS — shared authenticated workspace + auth UI.
+   These override the legacy violet tokens at their source, so every
+   module (including screens rendered after login) uses the same theme.
+   ============================================================ */
+:root{
+  --bg:#090C0B;
+  --surface:#111715;
+  --surface-2:#17201C;
+  --surface-3:#202B25;
+  --border:#293631;
+  --neon:#20C997;
+  --neon-deep:#12A77C;
+  --neon-dim:rgba(32,201,151,.12);
+  --text:#FFFFFF;
+  --muted:#A2AEA8;
+  --danger:#F07878;
+  --danger-dim:rgba(240,120,120,.12);
+  --warn:#E8C875;
+}
+@keyframes livePulse{
+  0%{box-shadow:0 0 0 0 rgba(32,201,151,.42);}
+  70%{box-shadow:0 0 0 7px rgba(32,201,151,0);}
+  100%{box-shadow:0 0 0 0 rgba(32,201,151,0);}
+}
+.card:hover,.stat:hover{border-color:rgba(32,201,151,.28);}
+.btn-primary:hover{box-shadow:0 6px 18px -6px rgba(32,201,151,.32);}
+.nav-link.active{border-color:rgba(32,201,151,.24);}
+
+
+/* Structural skeleton shown while auth/session/data bootstrap is in progress. */
+#boot-veil{padding:clamp(14px,3vw,34px);overflow:hidden;}
+.boot-skeleton{width:min(100%,1040px);display:grid;grid-template-columns:150px minmax(0,1fr);gap:22px;align-items:start;}
+.boot-side,.boot-main{display:flex;flex-direction:column;gap:13px;min-width:0;}
+.boot-side{padding:16px 12px;border:1px solid rgba(218,235,225,.09);border-radius:14px;background:rgba(17,23,21,.76);min-height:360px;}
+.boot-brand{height:13px;width:76%;margin:4px 0 20px;}
+.boot-nav{height:11px;width:88%;border-radius:6px;}
+.boot-nav.short{width:62%;}
+.boot-main{padding:5px 0;}
+.boot-heading{height:18px;width:34%;margin:4px 0 8px;}
+.boot-subheading{height:10px;width:52%;margin-bottom:12px;}
+.boot-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.boot-card{border:1px solid rgba(218,235,225,.09);border-radius:13px;background:rgba(17,23,21,.76);padding:15px;min-height:90px;}
+.boot-line{height:9px;width:54%;margin-bottom:15px;}
+.boot-value{height:20px;width:70%;}
+.boot-panels{display:grid;grid-template-columns:1.35fr 1fr;gap:12px;margin-top:1px;}
+.boot-panel{height:170px;border:1px solid rgba(218,235,225,.09);border-radius:13px;background:rgba(17,23,21,.76);padding:16px;}
+.boot-panel .boot-line{width:42%;}
+.boot-bars{height:94px;display:flex;align-items:end;gap:9px;padding:8px 3px 0;}
+.boot-bars i{display:block;flex:1;border-radius:5px 5px 0 0;background:rgba(32,201,151,.16);height:var(--h);}
+.boot-shimmer{position:relative;overflow:hidden;background:#202B25;border-radius:7px;}
+.boot-shimmer::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.09),transparent);animation:bootShimmer 1.65s ease-in-out infinite;}
+@keyframes bootShimmer{to{transform:translateX(100%);}}
+.boot-loading-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#A2AEA8;text-align:center;margin-top:3px;}
+@media(max-width:620px){
+  .boot-skeleton{grid-template-columns:minmax(0,1fr);gap:10px;}
+  .boot-side{display:none;}
+  .boot-heading{width:52%;}
+  .boot-subheading{width:78%;}
+  .boot-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .boot-card{min-height:76px;padding:12px;}
+  .boot-panels{grid-template-columns:minmax(0,1fr);}
+  .boot-panel{height:130px;}
+  .boot-panel:last-child{display:none;}
+}
+@media(prefers-reduced-motion:reduce){.boot-shimmer::after{animation:none;transform:none;opacity:.16;}}
