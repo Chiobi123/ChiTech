@@ -474,6 +474,8 @@
           <p class="text-muted" style="font-size:12px;line-height:1.7;margin:0;">Your Super Admin identity is reserved at the database level. Password changes are handled securely by Supabase Auth and are never stored in the website code.</p>
           <button class="btn btn-primary" onclick="changeSuperAdminPassword()">Change Super Admin password</button>
         </div>
+      </div>
+
       <div class="card">
         <div class="card-head"><div class="card-title">Plans &amp; prices</div><div class="card-sub">You set prices here — changes apply to new and renewing cycles only</div></div>
         <table>
@@ -1297,6 +1299,13 @@
         visible to the company admin.
       </div>
 
+      <div class="grid grid-4" class="auditor-kpis" style="margin-bottom:16px;">
+        <div class="stat pos"><div class="label">Audit confidence</div><div class="value" id="ac-confidence">—</div></div>
+        <div class="stat" id="ac-flags-card"><div class="label">Open flags</div><div class="value" id="ac-flags">0</div></div>
+        <div class="stat"><div class="label">Segregation of duties</div><div class="value" id="ac-sod">1 user</div></div>
+        <div class="stat" id="ac-opinion-card"><div class="label">Audit opinion</div><div class="value" id="ac-opinion" style="font-size:15px;">—</div></div>
+      </div>
+
       <div class="card">
         <div class="card-head">
           <div class="card-title">Analysis mode</div><div class="card-sub">How you'd like to review this company's numbers</div>
@@ -1324,12 +1333,7 @@
         <div id="ac-findings-list"></div>
       </div>
 
-      <div class="grid grid-4" style="margin-bottom:16px;">
-        <div class="stat pos"><div class="label">Audit confidence</div><div class="value" id="ac-confidence">—</div></div>
-        <div class="stat" id="ac-flags-card"><div class="label">Open flags</div><div class="value" id="ac-flags">0</div></div>
-        <div class="stat"><div class="label">Segregation of duties</div><div class="value" id="ac-sod">1 user</div></div>
-        <div class="stat" id="ac-opinion-card"><div class="label">Audit opinion</div><div class="value" id="ac-opinion" style="font-size:15px;">—</div></div>
-      </div>
+
 
       <div class="card">
         <div class="card-head"><div class="card-title">Audit terms explained</div></div>
@@ -1418,9 +1422,9 @@
      globals each file expects (supabase → sb → state → app) are unchanged. -->
 <script defer src="js/vendor/supabase.min.js"></script>
 <script defer src="js/supabase-config.js?v=20261116a"></script>
-<script defer src="js/data.js?v=20261116a"></script>
+<script defer src="js/data.js?v=20261116e"></script>
 <script defer src="js/auth.js?v=20261116a"></script>
-<script defer src="js/imports.js?v=20261116a"></script>
+<script defer src="js/imports.js?v=20261116e"></script>
 <script defer src="js/charts.js?v=20261116e"></script>
 <script defer src="js/health-gauge.js?v=20261116a"></script>
 <script defer src="js/app.js?v=20261116e"></script>
