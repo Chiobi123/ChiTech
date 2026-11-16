@@ -1613,7 +1613,6 @@ pre{max-width:100%;overflow:auto;background:#0B120E;color:#DCE8E0;border-radius:
 }
 
 /* Premium financial-console layer — Business Admin, Auditor and Super Admin. */
-:root{--radius:18px;--radius-sm:13px;}
 #sec-dashboard.section.active,#sec-auditor.section.active,#sec-superadmin.section.active{gap:18px;}
 #sec-dashboard .card,#sec-auditor .card,#sec-superadmin .card{border:1px solid rgba(184,205,194,.10);border-radius:20px;background:linear-gradient(155deg,rgba(23,34,29,.96),rgba(14,22,18,.98));box-shadow:0 16px 42px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.025);}
 #sec-dashboard .stat,#sec-auditor .stat,#sec-superadmin .stat{border:1px solid rgba(184,205,194,.10);border-radius:18px;background:linear-gradient(145deg,rgba(27,40,33,.98),rgba(16,25,20,.98));box-shadow:0 12px 30px rgba(0,0,0,.12);}
@@ -1635,3 +1634,12 @@ pre{max-width:100%;overflow:auto;background:#0B120E;color:#DCE8E0;border-radius:
 #sec-auditor .chart-canvas-wrap{min-height:190px;}
 @media(max-width:700px){#sec-dashboard .dashboard-primary-chart,#sec-dashboard .dashboard-secondary-chart{height:220px;}#sec-dashboard .dashboard-payment-chart{height:210px;}#sec-superadmin .sa-account-inner{align-items:flex-start;flex-direction:column;}}
 @media(prefers-reduced-motion:reduce){#sec-dashboard .card,#sec-auditor .card,#sec-superadmin .card,#sec-dashboard .stat,#sec-auditor .stat,#sec-superadmin .stat{transition:none;}}
+
+#sec-auditor .auditor-kpis{margin:0 0 2px!important;}
+#sec-auditor .auditor-kpis .stat{min-height:116px;padding:18px 20px;}
+#sec-auditor .auditor-kpis .value{font-size:clamp(20px,2vw,26px);letter-spacing:-.035em;}
+#sec-superadmin .card,#sec-auditor .card,#sec-dashboard .card{padding:22px;}
+@media(max-width:700px){
+ #sec-superadmin .card,#sec-auditor .card,#sec-dashboard .card{padding:16px;}
+ #sec-auditor .auditor-kpis .stat{min-height:96px;padding:13px!important;}
+}
