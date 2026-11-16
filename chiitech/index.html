@@ -462,10 +462,7 @@
           <div class="chart-canvas-wrap" style="height:200px;"><canvas id="sa-revenue-chart"></canvas></div>
           <div>
             <p class="text-muted" style="font-size:12px;line-height:1.7;margin-top:0;">
-              This is your subscription revenue as the platform owner — what each company pays <b style="color:var(--text)">you</b>
-              for using ChiiTech, priced on the Plans table below. It is separate from the "Billing &amp; payouts"
-              page inside each company, which is about that business collecting payments from <i>its own</i> customers.
-              Connect a real payment provider to actually collect this revenue automatically each month.
+              This chart shows how registered companies are distributed across your subscription plans. The recurring-revenue figures above are estimates based on active subscriptions and configured plan prices; actual collection requires a connected payment provider.
             </p>
           </div>
         </div>
@@ -477,10 +474,6 @@
           <p class="text-muted" style="font-size:12px;line-height:1.7;margin:0;">Your Super Admin identity is reserved at the database level. Password changes are handled securely by Supabase Auth and are never stored in the website code.</p>
           <button class="btn btn-primary" onclick="changeSuperAdminPassword()">Change Super Admin password</button>
         </div>
-      </div>
-        <div style="overflow:auto;"><table><thead><tr><th>Severity</th><th>Company</th><th>Event</th><th>Details</th><th>Time</th><th>Status</th><th></th></tr></thead><tbody id="sa-alerts-table"></tbody></table></div>
-      </div>
-
       <div class="card">
         <div class="card-head"><div class="card-title">Plans &amp; prices</div><div class="card-sub">You set prices here — changes apply to new and renewing cycles only</div></div>
         <table>
