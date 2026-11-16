@@ -10,7 +10,7 @@
      TLS handshake on a slow link right when the user presses "Sign in". -->
 <link rel="preconnect" href="https://qmypqghktxlscibgxgxo.supabase.co" crossorigin>
 <link rel="dns-prefetch" href="https://qmypqghktxlscibgxgxo.supabase.co">
-<link rel="stylesheet" href="css/style.css?v=20261116e">
+<link rel="stylesheet" href="css/style.css?v=20261117a">
 <!-- Charts are drawn locally in js/charts.js using the native Canvas API —
      no CDN or external chart library required, so this works fully offline
      and isn't at the mercy of a blocked network request. -->
@@ -347,10 +347,10 @@
   <div class="about-card">
     <button class="btn btn-sm" onclick="hideLegal()" style="margin-bottom:18px;">&larr; Back</button>
     <div class="chip-select" style="margin-bottom:20px;max-width:520px;">
-      <div class="chip-opt active" role="button" tabindex="0" aria-pressed="true" data-legal="privacy" onclick="showLegal('privacy')">Privacy</div>
-      <div class="chip-opt" role="button" tabindex="0" aria-pressed="false" data-legal="terms" onclick="showLegal('terms')">Terms</div>
-      <div class="chip-opt" role="button" tabindex="0" aria-pressed="false" data-legal="cookies" onclick="showLegal('cookies')">Cookies</div>
-      <div class="chip-opt" role="button" tabindex="0" aria-pressed="false" data-legal="refund" onclick="showLegal('refund')">Refunds</div>
+      <button type="button" class="chip-opt active" aria-pressed="true" data-legal="privacy" onclick="showLegal('privacy')">Privacy</button>
+      <button type="button" class="chip-opt" aria-pressed="false" data-legal="terms" onclick="showLegal('terms')">Terms</button>
+      <button type="button" class="chip-opt" aria-pressed="false" data-legal="cookies" onclick="showLegal('cookies')">Cookies</button>
+      <button type="button" class="chip-opt" aria-pressed="false" data-legal="refund" onclick="showLegal('refund')">Refunds</button>
     </div>
 
     <div id="legal-privacy" class="legal-pane">
@@ -1463,12 +1463,12 @@
      download in parallel and still run in exactly this order, so the
      globals each file expects (supabase → sb → state → app) are unchanged. -->
 <script defer src="js/vendor/supabase.min.js"></script>
-<script defer src="js/supabase-config.js?v=20261116a"></script>
-<script defer src="js/data.js?v=20261116e"></script>
-<script defer src="js/auth.js?v=20261116a"></script>
-<script defer src="js/imports.js?v=20261116e"></script>
-<script defer src="js/charts.js?v=20261116e"></script>
-<script defer src="js/health-gauge.js?v=20261116a"></script>
-<script defer src="js/app.js?v=20261116e"></script>
+<script defer src="js/supabase-config.js?v=20261117a"></script>
+<script defer src="js/data.js?v=20261117a"></script>
+<script defer src="js/auth.js?v=20261117a"></script>
+<script defer src="js/imports.js?v=20261117a"></script>
+<script defer src="js/charts.js?v=20261117a"></script>
+<script defer src="js/health-gauge.js?v=20261117a"></script>
+<script defer src="js/app.js?v=20261117a"></script>
 </body>
 </html>
