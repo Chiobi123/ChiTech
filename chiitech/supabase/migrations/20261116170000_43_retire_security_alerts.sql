@@ -3,6 +3,9 @@
 -- Historical alert records are preserved in an archive table for rollback/audit history.
 begin;
 create table if not exists public.security_alerts_retired_20261116 (like public.security_alerts including all);
+alter table public.security_alerts_retired_20261116 enable row level security;
+revoke all on table public.security_alerts_retired_20261116 from anon, authenticated;
+grant all on table public.security_alerts_retired_20261116 to service_role;
 insert into public.security_alerts_retired_20261116 select * from public.security_alerts on conflict do nothing;
 drop trigger if exists security_alert_audit_trigger on public.audit_log;
 drop trigger if exists security_alert_large_expense_trigger on public.expenses;
