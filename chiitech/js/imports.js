@@ -337,7 +337,7 @@ async function commitImport(){
     const {data:importedCount,error:commitError}=await sb.rpc('commit_import_batch',{p_batch_id:d.batchId,p_record_type:d.type});
     if(commitError) throw commitError;
     const actualCount=Number(importedCount||0);
-    await sb.rpc('create_security_alert',{p_company_id:session.companyId,p_severity:'low',p_event_type:'business_import',p_title:'Existing business records imported',p_description:`${actualCount} ${d.type} records imported from ${d.fileName}.`,p_metadata:{batch_id:d.batchId,record_type:d.type,row_count:actualCount,analysis:d.analysis}});
+
     if(typeof addAuditLog==='function') addAuditLog('import.completed',`Imported ${rows.length} ${d.type} records from ${d.fileName}`);
     toast(`Imported ${actualCount.toLocaleString()} records successfully.`,5000); cancelImport(); state=await loadBusiness(session.companyId); if(typeof renderSection==='function' && typeof currentSection!=='undefined' && currentSection){ try{ renderSection(currentSection); }catch(e){} }
   }catch(err){console.error(err);toast('Import failed. The staged records were not promoted into the business tables. Review the import batch and try again. '+(err.message||''),7000);}

@@ -75,7 +75,7 @@ the migrations folder disagree, stop and report it before changing anything.
 5. **Never weaken RLS to make a screen work.** Fix the query or add a scoped RPC.
 6. **Super Admin is not a superuser of company data.** `can_access_company()` means
    "the signed-in user's own company". Platform reads go through the dedicated RPCs
-   (`platform_overview`, `restore_company`, `restore_profile`, `resolve_security_alert`,
+   (`platform_overview`, `restore_company`, `restore_profile`,
    `ensure_super_admin`). No impersonation, no "view as admin".
 7. **Super Admin password lives only in Supabase Auth.** It is never written into JS,
    SQL, docs, or git. Reserved account: `igbanichiobiebere@gmail.com`.
@@ -193,7 +193,7 @@ For an import change:
 
 - [ ] Small CSV first, analysis shown before commit.
 - [ ] Rows land in the intended table only.
-- [ ] A security alert is created.
+- [ ] No security-alert side effect is created; imports complete independently of the retired alert feature.
 - [ ] Bad file (missing column, bad date, negative amount) is rejected with a clear message.
 
 ## 8. Commit messages
@@ -217,8 +217,7 @@ One logical change per commit. Do not bundle a doc rewrite with a behaviour chan
 - Import analysis is **deterministic and rule-based** on purpose. No LLM in the import
   path yet; if added, it must read staged rows server-side, never with a service key in
   the browser.
-- Security alerts are **review signals**, not fraud verdicts. Wording matters.
-- Alerting is database-only. No email/SMS/push delivery yet.
+- The former security-alert workflow is retired; do not reintroduce alert triggers or RPC calls.
 - No automated frontend tests. Verification is manual plus the k6 load test.
 
 ## 10. Multi-tool handoff

@@ -986,12 +986,14 @@ function renderDashboard(){
   const now=new Date();
   const start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   start.setDate(start.getDate()-(dashboardRangeDays-1));
-  const periodSales=state.sales.filter(s=>s.time>=start.getTime()&&s.time<now.getTime()+86400000);
-  const periodExpenses=state.expenses.filter(e=>e.time>=start.getTime()&&e.time<now.getTime()+86400000);
+  const end=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1).getTime();
+  const periodSales=state.sales.filter(s=>s.time>=start.getTime()&&s.time<end);
+  const periodExpenses=state.expenses.filter(e=>e.time>=start.getTime()&&e.time<end);
   const revenue=periodSales.reduce((sum,s)=>sum+(Number(s.total)||0),0);
   const cost=periodSales.reduce((sum,s)=>sum+(Number(s.cost)||0),0);
+  const grossProfit=revenue-cost;
   const expenses=periodExpenses.reduce((sum,e)=>sum+(Number(e.amount)||0),0);
-  const netProfit=revenue-cost-expenses;
+  const netProfit=grossProfit-expenses;
   animateStatNumber('d-sales',revenue,fmtN);
   animateStatNumber('d-profit',grossProfit,fmtN);
   animateStatNumber('d-net-profit',netProfit,fmtN);
@@ -1012,12 +1014,12 @@ function renderDashboard(){
   chiLine('d-chart',{labels:daily.map(d=>d.label),series:[{label:'Revenue',data:daily.map(d=>d.revenue),color:CHIITECH_CHART_COLORS.neon}]});
   chiLine('d-revcost-chart',{labels:daily.map(d=>d.label),series:[
     {label:'Revenue',data:daily.map(d=>d.revenue),color:CHIITECH_CHART_COLORS.neon},
-    {label:'Gross profit',data:daily.map(d=>Math.max(0,d.revenue-d.cost)),color:CHIITECH_CHART_COLORS.warn}
+    {label:'Gross profit',data:daily.map(d=>d.revenue-d.cost),color:CHIITECH_CHART_COLORS.warn}
   ]});
   const byPayment={};
   periodSales.forEach(s=>{const key=(s.payment||'Unspecified').toString();byPayment[key]=(byPayment[key]||0)+(Number(s.total)||0);});
   const paymentLabels=Object.keys(byPayment);
-  chiDoughnut('d-payment-chart',{labels:paymentLabels.length?paymentLabels:['No sales in this period'],values:paymentLabels.length?paymentLabels.map(k=>byPayment[k]):[1],centerLabel:paymentLabels.length?fmtN(revenue):'No data'});
+  chiDoughnut('d-payment-chart',{labels:paymentLabels.length?paymentLabels:['No sales in this period'],values:paymentLabels.length?paymentLabels.map(k=>byPayment[k]):[0],centerLabel:paymentLabels.length?fmtN(revenue):'No data'});
   const openDebts=(state.debts||[]).filter(d=>d.status==='open');
   const receivables=state.customers.reduce((sum,x)=>sum+Math.max(0,Number(x.balanceDue)||0),0)+openDebts.filter(d=>d.direction==='owed_to_me').reduce((sum,d)=>sum+(Number(d.amount)||0),0);
   const overdue=openDebts.filter(d=>d.direction==='i_owe'&&d.dueDate&&new Date(d.dueDate).getTime()<Date.now()).length;
@@ -2136,8 +2138,7 @@ async function restoreCompany(companyId){
 async function renderSuperAdmin(){
   const companies = platform.companies || [];
   const salesByCompany = platform.salesByCompany || {};
-  const alerts = platform.securityAlerts || [];
-  if(platform.loadError){
+    if(platform.loadError){
     document.getElementById('sa-table').innerHTML = `<tr><td colspan="7" class="auth-error">Platform data failed to load: ${escapeHtml(platform.loadError)} — sign out and back in; if it persists, contact support.</td></tr>`;
   }
   let totalWorkers=0, totalSales=0, mrr=0, foundingCount=0;
@@ -2173,21 +2174,11 @@ async function renderSuperAdmin(){
   document.getElementById('sa-mrr').textContent = fmtN(mrr);
   document.getElementById('sa-arpc').textContent = fmtN(companies.length ? mrr/companies.length : 0);
   document.getElementById('sa-founding-count').textContent = foundingCount;
-
-  const openAlerts=alerts.filter(a=>a.status==='open'||a.status==='reviewing');
-  document.getElementById('sa-open-alerts').textContent=openAlerts.length;
-  document.getElementById('sa-alerts-table').innerHTML=alerts.slice(0,50).map(a=>`<tr>
-    <td><span class="badge ${a.severity==='critical'||a.severity==='high'?'badge-danger':a.severity==='medium'?'badge-warn':'badge-ok'}">${escapeHtml(a.severity)}</span></td>
-    <td>${escapeHtml(a.companyName||'Platform')}</td><td>${escapeHtml(a.title)}</td><td>${escapeHtml(a.description||'—')}</td>
-    <td>${new Date(a.createdAt).toLocaleString('en-NG')}</td><td>${escapeHtml(a.status)}</td>
-    <td>${a.status!=='resolved'&&a.status!=='dismissed'?`<button class="btn btn-sm" onclick="resolveSecurityAlert('${a.id}')">Resolve</button>`:''}</td>
-  </tr>`).join('') || `<tr><td colspan="7" class="text-muted">No security alerts.</td></tr>`;
-
   const planLabels = Object.keys(planCounts);
   chiDoughnut('sa-revenue-chart', {
     labels: planLabels.length ? planLabels.map(p=>`${p} (${planCounts[p]})`) : ['No companies yet'],
-    values: planLabels.length ? planLabels.map(p=>(priceByPlan[p]||0)*planCounts[p]) : [1],
-    centerLabel: fmtN(mrr),
+    values: planLabels.length ? planLabels.map(p=>planCounts[p]) : [0],
+    centerLabel: companies.length ? companies.length+' companies' : 'No data',
   });
 
   document.getElementById('sa-plans-table').innerHTML = (platform.plans||[]).map(p=>`<tr>
@@ -2249,12 +2240,6 @@ async function revertToFree(companyId){
   const {error} = await sb.rpc('set_subscription_status', { p_company_id: companyId, p_status: 'active', p_renew_days: 30, p_plan_id: 'free' });
   if(error){ toast('Revert failed: ' + error.message, 4000); return; }
   platform = await loadPlatform(); await renderSuperAdmin(); toast('Reverted to Free.');
-}
-
-async function resolveSecurityAlert(id){
-  const {error}=await sb.rpc('resolve_security_alert',{p_alert_id:id,p_status:'resolved'});
-  if(error){toast('Could not resolve alert: '+error.message,4000);return;}
-  platform=await loadPlatform(); await renderSuperAdmin(); toast('Security alert marked resolved');
 }
 
 async function changeSuperAdminPassword(){

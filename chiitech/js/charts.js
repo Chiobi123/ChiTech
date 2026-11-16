@@ -233,63 +233,30 @@ function chiRoundRect(ctx, x, y, w, h, r){
   ctx.closePath();
 }
 
+/* Smooth, tension-controlled curve shared by financial and audit line charts. */
+function chiSmoothPath(ctx,pts){
+ if(!pts.length)return;ctx.moveTo(pts[0].x,pts[0].y);
+ for(let i=0;i<pts.length-1;i++){const p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(pts.length-1,i+2)],dx=p2.x-p1.x,lo=Math.min(p1.y,p2.y),hi=Math.max(p1.y,p2.y);
+ const c1={x:p1.x+dx/3,y:p1.y+(p2.y-p0.y)/6},c2={x:p2.x-dx/3,y:p2.y-(p3.y-p1.y)/6};c1.y=Math.max(lo,Math.min(hi,c1.y));c2.y=Math.max(lo,Math.min(hi,c2.y));ctx.bezierCurveTo(c1.x,c1.y,c2.x,c2.y,p2.x,p2.y);}
+}
 /* ---------------- LINE CHART (multi-series, with area fill) ---------------- */
-function chiLine(canvasId, opts){
-  const canvas = document.getElementById(canvasId);
-  if(!canvas) return;
-  const series = opts.series.map((s,i)=>({ color: s.color || CHI_PALETTE[i%CHI_PALETTE.length], ...s }));
-
-  chiObserve(canvas, function redraw(){
-    const {ctx, w, h} = chiFitCanvas(canvas);
-    ctx.clearRect(0,0,w,h);
-    const labels = opts.labels;
-    const padL = 38, padR = 12, padT = 14, padB = 26;
-    const plotW = Math.max(10, w-padL-padR);
-    const plotH = Math.max(10, h-padT-padB);
-    const allVals = series.flatMap(s=>s.data);
-    const maxVal = Math.max(1, ...allVals) * 1.15;
-    const stepX = labels.length>1 ? plotW/(labels.length-1) : plotW;
-
-    ctx.strokeStyle = CHIITECH_CHART_COLORS.grid;
-    ctx.fillStyle = CHIITECH_CHART_COLORS.text;
-    ctx.font = '10px Inter, Arial, sans-serif';
-    ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-    for(let i=0;i<=4;i++){
-      const y = padT + plotH - (plotH*i/4);
-      ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+plotW,y); ctx.lineWidth=1; ctx.stroke();
-      ctx.fillText(chiShortNumber(maxVal*i/4), padL-6, y);
-    }
-
-    series.forEach(s=>{
-      const pts = s.data.map((v,i)=>({ x: padL+i*stepX, y: padT+plotH-(v/maxVal)*plotH }));
-      // area fill
-      if(s.fill!==false){
-        ctx.beginPath();
-        ctx.moveTo(pts[0].x, padT+plotH);
-        pts.forEach(p=>ctx.lineTo(p.x,p.y));
-        ctx.lineTo(pts[pts.length-1].x, padT+plotH);
-        ctx.closePath();
-        ctx.fillStyle = s.color+'22';
-        ctx.fillStyle = hexToRgba(s.color, 0.12);
-        ctx.fill();
-      }
-      // line
-      ctx.beginPath();
-      pts.forEach((p,i)=> i===0 ? ctx.moveTo(p.x,p.y) : ctx.lineTo(p.x,p.y));
-      ctx.strokeStyle = s.color; ctx.lineWidth = 2.5; ctx.lineJoin='round'; ctx.stroke();
-      // points
-      pts.forEach(p=>{
-        ctx.beginPath(); ctx.arc(p.x,p.y,3,0,Math.PI*2);
-        ctx.fillStyle = s.color; ctx.fill();
-      });
-    });
-
-    ctx.fillStyle = CHIITECH_CHART_COLORS.text;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-    labels.forEach((label,i)=> ctx.fillText(label, padL+i*stepX, padT+plotH+8));
-
-    chiDrawLegend(canvas, series);
+function chiLine(canvasId,opts){
+ const canvas=document.getElementById(canvasId);if(!canvas)return;
+ const labels=Array.isArray(opts.labels)?opts.labels:[];
+ const series=(opts.series||[]).map((s,i)=>({color:s.color||CHI_PALETTE[i%CHI_PALETTE.length],data:Array.isArray(s.data)?s.data.slice(0,labels.length).map(v=>Number(v)||0):[],...s}));
+ chiObserve(canvas,function redraw(){
+  const {ctx,w,h}=chiFitCanvas(canvas);ctx.clearRect(0,0,w,h);
+  const padL=42,padR=14,padT=18,padB=30,plotW=Math.max(10,w-padL-padR),plotH=Math.max(10,h-padT-padB),vals=series.flatMap(s=>s.data).filter(Number.isFinite),maxVal=Math.max(1,...vals),minVal=Math.min(0,...vals),valueRange=Math.max(1,maxVal-minVal),zeroY=padT+plotH-(0-minVal)/valueRange*plotH,stepX=labels.length>1?plotW/(labels.length-1):0;
+  ctx.save();ctx.strokeStyle=CHIITECH_CHART_COLORS.grid;ctx.fillStyle=CHIITECH_CHART_COLORS.text;ctx.font='10px Inter,Arial,sans-serif';ctx.textAlign='right';ctx.textBaseline='middle';
+  for(let i=0;i<=4;i++){const value=minVal+valueRange*i/4,y=padT+plotH-plotH*i/4;ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(padL+plotW,y);ctx.lineWidth=1;ctx.globalAlpha=i===0?.72:.4;ctx.stroke();ctx.globalAlpha=1;ctx.fillText(chiShortNumber(value),padL-9,y);}ctx.restore();
+  series.forEach(s=>{const pts=s.data.map((v,i)=>({x:padL+(labels.length>1?i*stepX:plotW/2),y:padT+plotH-(v-minVal)/valueRange*plotH}));if(!pts.length)return;
+   if(s.fill!==false&&pts.length>1){ctx.beginPath();chiSmoothPath(ctx,pts);ctx.lineTo(pts[pts.length-1].x,zeroY);ctx.lineTo(pts[0].x,zeroY);ctx.closePath();const g=ctx.createLinearGradient(0,padT,0,padT+plotH);g.addColorStop(0,hexToRgba(s.color,.22));g.addColorStop(1,hexToRgba(s.color,.008));ctx.fillStyle=g;ctx.fill();}
+   if(pts.length>1){ctx.save();ctx.beginPath();chiSmoothPath(ctx,pts);ctx.strokeStyle=hexToRgba(s.color,.15);ctx.lineWidth=8;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();ctx.restore();}
+   ctx.beginPath();chiSmoothPath(ctx,pts);ctx.strokeStyle=s.color;ctx.lineWidth=2.8;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();const last=pts[pts.length-1];ctx.beginPath();ctx.arc(last.x,last.y,3,0,Math.PI*2);ctx.fillStyle=s.color;ctx.fill();ctx.beginPath();ctx.arc(last.x,last.y,6,0,Math.PI*2);ctx.strokeStyle=hexToRgba(s.color,.25);ctx.lineWidth=1.2;ctx.stroke();
   });
+  ctx.fillStyle=CHIITECH_CHART_COLORS.text;ctx.font='10px Inter,Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='top';const stride=Math.max(1,Math.ceil(labels.length/8));labels.forEach((label,i)=>{if(label&&(i%stride===0||i===labels.length-1))ctx.fillText(label,padL+(labels.length>1?i*stepX:plotW/2),padT+plotH+9);});
+  chiDrawLegend(canvas,series);
+ });
 }
 
 function hexToRgba(hex, alpha){
@@ -390,10 +357,9 @@ function chiBarLineCombo(canvasId, {labels, bar, line}){
     const pts = line.data.map((v,i)=>({x:padL+i*stepX+groupW/2-stepX/2+ (labels.length>1?0:0), y: padT+plotH-(v/maxVal)*plotH}));
     // align line points to bar-group centers precisely
     const pts2 = labels.map((_,i)=>({ x: padL+i*groupW+groupW/2, y: padT+plotH-((line.data[i]||0)/maxVal)*plotH }));
-    ctx.beginPath();
-    pts2.forEach((p,i)=> i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));
-    ctx.strokeStyle = CHIITECH_CHART_COLORS.warn; ctx.lineWidth=2; ctx.stroke();
-    pts2.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,2.5,0,Math.PI*2); ctx.fillStyle=CHIITECH_CHART_COLORS.warn; ctx.fill(); });
+    ctx.beginPath();chiSmoothPath(ctx,pts2);
+    ctx.strokeStyle=CHIITECH_CHART_COLORS.warn;ctx.lineWidth=2.6;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
+    const last=pts2[pts2.length-1];if(last){ctx.beginPath();ctx.arc(last.x,last.y,3,0,Math.PI*2);ctx.fillStyle=CHIITECH_CHART_COLORS.warn;ctx.fill();}
 
     chiDrawLegend(canvas, [{label:bar.label||'Observed', color:CHIITECH_CHART_COLORS.neon},{label:line.label||'Expected', color:CHIITECH_CHART_COLORS.warn}]);
   });

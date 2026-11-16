@@ -509,7 +509,7 @@ async function loadPlatform(){
   if(error){
     console.error('loadPlatform:', error);
     toast('Could not load the platform console: ' + (error.message || error), 5000);
-    return {companies:[], users:[], salesByCompany:{}, securityAlerts:[], loadError:(error.message || String(error))};
+    return {companies:[], users:[], salesByCompany:{}, plans:[], subscriptions:[], loadError:(error.message || String(error))};
   }
   const payload = data || {};
   const companies = (payload.companies||[]).map(c=>({
@@ -522,15 +522,9 @@ async function loadPlatform(){
     departments:p.departments||[], active:p.active
   }));
   const salesByCompany = {};
-  (payload.sales_by_company||[]).forEach(x=>{ salesByCompany[x.company_id]=Number(x.total||0); });
-  const securityAlerts = (payload.security_alerts||[]).map(a=>({
-    id:a.id, companyId:a.company_id, companyName:a.company_name||'Platform', severity:a.severity,
-    eventType:a.event_type, title:a.title, description:a.description, source:a.source, status:a.status,
-    metadata:a.metadata||{}, createdAt:new Date(a.created_at).getTime(), resolvedAt:a.resolved_at?new Date(a.resolved_at).getTime():null
-  }));
-  const plans = (payload.plans||[]).map(p=>({ id:p.id, name:p.name, price:Number(p.price), features:p.features||[], active:p.active }));
+  (payload.sales_by_company||[]).forEach(x=>{ salesByCompany[x.company_id]=Number(x.total||0); });  const plans = (payload.plans||[]).map(p=>({ id:p.id, name:p.name, price:Number(p.price), features:p.features||[], active:p.active }));
   const subscriptions = (payload.subscriptions||[]).map(s=>({ company_id:s.company_id, plan_id:s.plan_id, status:s.status, renews_at:s.renews_at }));
-  return { companies, users, salesByCompany, securityAlerts, plans, subscriptions };
+  return { companies, users, salesByCompany, plans, subscriptions };
 }
 
 /** Retired no-op (platform writes go straight to Supabase in app.js).
