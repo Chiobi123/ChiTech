@@ -10,7 +10,7 @@ answer to "how far along is this?".
 | GitHub | `github.com/Chiobi123/ChiTech` |
 | Frontend host | Cloudflare Pages project `chiitech` (deploy dir `chiitech/`) |
 | Supabase project | `qmypqghktxlscibgxgxo` (live, existing — never reset) |
-| Last frontend asset version | `20261116e` (feature branch; not yet deployed) |
+| Last frontend asset version | `20261117a` (priority 1–7 work in feature branch; production verification pending) |
 | Live site | `https://chiitech.pages.dev` — verified in sync with local on 2026-10-23 |
 | Local migrations | 43 files (`01` → `42_deep_import_analysis`, plus the recovered live `22_restore_auditor_access`) |
 | Live DB migration count | **44** (verified 2026-11-16; includes dashboard Realtime and alert-retirement migrations) |
@@ -239,3 +239,19 @@ Branch: `feature/premium-dashboards-cleanup`.
 - Dashboard branch work remains unmerged and not deployed. Asset version `20261116e`.
 - Validation completed: JavaScript parse checks for app/charts/data/imports; no duplicate HTML IDs; CSS brace balance; zero active alert-feature references in frontend source; production schema checks above.
 - Still outstanding: authenticated browser E2E for Business Admin, Auditor, Super Admin, worker permissions, and full live UI smoke tests.
+
+
+## 2026-11-17 — priority 1–7 brand, onboarding, legal and mobile pass
+
+Branch: `feature/priority-1-to-7-brand-auth-legal-mobile`.
+
+- Consolidated the CSS design tokens to one charcoal / emerald / white palette. Removed legacy indigo/violet declarations and hard-coded violet accents so older component rules cannot reintroduce the previous theme.
+- Reworked first-time Google OAuth onboarding: new identities choose Business Owner, Auditor or Worker. Owner creates a company; worker/auditor must accept the corresponding email-bound, single-use invitation. Existing linked accounts continue to route from their trusted database profile.
+- Added clear pending-approval handling for invited workers; auditor role continues through the existing auditor invitation and read-only access path.
+- Repaired legal tab switching so each tab shows its own content. Removed the public build identifier and fake support email/WhatsApp details. Made the registration consent checkbox explicit and visible.
+- Replaced the legal placeholders with product-specific working drafts covering personal/business data, Supabase (EU West), Google sign-in, Groq AI processing, role permissions, retention/account deactivation, terms, browser storage and the current demo-only Paystack connection control.
+- Added mobile refinements for narrow layouts, scrollable data tables, touch targets, forms and role onboarding.
+- Asset cache version bumped to `20261117a`.
+- No production deployment or schema change recorded yet. Live public audit on 2026-11-16 observed build `20261116d`; production deployment must be verified after the branch is validated.
+- Before launch: operator legal identity, business address, privacy/support contact, data-retention schedule, provider data-processing terms and cross-border safeguards still require confirmation and legal review.
+- Google invitation display-name persistence requires a small additive migration to read the user's Google profile name into the new worker/auditor profile; the migration is prepared separately and must be applied and verified before this part is considered complete.
