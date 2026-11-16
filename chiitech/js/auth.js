@@ -690,6 +690,7 @@ async function deleteMyAccount(){
 }
 
 async function logout(){
+  if(typeof stopDashboardRealtime==='function') stopDashboardRealtime();
   clearSession();
   session = null;
   myCompany = null;
