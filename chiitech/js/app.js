@@ -1574,7 +1574,7 @@ function exportAuditReport(format){
     const win = window.open('', '_blank');
     win.document.write(`
       <html><head><title>ChiiTech Audit Report — ${escapeHtml(currentCompany()?.name||'')}</title>
-      <style>body{font-family:Arial,sans-serif;padding:32px;color:#111;} h1{color:#8B7CF6;} table{width:100%;border-collapse:collapse;margin-top:14px;} td,th{border:1px solid #ddd;padding:8px;font-size:13px;text-align:left;}</style>
+      <style>:root{color-scheme:dark}body{font-family:Arial,sans-serif;padding:32px;background:#090C0B;color:#fff;line-height:1.6}h1{color:#20C997}table{width:100%;border-collapse:collapse;margin-top:14px;background:#111715}td,th{border:1px solid #293631;padding:8px;font-size:13px;text-align:left}th{color:#62E3B9;background:#17201D}td{color:#fff}</style>
       </head><body>
       <h1>ChiiTech Audit Report</h1>
       <p><b>Company:</b> ${escapeHtml(currentCompany()?.name||'')} &nbsp; <b>Generated:</b> ${new Date().toLocaleString()}</p>
