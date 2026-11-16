@@ -252,6 +252,6 @@ Branch: `feature/priority-1-to-7-brand-auth-legal-mobile`.
 - Replaced the legal placeholders with product-specific working drafts covering personal/business data, Supabase (EU West), Google sign-in, Groq AI processing, role permissions, retention/account deactivation, terms, browser storage and the current demo-only Paystack connection control.
 - Added mobile refinements for narrow layouts, scrollable data tables, touch targets, forms and role onboarding.
 - Asset cache version bumped to `20261117a`.
-- No production deployment or schema change recorded yet. Live public audit on 2026-11-16 observed build `20261116d`; production deployment must be verified after the branch is validated.
+- No production frontend deployment yet. Migration 46 was applied to live Supabase under recorded version `20261116232906`; both invitation RPC definitions were verified after application. Live public audit on 2026-11-16 observed build `20261116d`; production frontend deployment must be verified after branch validation.
 - Before launch: operator legal identity, business address, privacy/support contact, data-retention schedule, provider data-processing terms and cross-border safeguards still require confirmation and legal review.
-- Google invitation display-name persistence requires a small additive migration to read the user's Google profile name into the new worker/auditor profile; the migration is prepared separately and must be applied and verified before this part is considered complete.
+- Google invitation display-name persistence migration 46 is applied and verified. It reads Google profile name metadata only for display; authorization still derives from database invitation and profile state.
