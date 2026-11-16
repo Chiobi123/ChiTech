@@ -2136,8 +2136,7 @@ async function restoreCompany(companyId){
 async function renderSuperAdmin(){
   const companies = platform.companies || [];
   const salesByCompany = platform.salesByCompany || {};
-  const alerts = platform.securityAlerts || [];
-  if(platform.loadError){
+    if(platform.loadError){
     document.getElementById('sa-table').innerHTML = `<tr><td colspan="7" class="auth-error">Platform data failed to load: ${escapeHtml(platform.loadError)} — sign out and back in; if it persists, contact support.</td></tr>`;
   }
   let totalWorkers=0, totalSales=0, mrr=0, foundingCount=0;
@@ -2173,21 +2172,11 @@ async function renderSuperAdmin(){
   document.getElementById('sa-mrr').textContent = fmtN(mrr);
   document.getElementById('sa-arpc').textContent = fmtN(companies.length ? mrr/companies.length : 0);
   document.getElementById('sa-founding-count').textContent = foundingCount;
-
-  const openAlerts=alerts.filter(a=>a.status==='open'||a.status==='reviewing');
-  document.getElementById('sa-open-alerts').textContent=openAlerts.length;
-  document.getElementById('sa-alerts-table').innerHTML=alerts.slice(0,50).map(a=>`<tr>
-    <td><span class="badge ${a.severity==='critical'||a.severity==='high'?'badge-danger':a.severity==='medium'?'badge-warn':'badge-ok'}">${escapeHtml(a.severity)}</span></td>
-    <td>${escapeHtml(a.companyName||'Platform')}</td><td>${escapeHtml(a.title)}</td><td>${escapeHtml(a.description||'—')}</td>
-    <td>${new Date(a.createdAt).toLocaleString('en-NG')}</td><td>${escapeHtml(a.status)}</td>
-    <td>${a.status!=='resolved'&&a.status!=='dismissed'?`<button class="btn btn-sm" onclick="resolveSecurityAlert('${a.id}')">Resolve</button>`:''}</td>
-  </tr>`).join('') || `<tr><td colspan="7" class="text-muted">No security alerts.</td></tr>`;
-
   const planLabels = Object.keys(planCounts);
   chiDoughnut('sa-revenue-chart', {
     labels: planLabels.length ? planLabels.map(p=>`${p} (${planCounts[p]})`) : ['No companies yet'],
-    values: planLabels.length ? planLabels.map(p=>(priceByPlan[p]||0)*planCounts[p]) : [1],
-    centerLabel: fmtN(mrr),
+    values: planLabels.length ? planLabels.map(p=>planCounts[p]) : [0],
+    centerLabel: companies.length ? companies.length+' companies' : 'No data',
   });
 
   document.getElementById('sa-plans-table').innerHTML = (platform.plans||[]).map(p=>`<tr>
@@ -2249,12 +2238,6 @@ async function revertToFree(companyId){
   const {error} = await sb.rpc('set_subscription_status', { p_company_id: companyId, p_status: 'active', p_renew_days: 30, p_plan_id: 'free' });
   if(error){ toast('Revert failed: ' + error.message, 4000); return; }
   platform = await loadPlatform(); await renderSuperAdmin(); toast('Reverted to Free.');
-}
-
-async function resolveSecurityAlert(id){
-  const {error}=await sb.rpc('resolve_security_alert',{p_alert_id:id,p_status:'resolved'});
-  if(error){toast('Could not resolve alert: '+error.message,4000);return;}
-  platform=await loadPlatform(); await renderSuperAdmin(); toast('Security alert marked resolved');
 }
 
 async function changeSuperAdminPassword(){
