@@ -470,6 +470,8 @@ async function acceptGoogleWorkerInvite(){
   if(!user){authError('Your Google session expired. Sign in with Google again.');return;}
   if(isSuperAdmin(user.email)){authError('The reserved platform account cannot join a company as a worker.');return;}
   if(!token||!name){authError('Enter your full name and worker invitation token.');return;}
+  const {error:metaError}=await sb.auth.updateUser({data:{full_name:name,name}});
+  if(metaError){authError('Could not save your Google profile name. Please try again.');return;}
   const {error}=await sb.rpc('accept_invitation',{p_token:token});
   if(error){authError(noSuchInvitation(token));return;}
   const built=await buildSessionFromProfile(user);
@@ -498,6 +500,8 @@ async function acceptGoogleAuditorInvite(){
   if(!user){authError('Your Google session expired. Sign in with Google again.');return;}
   if(isSuperAdmin(user.email)){authError('The reserved platform account cannot register as an auditor.');return;}
   if(!code||!token||!name){authError('Enter your full name, company code and auditor invitation token.');return;}
+  const {error:metaError}=await sb.auth.updateUser({data:{full_name:name,name}});
+  if(metaError){authError('Could not save your Google profile name. Please try again.');return;}
   const {error}=await sb.rpc('accept_auditor_invite',{p_token:token});
   if(error){authError(noSuchInvitation(token));return;}
   await finishAuditorSignIn(code,true);
