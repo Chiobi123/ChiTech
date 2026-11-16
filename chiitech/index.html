@@ -569,134 +569,115 @@
       </div>
     </section>
 
-    <!-- ---------- DASHBOARD ---------- -->
-    <section id="sec-dashboard" class="section active">
-      <div class="topbar">
+    <!-- ---------- EXECUTIVE BUSINESS DASHBOARD ---------- -->
+    <section id="sec-dashboard" class="section active dashboard-page">
+      <div class="topbar dashboard-topbar">
         <div>
-          <div class="page-title"><span class="live-dot" aria-hidden="true"></span><span id="d-greeting">Good morning</span></div>
-          <div class="page-sub">Here's how things stand today</div>
+          <div class="page-title"><span id="d-greeting">Business overview</span></div>
+          <div class="page-sub">A clear view of your business performance and the actions that need attention.</div>
         </div>
-        <div class="user-chip"><div class="avatar" id="d-avatar">BO</div> <span id="d-role-chip">Founding plan</span></div>
+        <div class="dashboard-topbar-meta">
+          <span class="dashboard-live-status" id="dashboard-live-status" data-state="connecting"><span class="live-dot"></span><span>Connecting to live data</span></span>
+          <div class="user-chip"><div class="avatar" id="d-avatar">BO</div><span id="d-role-chip">Business admin</span></div>
+        </div>
       </div>
 
       <div id="getting-started-card"></div>
 
-      <div class="grid grid-4" style="margin-bottom:16px;">
-        <div class="stat pos"><div class="label">Sales today</div><div class="value" id="d-sales">₦0</div></div>
-        <div class="stat pos"><div class="label">Profit today</div><div class="value" id="d-profit">₦0</div></div>
-        <div class="stat warn"><div class="label">Expenses today</div><div class="value" id="d-expenses">₦0</div></div>
-        <div class="stat" id="d-lowstock-card"><div class="label">Low stock</div><div class="value" id="d-lowstock">0</div></div>
-      </div>
-
-      <div class="card">
-        <div class="card-head"><div class="card-title">Business health</div><div class="card-sub">Same score as the Audit page — sweeps to its new value each time you check</div></div>
-        <div id="health-gauge-root"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-head"><div class="card-title">Money pulse</div><div class="card-sub">Plain-answers from your own books — updated every visit</div></div>
-        <div class="grid grid-2">
-          <div>
-            <div class="forgot-title">How much must I sell today?</div>
-            <div class="value" id="pulse-target" style="font-size:24px;font-weight:800;">—</div>
-            <div class="text-muted" id="pulse-target-sub" style="font-size:11.5px;"></div>
-          </div>
-          <div>
-            <div class="forgot-title">Who owes me / who I owe</div>
-            <div id="pulse-debts" class="text-muted" style="font-size:12.5px;line-height:1.7;"></div>
-          </div>
+      <div class="dashboard-toolbar">
+        <div>
+          <div class="dashboard-period-title">Performance overview</div>
+          <div class="card-sub" id="d-period-caption">Last 30 days · Updates when business records change</div>
         </div>
-        <div class="grid grid-2" style="margin-top:12px;">
-          <div>
-            <div class="forgot-title">Slow &amp; stuck stock</div>
-            <div id="pulse-stock" class="text-muted" style="font-size:12.5px;line-height:1.7;"></div>
-          </div>
-          <div>
-            <div class="forgot-title">Regulars &amp; quiet customers</div>
-            <div id="pulse-regulars" class="text-muted" style="font-size:12.5px;line-height:1.7;"></div>
-          </div>
-        </div>
-        <div class="grid grid-2" style="margin-top:12px;">
-          <div>
-            <div class="forgot-title">Spending limits — this month</div>
-            <div id="pulse-budgets" class="text-muted" style="font-size:12.5px;line-height:1.7;"></div>
-          </div>
-          <div>
-            <div class="forgot-title">Staff scoreboard — last 7 days</div>
-            <div id="pulse-staff" class="text-muted" style="font-size:12.5px;line-height:1.7;"></div>
-          </div>
+        <div class="dashboard-range" role="group" aria-label="Analytics date range">
+          <button class="range-option" type="button" data-range="7" onclick="setDashboardRange(7)">7 days</button>
+          <button class="range-option active" type="button" data-range="30" onclick="setDashboardRange(30)">30 days</button>
+          <button class="range-option" type="button" data-range="90" onclick="setDashboardRange(90)">90 days</button>
         </div>
       </div>
 
-      <div class="card" id="debts-card">
-        <div class="card-head"><div class="card-title">Owe &amp; owed</div><div class="card-sub">People who owe you, and people you owe — with due dates and reminders</div></div>
-        <div class="form-row" id="debt-form">
-          <div class="field"><label>Who</label><input id="debt-party" placeholder="e.g. Musa (tailor)"></div>
-          <div class="field"><label>Direction</label><select id="debt-direction"><option value="owed_to_me">Owes me</option><option value="i_owe">I owe</option></select></div>
-          <div class="field"><label>Amount ₦</label><input id="debt-amount" type="number" min="0" placeholder="0"></div>
-          <div class="field"><label>Due date (optional)</label><input id="debt-due" type="date"></div>
-        </div>
-        <div class="form-row" id="debt-form-2">
-          <div class="field"><label>Note (optional)</label><input id="debt-note" placeholder="e.g. Ankara balance"></div>
-          <div class="field"><label>&nbsp;</label><button class="btn btn-primary" onclick="addDebt()">Add</button></div>
-        </div>
-        <table>
-          <thead><tr><th>Who</th><th></th><th>Amount</th><th>Due</th><th></th></tr></thead>
-          <tbody id="debts-table"></tbody>
-        </table>
+      <div class="grid grid-4 dashboard-kpis">
+        <div class="stat"><div class="label">Revenue</div><div class="value" id="d-sales">₦0</div><div class="stat-foot">Recorded sales in period</div></div>
+        <div class="stat"><div class="label">Gross profit</div><div class="value" id="d-profit">₦0</div><div class="stat-foot">Revenue less cost of goods and expenses</div></div>
+        <div class="stat"><div class="label">Operating expenses</div><div class="value" id="d-expenses">₦0</div><div class="stat-foot">Recorded expenses in period</div></div>
+        <div class="stat" id="d-lowstock-card"><div class="label">Low-stock products</div><div class="value" id="d-lowstock">0</div><div class="stat-foot">At or below reorder level</div></div>
       </div>
 
-      <div class="card">
-        <div class="card-head">
-          <div class="card-title">Sales trend — last 7 days
-            <span class="info-dot" tabindex="0" role="note" aria-label="More info">i<span class="tooltip">Total revenue recorded per day for the last week, from your Sales log.</span></span>
+      <div class="dashboard-main-grid">
+        <div class="card dashboard-chart-card">
+          <div class="card-head dashboard-card-head">
+            <div><div class="card-title">Revenue trend</div><div class="card-sub">Daily sales revenue · Nigerian naira</div></div>
+            <span class="chart-live-tag"><span class="live-dot"></span>Live</span>
           </div>
-          <div class="chart-controls">
-            <div class="chip-select" id="d-chart-type">
-              <div class="chip-opt" data-chart="bar">Bar</div>
-              <div class="chip-opt" data-chart="line">Line</div>
-              <div class="chip-opt" data-chart="doughnut">Doughnut</div>
-            </div>
-          </div>
+          <div class="dashboard-chart-summary"><strong id="d-trend-total">₦0</strong><span>Revenue in selected period</span></div>
+          <div class="chart-canvas-wrap dashboard-primary-chart"><canvas id="d-chart" aria-label="Daily revenue trend chart"></canvas></div>
         </div>
-        <div class="chart-canvas-wrap"><canvas id="d-chart"></canvas></div>
-        <div class="card-sub" id="d-trend-total" style="margin-top:6px;"></div>
-      </div>
-
-      <div class="grid grid-2" style="margin-bottom:16px;">
-        <div class="card mb-0">
-          <div class="card-head">
-            <div class="card-title">Revenue vs. cost of goods — last 7 days</div>
-            <div class="chip-select" id="d-revcost-type">
-              <div class="chip-opt" data-chart="bar">Stacked</div>
-              <div class="chip-opt" data-chart="line">Line</div>
-              <div class="chip-opt" data-chart="doughnut">Doughnut</div>
-            </div>
+        <div class="card dashboard-chart-card">
+          <div class="card-head dashboard-card-head">
+            <div><div class="card-title">Revenue and gross profit</div><div class="card-sub">Performance by day</div></div>
           </div>
-          <div class="chart-canvas-wrap" style="height:190px;"><canvas id="d-revcost-chart"></canvas></div>
-        </div>
-        <div class="card mb-0">
-          <div class="card-head"><div class="card-title">Sales by payment method</div></div>
-          <div class="chart-canvas-wrap" style="height:190px;"><canvas id="d-payment-chart"></canvas></div>
+          <div class="chart-canvas-wrap dashboard-secondary-chart"><canvas id="d-revcost-chart" aria-label="Revenue and gross profit comparison chart"></canvas></div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-head"><div class="card-title">Business health &amp; audit status</div></div>
-        <div class="health-row">
-          <div class="ring" id="d-health-ring"><div class="ring-inner" id="d-health-score">—</div></div>
-          <div>
-            <div id="d-health-text" class="text-muted" style="font-size:12.5px;line-height:1.6;"></div>
-            <div id="d-flag-pill"></div>
+      <div class="grid grid-2 dashboard-secondary-grid">
+        <div class="card mb-0 dashboard-chart-card">
+          <div class="card-head"><div><div class="card-title">Payment mix</div><div class="card-sub">Sales value by payment method</div></div></div>
+          <div class="chart-canvas-wrap dashboard-payment-chart"><canvas id="d-payment-chart" aria-label="Sales by payment method chart"></canvas></div>
+        </div>
+        <div class="card mb-0 dashboard-attention-card">
+          <div class="card-head"><div><div class="card-title">Needs attention</div><div class="card-sub">Items that may need your review</div></div></div>
+          <div class="attention-list">
+            <div class="attention-row"><span class="attention-icon"><i class="ti ti-package"></i></span><span><b>Low-stock products</b><small>Products at or below reorder level</small></span><strong id="d-attention-lowstock">0</strong></div>
+            <div class="attention-row"><span class="attention-icon"><i class="ti ti-flag"></i></span><span><b>Flagged expenses</b><small>Records requiring review</small></span><strong id="d-attention-flags">0</strong></div>
+            <div class="attention-row"><span class="attention-icon"><i class="ti ti-wallet"></i></span><span><b>Customer balances</b><small>Outstanding amounts owed to you</small></span><strong id="d-attention-receivables">₦0</strong></div>
+            <div class="attention-row"><span class="attention-icon"><i class="ti ti-calendar-due"></i></span><span><b>Overdue payables</b><small>Open debts past their due date</small></span><strong id="d-attention-overdue">0</strong></div>
           </div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-head"><div class="card-title">Quick actions</div></div>
-        <button class="btn btn-primary" onclick="showSection('sales')" data-qa="sales"><i class="ti ti-plus"></i>&nbsp; Record a sale</button>
-        <button class="btn" onclick="showSection('expenses')" data-qa="expenses" style="margin-left:8px;"><i class="ti ti-wallet"></i>&nbsp; Log an expense</button>
-        <button class="btn" onclick="showSection('orders')" data-qa="orders" style="margin-left:8px;"><i class="ti ti-truck"></i>&nbsp; View orders</button>
+      <div class="card dashboard-activity-card">
+        <div class="card-head"><div><div class="card-title">Recent business activity</div><div class="card-sub">Latest recorded sales, expenses and orders</div></div><button class="btn btn-sm" type="button" onclick="showSection('audit')">View audit trail</button></div>
+        <div class="dashboard-activity-list" id="d-recent-activity"><div class="empty-state">Your latest business activity will appear here.</div></div>
+      </div>
+
+      <div class="card dashboard-insights-card">
+        <div class="card-head"><div><div class="card-title">Business insights</div><div class="card-sub">Practical signals from your recorded business activity</div></div></div>
+        <div class="grid grid-2 dashboard-insights-grid">
+          <div class="insight-block"><div class="insight-label">Daily sales target</div><strong id="pulse-target">—</strong><p id="pulse-target-sub"></p></div>
+          <div class="insight-block"><div class="insight-label">Stock movement</div><div id="pulse-stock"></div></div>
+          <div class="insight-block"><div class="insight-label">Customer activity</div><div id="pulse-regulars"></div></div>
+          <div class="insight-block"><div class="insight-label">Spending limits</div><div id="pulse-budgets"></div></div>
+          <div class="insight-block"><div class="insight-label">Team sales · last 7 days</div><div id="pulse-staff"></div></div>
+          <div class="hidden" id="pulse-debts" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <details class="card dashboard-debt-details" id="debts-card">
+        <summary><span><b>Manage debts and outstanding balances</b><small>Record, review and settle amounts owed to or by the business</small></span><i class="ti ti-chevron-down"></i></summary>
+        <div class="debt-details-content">
+          <div class="form-row" id="debt-form">
+            <div class="field"><label>Who</label><input id="debt-party" placeholder="e.g. Musa (tailor)"></div>
+            <div class="field"><label>Direction</label><select id="debt-direction"><option value="owed_to_me">Owes me</option><option value="i_owe">I owe</option></select></div>
+            <div class="field"><label>Amount ₦</label><input id="debt-amount" type="number" min="0" placeholder="0"></div>
+            <div class="field"><label>Due date (optional)</label><input id="debt-due" type="date"></div>
+          </div>
+          <div class="form-row" id="debt-form-2">
+            <div class="field"><label>Note (optional)</label><input id="debt-note" placeholder="e.g. Ankara balance"></div>
+            <div class="field"><label>&nbsp;</label><button class="btn btn-primary" onclick="addDebt()">Add balance</button></div>
+          </div>
+          <div class="table-wrap"><table><thead><tr><th>Who</th><th>Direction</th><th>Amount</th><th>Due</th><th>Status</th></tr></thead><tbody id="debts-table"></tbody></table></div>
+        </div>
+      </details>
+
+      <div class="card dashboard-actions-card">
+        <div class="card-head"><div><div class="card-title">Quick actions</div><div class="card-sub">Shortcuts to common tasks</div></div></div>
+        <div class="dashboard-actions">
+          <button class="btn btn-primary" onclick="showSection('sales')" data-qa="sales"><i class="ti ti-plus"></i>&nbsp; Record a sale</button>
+          <button class="btn" onclick="showSection('expenses')" data-qa="expenses"><i class="ti ti-wallet"></i>&nbsp; Log an expense</button>
+          <button class="btn" onclick="showSection('products')" data-qa="products"><i class="ti ti-package"></i>&nbsp; Manage inventory</button>
+          <button class="btn" onclick="showSection('orders')" data-qa="orders"><i class="ti ti-truck"></i>&nbsp; View orders</button>
+        </div>
       </div>
     </section>
 
