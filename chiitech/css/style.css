@@ -12,8 +12,8 @@
   /* Single source of truth: charcoal surfaces, emerald actions, white text. */
   --bg:#090C0B;
   --surface:#111715;
-  --surface-2:#17201D;
-  --surface-3:#202B27;
+  --surface-2:#17201C;
+  --surface-3:#202B25;
   --border:#293631;
   --neon:#20C997;
   --neon-deep:#12A77C;
@@ -22,7 +22,7 @@
   --muted:#A2AEA8;
   --danger:#F07878;
   --danger-dim:rgba(240,120,120,.12);
-  --warn:#DDB65D;
+  --warn:#E8C875;
   --radius:14px;
   --radius-sm:10px;
 }
@@ -1081,7 +1081,7 @@ a{color:var(--neon);}
 .flag-pill{box-shadow:0 0 0 3px rgba(255,107,107,0.15);}
 .mobile-nav .nav-item.active{text-shadow:none;}
 ::-webkit-scrollbar{width:10px;height:10px;}
-::-webkit-scrollbar-thumb{background:#2A2A44;border-radius:8px;border:2px solid var(--bg);}
+::-webkit-scrollbar-thumb{background:#34423C;border-radius:8px;border:2px solid var(--bg);}
 ::-webkit-scrollbar-track{background:transparent;}
 ::selection{background:rgba(32,201,151,0.22);}
 
@@ -1430,26 +1430,7 @@ pre{max-width:100%;overflow:auto;background:#0B120E;color:#DCE8E0;border-radius:
 }
 
 
-/* ============================================================
-   FINAL THEME TOKENS — shared authenticated workspace + auth UI.
-   These override the legacy emerald tokens at their source, so every
-   module (including screens rendered after login) uses the same theme.
-   ============================================================ */
-:root{
-  --bg:#090C0B;
-  --surface:#111715;
-  --surface-2:#17201C;
-  --surface-3:#202B25;
-  --border:#293631;
-  --neon:#20C997;
-  --neon-deep:#12A77C;
-  --neon-dim:rgba(32,201,151,.12);
-  --text:#FFFFFF;
-  --muted:#A2AEA8;
-  --danger:#F07878;
-  --danger-dim:rgba(240,120,120,.12);
-  --warn:#E8C875;
-}
+/* Shared theme interaction refinements; palette tokens are defined once at the top. */
 @keyframes livePulse{
   0%{box-shadow:0 0 0 0 rgba(32,201,151,.42);}
   70%{box-shadow:0 0 0 7px rgba(32,201,151,0);}
