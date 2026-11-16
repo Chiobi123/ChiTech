@@ -1,6 +1,6 @@
 # ChiiTech — current state
 
-Snapshot taken 2026-10-23. Update this file whenever the state changes; it is the
+Historical baseline from 2026-10-23; current status is appended below. This file remains the
 answer to "how far along is this?".
 
 ## Where it runs
@@ -13,7 +13,7 @@ answer to "how far along is this?".
 | Last frontend asset version | `20261116e` (feature branch; not yet deployed) |
 | Live site | `https://chiitech.pages.dev` — verified in sync with local on 2026-10-23 |
 | Local migrations | 43 files (`01` → `42_deep_import_analysis`, plus the recovered live `22_restore_auditor_access`) |
-| Live DB migration count | **25** (01-22 recorded + 39, 40, 41 applied 2026-10-24; 42 in repo) |
+| Live DB migration count | **44** (verified 2026-11-16; includes dashboard Realtime and alert-retirement migrations) |
 | Git remote | in sync with `origin/main` |
 
 > Verified live on 2026-10-23 with `supabase db query --linked`. The live database holds
@@ -93,7 +93,7 @@ answer to "how far along is this?".
   outliers → strengths, weaknesses, recommended actions
 - Final write is a transactional RPC, never a direct table write
 - Super Admin isolated from company data; platform ops via `SECURITY DEFINER` RPCs
-- Former security-alert table and rules are scheduled for retirement in migration 43; historical rows are copied to a restricted archive table.
+- Former security-alert table and rules have been retired in live migration 43; six historical rows are preserved in a restricted private-schema archive.
 - Super Admin password change via `supabase.auth.updateUser`
 - Flight recorder: `audit_log`, capped queries, latency indexes
 
@@ -222,6 +222,20 @@ Branch: `feature/premium-dashboards-cleanup`.
 - Moved Auditor summary KPIs directly beneath its read-only overview.
 - Fixed Business Admin gross-profit calculation and selected-period end boundary; future-dated records are excluded, and negative gross profit is represented accurately in the charts.
 - Removed alert UI, client payload mapping, resolver and import side-effect. Super Admin plan distribution now charts company counts, not estimated plan-value totals under a revenue label.
-- Added migration `20261116220000_43_retire_security_alerts.sql`. It archives historical alert rows privately, removes alert triggers/functions/table, and replaces `platform_overview()` without the alert payload.
+- Added migration `20261116221351_43_retire_security_alerts.sql`. It archives historical alert rows privately, removes alert triggers/functions/table, and replaces `platform_overview()` without the alert payload.
 - **Not deployed.** Live schema must be checked against this migration and backed up before application. No production database changes have been made.
 - Authenticated browser tests for all roles and full live event verification remain outstanding.
+
+
+## 2026-11-16 — production alert retirement and dashboard refactor
+
+**Live Supabase project:** `qmypqghktxlscibgxgxo` — confirmed `ACTIVE_HEALTHY`.
+
+- Security-alert feature removed from the Super Admin interface, platform overview response, data loader, import-completion path, and trigger/RPC workflow.
+- Live schema verification: `public.security_alerts` absent; zero security-alert triggers; zero public security-alert functions; `platform_overview()` no longer references the feature.
+- Six historical alert rows retained in `app_private.security_alerts_retired_20261116`. The archive has no grants to `anon` or `authenticated`; `service_role` retains access.
+- Live migration versions: `20261116210231` dashboard Realtime publication, `20261116221351` alert retirement, `20261116221411` private archive, `20261116221430` archive access controls.
+- Security advisors after retirement: the archive-related RLS warning is gone. Existing findings remain for `public.ai_usage`, `make_invite_token` search path, `lookup_company_by_email` anon execution, existing SECURITY DEFINER RPC exposure, and leaked-password protection. These were not broadened into unrelated changes.
+- Dashboard branch work remains unmerged and not deployed. Asset version `20261116e`.
+- Validation completed: JavaScript parse checks for app/charts/data/imports; no duplicate HTML IDs; CSS brace balance; zero active alert-feature references in frontend source; production schema checks above.
+- Still outstanding: authenticated browser E2E for Business Admin, Auditor, Super Admin, worker permissions, and full live UI smoke tests.
