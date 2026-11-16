@@ -986,12 +986,14 @@ function renderDashboard(){
   const now=new Date();
   const start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
   start.setDate(start.getDate()-(dashboardRangeDays-1));
-  const periodSales=state.sales.filter(s=>s.time>=start.getTime()&&s.time<now.getTime()+86400000);
-  const periodExpenses=state.expenses.filter(e=>e.time>=start.getTime()&&e.time<now.getTime()+86400000);
+  const end=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1).getTime();
+  const periodSales=state.sales.filter(s=>s.time>=start.getTime()&&s.time<end);
+  const periodExpenses=state.expenses.filter(e=>e.time>=start.getTime()&&e.time<end);
   const revenue=periodSales.reduce((sum,s)=>sum+(Number(s.total)||0),0);
   const cost=periodSales.reduce((sum,s)=>sum+(Number(s.cost)||0),0);
+  const grossProfit=revenue-cost;
   const expenses=periodExpenses.reduce((sum,e)=>sum+(Number(e.amount)||0),0);
-  const netProfit=revenue-cost-expenses;
+  const netProfit=grossProfit-expenses;
   animateStatNumber('d-sales',revenue,fmtN);
   animateStatNumber('d-profit',grossProfit,fmtN);
   animateStatNumber('d-net-profit',netProfit,fmtN);
@@ -1012,7 +1014,7 @@ function renderDashboard(){
   chiLine('d-chart',{labels:daily.map(d=>d.label),series:[{label:'Revenue',data:daily.map(d=>d.revenue),color:CHIITECH_CHART_COLORS.neon}]});
   chiLine('d-revcost-chart',{labels:daily.map(d=>d.label),series:[
     {label:'Revenue',data:daily.map(d=>d.revenue),color:CHIITECH_CHART_COLORS.neon},
-    {label:'Gross profit',data:daily.map(d=>Math.max(0,d.revenue-d.cost)),color:CHIITECH_CHART_COLORS.warn}
+    {label:'Gross profit',data:daily.map(d=>d.revenue-d.cost),color:CHIITECH_CHART_COLORS.warn}
   ]});
   const byPayment={};
   periodSales.forEach(s=>{const key=(s.payment||'Unspecified').toString();byPayment[key]=(byPayment[key]||0)+(Number(s.total)||0);});
