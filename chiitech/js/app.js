@@ -1019,7 +1019,7 @@ function renderDashboard(){
   const byPayment={};
   periodSales.forEach(s=>{const key=(s.payment||'Unspecified').toString();byPayment[key]=(byPayment[key]||0)+(Number(s.total)||0);});
   const paymentLabels=Object.keys(byPayment);
-  chiDoughnut('d-payment-chart',{labels:paymentLabels.length?paymentLabels:['No sales in this period'],values:paymentLabels.length?paymentLabels.map(k=>byPayment[k]):[1],centerLabel:paymentLabels.length?fmtN(revenue):'No data'});
+  chiDoughnut('d-payment-chart',{labels:paymentLabels.length?paymentLabels:['No sales in this period'],values:paymentLabels.length?paymentLabels.map(k=>byPayment[k]):[0],centerLabel:paymentLabels.length?fmtN(revenue):'No data'});
   const openDebts=(state.debts||[]).filter(d=>d.status==='open');
   const receivables=state.customers.reduce((sum,x)=>sum+Math.max(0,Number(x.balanceDue)||0),0)+openDebts.filter(d=>d.direction==='owed_to_me').reduce((sum,d)=>sum+(Number(d.amount)||0),0);
   const overdue=openDebts.filter(d=>d.direction==='i_owe'&&d.dueDate&&new Date(d.dueDate).getTime()<Date.now()).length;
