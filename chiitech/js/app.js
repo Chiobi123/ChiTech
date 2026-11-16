@@ -991,7 +991,8 @@ function renderDashboard(){
   const expenses=periodExpenses.reduce((sum,e)=>sum+(Number(e.amount)||0),0);
   const netProfit=revenue-cost-expenses;
   animateStatNumber('d-sales',revenue,fmtN);
-  animateStatNumber('d-profit',netProfit,fmtN);
+  animateStatNumber('d-profit',grossProfit,fmtN);
+  animateStatNumber('d-net-profit',netProfit,fmtN);
   animateStatNumber('d-expenses',expenses,fmtN);
   const lowStock=state.products.filter(p=>Number(p.stock)<=Number(p.reorder)).length;
   const lowEl=document.getElementById('d-lowstock');if(lowEl)lowEl.textContent=lowStock;
