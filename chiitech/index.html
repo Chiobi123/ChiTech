@@ -10,7 +10,7 @@
      TLS handshake on a slow link right when the user presses "Sign in". -->
 <link rel="preconnect" href="https://qmypqghktxlscibgxgxo.supabase.co" crossorigin>
 <link rel="dns-prefetch" href="https://qmypqghktxlscibgxgxo.supabase.co">
-<link rel="stylesheet" href="css/style.css?v=20261116d">
+<link rel="stylesheet" href="css/style.css?v=20261116e">
 <!-- Charts are drawn locally in js/charts.js using the native Canvas API —
      no CDN or external chart library required, so this works fully offline
      and isn't at the mercy of a blocked network request. -->
@@ -439,7 +439,7 @@
       </div>
       <div class="section-explainer">
         You're signed in as the platform's top-level admin. This console is intentionally separated from every
-        company workspace: you can review platform metadata, aggregate figures, security alerts and account status,
+        company workspace: you can review platform metadata, aggregate figures and account status,
         but you cannot enter or impersonate a company's admin dashboard.
       </div>
       <div class="grid grid-3" style="margin-bottom:16px;">
@@ -450,8 +450,8 @@
 
       <div class="card">
         <div class="card-head">
-          <div class="card-title">Platform revenue — how ChiiTech makes money</div>
-          <div class="card-sub">Subscription income from every company on the platform</div>
+          <div class="card-title">Subscription mix</div>
+          <div class="card-sub">Distribution of companies across platform plans</div>
         </div>
         <div class="grid grid-3" style="margin-bottom:16px;">
           <div class="stat pos"><div class="label">Monthly recurring revenue</div><div class="value" id="sa-mrr">₦0</div></div>
@@ -471,21 +471,13 @@
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-head"><div class="card-title">Super Admin security</div><div class="card-sub">Platform-only controls</div></div>
-        <div class="grid grid-2">
-          <div>
-            <p class="text-muted" style="font-size:12px;line-height:1.6;">Your Super Admin email is reserved at the database level. Your password is managed by Supabase Auth and is never stored in the website code.</p>
-            <button class="btn btn-primary" onclick="changeSuperAdminPassword()">Change Super Admin password</button>
-          </div>
-          <div>
-            <div class="stat warn"><div class="label">Open security alerts</div><div class="value" id="sa-open-alerts">0</div></div>
-          </div>
+      <div class="card sa-account-card">
+        <div class="card-head"><div class="card-title">Account security</div><div class="card-sub">Your platform administrator account</div></div>
+        <div class="sa-account-inner">
+          <p class="text-muted" style="font-size:12px;line-height:1.7;margin:0;">Your Super Admin identity is reserved at the database level. Password changes are handled securely by Supabase Auth and are never stored in the website code.</p>
+          <button class="btn btn-primary" onclick="changeSuperAdminPassword()">Change Super Admin password</button>
         </div>
       </div>
-
-      <div class="card">
-        <div class="card-head"><div class="card-title">Security alerts</div><div class="card-sub">Suspicious activity requires review; an alert is not automatically proof of fraud.</div></div>
         <div style="overflow:auto;"><table><thead><tr><th>Severity</th><th>Company</th><th>Event</th><th>Details</th><th>Time</th><th>Status</th><th></th></tr></thead><tbody id="sa-alerts-table"></tbody></table></div>
       </div>
 
@@ -1436,8 +1428,8 @@
 <script defer src="js/data.js?v=20261116a"></script>
 <script defer src="js/auth.js?v=20261116a"></script>
 <script defer src="js/imports.js?v=20261116a"></script>
-<script defer src="js/charts.js?v=20261116d"></script>
+<script defer src="js/charts.js?v=20261116e"></script>
 <script defer src="js/health-gauge.js?v=20261116a"></script>
-<script defer src="js/app.js?v=20261116d"></script>
+<script defer src="js/app.js?v=20261116e"></script>
 </body>
 </html>
