@@ -10,7 +10,7 @@
      TLS handshake on a slow link right when the user presses "Sign in". -->
 <link rel="preconnect" href="https://qmypqghktxlscibgxgxo.supabase.co" crossorigin>
 <link rel="dns-prefetch" href="https://qmypqghktxlscibgxgxo.supabase.co">
-<link rel="stylesheet" href="css/style.css?v=20261101f">
+<link rel="stylesheet" href="css/style.css?v=20261116c">
 <!-- Charts are drawn locally in js/charts.js using the native Canvas API —
      no CDN or external chart library required, so this works fully offline
      and isn't at the mercy of a blocked network request. -->
@@ -19,9 +19,30 @@
 <!-- Boot veil: covers everything until session validation resolves, so a
      refresh never flashes the sign-in form or a stale dashboard. Removed
      by the boot handler in app.js. -->
-<div id="boot-veil" style="position:fixed;inset:0;background:#080A16;z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
-  <div style="font-size:26px;font-weight:800;letter-spacing:2px;">CHIITECH</div>
-  <div style="font-size:12.5px;color:#9A96B0;">Loading your workspace…</div>
+<div id="boot-veil" role="status" aria-live="polite" aria-label="Loading ChiiTech workspace" style="position:fixed;inset:0;background:#090C0B;z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;">
+  <div class="boot-skeleton" aria-hidden="true">
+    <aside class="boot-side">
+      <div class="boot-brand boot-shimmer"></div>
+      <div class="boot-nav boot-shimmer"></div><div class="boot-nav short boot-shimmer"></div>
+      <div class="boot-nav boot-shimmer"></div><div class="boot-nav short boot-shimmer"></div>
+      <div class="boot-nav boot-shimmer"></div><div class="boot-nav short boot-shimmer"></div>
+      <div class="boot-nav boot-shimmer"></div>
+    </aside>
+    <div class="boot-main">
+      <div class="boot-heading boot-shimmer"></div>
+      <div class="boot-subheading boot-shimmer"></div>
+      <div class="boot-stats">
+        <div class="boot-card"><div class="boot-line boot-shimmer"></div><div class="boot-value boot-shimmer"></div></div>
+        <div class="boot-card"><div class="boot-line boot-shimmer"></div><div class="boot-value boot-shimmer"></div></div>
+        <div class="boot-card"><div class="boot-line boot-shimmer"></div><div class="boot-value boot-shimmer"></div></div>
+      </div>
+      <div class="boot-panels">
+        <div class="boot-panel"><div class="boot-line boot-shimmer"></div><div class="boot-bars"><i style="--h:38%"></i><i style="--h:64%"></i><i style="--h:48%"></i><i style="--h:82%"></i><i style="--h:70%"></i><i style="--h:94%"></i></div></div>
+        <div class="boot-panel"><div class="boot-line boot-shimmer"></div><div class="boot-line boot-shimmer" style="width:82%;margin-top:22px"></div><div class="boot-line boot-shimmer" style="width:68%;margin-top:18px"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="boot-loading-label">Preparing your ChiiTech workspace…</div>
 </div>
 <!--
   CHIITECH — page structure, top to bottom:
@@ -51,9 +72,9 @@
         <svg viewBox="0 0 300 140" fill="none">
           <defs>
             <linearGradient id="flowStroke" x1="0" y1="140" x2="300" y2="0" gradientUnits="userSpaceOnUse">
-              <stop offset="0" stop-color="#6A5AE0" stop-opacity="0"/>
-              <stop offset=".45" stop-color="#8B7CF6" stop-opacity=".7"/>
-              <stop offset="1" stop-color="#C3BAFF"/>
+              <stop offset="0" stop-color="#12A77C" stop-opacity="0"/>
+              <stop offset=".45" stop-color="#20C997" stop-opacity=".7"/>
+              <stop offset="1" stop-color="#A5F2D8"/>
             </linearGradient>
           </defs>
           <g class="flow-base" stroke="url(#flowStroke)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -61,7 +82,7 @@
             <path d="M8 138H40V124H84V108H128V88H172V64H216V44H260V26H292"/>
             <path d="M8 126H64V110H108V90H152V68H196V46H240V22H284V10"/>
           </g>
-          <g class="flow-pulse" stroke="#C3BAFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+          <g class="flow-pulse" stroke="#62E3B9" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
             <path class="p1" d="M8 132H52V116H96V98H140V76H184V54H228V30H272V14"/>
             <path class="p2" d="M8 138H40V124H84V108H128V88H172V64H216V44H260V26H292"/>
             <path class="p3" d="M8 126H64V110H108V90H152V68H196V46H240V22H284V10"/>

@@ -40,16 +40,16 @@
    ============================================================ */
 
 const CHIITECH_CHART_COLORS = {
-  neon: '#8B7CF6',
-  neonDeep: '#6A5AE0',
-  neonSoft: 'rgba(139,124,246,0.15)',
-  grid: '#262640',
-  text: '#9A96B0',
-  textStrong: '#EFEDF7',
+  neon: '#20C997',
+  neonDeep: '#12A77C',
+  neonSoft: 'rgba(32,201,151,0.16)',
+  grid: '#293631',
+  text: '#A2AEA8',
+  textStrong: '#FFFFFF',
   danger: '#F16A6A',
   warn: '#E8BE4F',
-  blue: '#5A8FD6',
-  purple: '#7686A0',
+  blue: '#72B7A1',
+  purple: '#A7B6AE',
 };
 
 /** Rotating palette used when a chart has more than one series/segment. */
