@@ -150,20 +150,55 @@
     <!-- FINISH GOOGLE SIGN-UP (identity with no workspace yet) — a signed-in
          Google account with no profiles row lands here: two fields, then its
          own workspace. Never a dashboard it doesn't own. -->
+        <!-- GOOGLE OAUTH ONBOARDING: role choice first, then the matching invitation/setup flow. -->
     <div id="auth-view-oauth" class="auth-pane">
-      <div class="forgot-title">Set up your workspace</div>
-      <p class="text-muted" style="font-size:11.5px;margin-bottom:14px;">
+      <div class="forgot-title">Set up your ChiiTech access</div>
+      <p class="text-muted" style="font-size:11.5px;margin-bottom:8px;">
         Signed in with Google as <b id="oauth-email" style="color:var(--text);">—</b>.
-        Create your company below — you become its admin — or accept a team invitation instead.
+        Choose the type of access you were invited to or want to create.
       </p>
-      <div class="field"><label>Company name</label><input id="oauth-company" placeholder="e.g. Adaeze Fashion House"></div>
-      <div class="field"><label>Your name</label><input id="oauth-name" placeholder="e.g. Adaeze Okafor"></div>
-      <button class="btn btn-primary btn-block" onclick="registerCompanyWithOAuth()">Create my workspace</button>
-      <p class="text-muted" style="font-size:12px;margin-top:12px;text-align:center;">
-        Invited to an existing team? <a href="#" onclick="showAuthView('invite');return false;">Accept your invitation</a>
-      </p>
-      <p style="margin-top:12px;text-align:center;"><a href="#" onclick="showAuthView('signin');return false;">&larr; Back to sign in</a></p>
+      <div id="oauth-role-choice" class="oauth-step">
+        <div class="oauth-role-grid">
+          <button type="button" class="oauth-role-card" onclick="chooseOAuthRole('owner')">
+            <span class="role-icon" aria-hidden="true">▦</span>
+            <span><b>Business owner</b><small>Create a new company and open its Business Admin workspace.</small></span>
+          </button>
+          <button type="button" class="oauth-role-card" onclick="chooseOAuthRole('auditor')">
+            <span class="role-icon" aria-hidden="true">✓</span>
+            <span><b>Auditor</b><small>Join a company using the auditor invitation and company code you received.</small></span>
+          </button>
+          <button type="button" class="oauth-role-card" onclick="chooseOAuthRole('worker')">
+            <span class="role-icon" aria-hidden="true">⌂</span>
+            <span><b>Worker</b><small>Join an existing company using your single-use worker invitation.</small></span>
+          </button>
+        </div>
+      </div>
+      <div id="oauth-role-owner" class="oauth-step hidden">
+        <a class="oauth-back" href="#" onclick="showOAuthRoleChooser();return false;">← Choose a different role</a>
+        <div class="oauth-step-note">You are creating a new company workspace. This Google account will become its company administrator.</div>
+        <div class="field"><label>Company name</label><input id="oauth-company" placeholder="e.g. Adaeze Fashion House" autocomplete="organization"></div>
+        <div class="field"><label>Your name</label><input id="oauth-name" placeholder="Your full name" autocomplete="name"></div>
+        <button class="btn btn-primary btn-block" onclick="registerCompanyWithOAuth()">Create my business workspace</button>
+      </div>
+      <div id="oauth-role-worker" class="oauth-step hidden">
+        <a class="oauth-back" href="#" onclick="showOAuthRoleChooser();return false;">← Choose a different role</a>
+        <div class="oauth-step-note">Use the single-use invitation token sent by your company administrator. The invitation must belong to this Google email address.</div>
+        <div class="field"><label>Your full name</label><input id="oauth-worker-name" placeholder="Your full name" autocomplete="name"></div>
+        <div class="field"><label>Worker invitation token</label><input id="oauth-worker-token" placeholder="Paste your invitation token" autocomplete="off"></div>
+        <button class="btn btn-primary btn-block" onclick="acceptGoogleWorkerInvite()">Join company workspace</button>
+      </div>
+      <div id="oauth-role-auditor" class="oauth-step hidden">
+        <a class="oauth-back" href="#" onclick="showOAuthRoleChooser();return false;">← Choose a different role</a>
+        <div class="oauth-step-note">Auditor access is read-only. Enter the company code and single-use auditor invitation supplied by the company administrator.</div>
+        <div class="field"><label>Your full name</label><input id="oauth-auditor-name" placeholder="Your full name" autocomplete="name"></div>
+        <div class="field"><label>Company code</label><input id="oauth-auditor-code" placeholder="e.g. CHI-1234" style="text-transform:uppercase;" autocomplete="off"></div>
+        <div class="field"><label>Auditor invitation token</label><input id="oauth-auditor-token" placeholder="Paste your invitation token" autocomplete="off"></div>
+        <button class="btn btn-primary btn-block" onclick="acceptGoogleAuditorInvite()">Join as auditor</button>
+      </div>
+      <p style="margin-top:14px;text-align:center;"><a href="#" onclick="logout();return false;">Cancel and sign out</a></p>
     </div>
+
+    <!-- CREATE ACCOUNT
 
     <!-- CREATE ACCOUNT (new business owner) -->
     <div id="auth-view-register" class="auth-pane">
@@ -171,7 +206,7 @@
       <div class="field"><label>Your name</label><input id="reg-name" placeholder="e.g. Adaeze Okafor"></div>
       <div class="field"><label>Email</label><input id="reg-email" type="text" placeholder="you@business.com"></div>
       <div class="field"><label>Password</label><input id="reg-password" type="password" minlength="8" placeholder="8+ characters"></div>
-      <label class="dept-check" style="margin-bottom:12px;"><input type="checkbox" id="reg-consent"> I accept the <a href="#" onclick="showLegal('terms');return false;">Terms</a> &amp; <a href="#" onclick="showLegal('privacy');return false;">Privacy Policy</a></label>
+      <label class="dept-check auth-consent"><input type="checkbox" id="reg-consent" required aria-required="true"> I accept the <a href="#" onclick="showLegal('terms');return false;">Terms</a> &amp; <a href="#" onclick="showLegal('privacy');return false;">Privacy Policy</a></label>
       <button class="btn btn-primary btn-block" onclick="registerCompany()">Create company &amp; sign in</button>
       <p style="margin-top:14px;"><a href="#" onclick="showAuthView('signin');return false;">&larr; Back to sign in</a></p>
     </div>
@@ -260,7 +295,7 @@
     </div>
 
     <div class="legal-footer legal-footer-inline">
-      <span class="text-muted" id="build-tag" style="font-size:10.5px;">build 20261116d</span>
+      
       <a href="#" onclick="showLegal('privacy');return false;">Privacy</a>
       <a href="#" onclick="showLegal('terms');return false;">Terms</a>
       <a href="#" onclick="showLegal('cookies');return false;">Cookies</a>
@@ -296,17 +331,13 @@
     <p>Fashion sellers, electronics shops, provisions stores, salons, and small restaurants — any business
       that wants to look bankable and stay in control as it grows, without hiring a full finance team to get there.</p>
 
-    <h3>Contact</h3>
-    <p>Email <a href="mailto:hello@chiitech.africa">hello@chiitech.africa</a> or WhatsApp
-      <a href="#">+234 800 000 0000</a> (placeholder details — swap in your real support channels before launch).</p>
-
     <button class="btn btn-primary" onclick="hideAbout()" style="margin-top:10px;">Get started</button>
 
     <div class="legal-footer">
       <a href="#" onclick="showLegal('privacy');return false;">Privacy Policy</a>
-      <a href="#" onclick="showLegal('terms');return false;">Terms &amp; Conditions</a>
-      <a href="#" onclick="showLegal('cookies');return false;">Cookie &amp; Data Policy</a>
-      <a href="#" onclick="showLegal('refund');return false;">Refund Policy</a>
+      <a href="#" onclick="showLegal('terms');return false;">Terms</a>
+      <a href="#" onclick="showLegal('cookies');return false;">Cookies</a>
+      <a href="#" onclick="showLegal('refund');return false;">Refunds</a>
     </div>
   </div>
 </div>
@@ -316,76 +347,87 @@
   <div class="about-card">
     <button class="btn btn-sm" onclick="hideLegal()" style="margin-bottom:18px;">&larr; Back</button>
     <div class="chip-select" style="margin-bottom:20px;max-width:520px;">
-      <div class="chip-opt" data-legal="privacy" onclick="showLegal('privacy')">Privacy</div>
-      <div class="chip-opt" data-legal="terms" onclick="showLegal('terms')">Terms</div>
-      <div class="chip-opt" data-legal="cookies" onclick="showLegal('cookies')">Cookies</div>
-      <div class="chip-opt" data-legal="refund" onclick="showLegal('refund')">Refunds</div>
+      <div class="chip-opt active" role="button" tabindex="0" aria-pressed="true" data-legal="privacy" onclick="showLegal('privacy')">Privacy</div>
+      <div class="chip-opt" role="button" tabindex="0" aria-pressed="false" data-legal="terms" onclick="showLegal('terms')">Terms</div>
+      <div class="chip-opt" role="button" tabindex="0" aria-pressed="false" data-legal="cookies" onclick="showLegal('cookies')">Cookies</div>
+      <div class="chip-opt" role="button" tabindex="0" aria-pressed="false" data-legal="refund" onclick="showLegal('refund')">Refunds</div>
     </div>
 
     <div id="legal-privacy" class="legal-pane">
       <h3 style="margin-top:0;">Privacy Policy</h3>
-      <p class="text-muted" style="font-size:11px;">Last updated: placeholder — set this to your real launch date.</p>
-      <p>ChiiTech ("we", "us") provides business-management software for small and medium businesses. This
-        policy explains what data we collect and how it's used, in line with Nigeria's Data Protection Act
-        (NDPA) 2023 and the NDPR.</p>
-      <h3>What we collect</h3>
-      <p>Account details you provide (name, email, company name), and business records you enter (sales,
-        expenses, customers, products) to operate the software. This data is stored server-side in
-        our managed database (see Cookie &amp; Data Storage), never only in your browser. Your browser
-        holds just your current sign-in session, which ends when you close the tab.</p>
-      <h3>How we use it</h3>
-      <p>Solely to run the features you use — dashboards, audit trail, tax calculations, growth forecasts. We
-        do not sell business data to third parties.</p>
-      <h3>Your rights</h3>
-      <p>You can request access to, correction of, or deletion of your data at any time by contacting us (see
-        Contact on the About page). Company admins can export their audit data directly from the Audit page.</p>
-      <p class="text-muted" style="font-size:11.5px;">This is a template, not legal advice — have it reviewed by
-        a Nigerian data-protection lawyer before relying on it for a live product.</p>
+      <p class="text-muted" style="font-size:11px;">Last updated: 17 November 2026</p>
+      <p>ChiiTech provides business-management, bookkeeping, reporting and audit-support tools. This policy explains how information is handled when an organisation or an invited team member uses the service. It is a working product policy and must be completed with the operator's legal identity and contact details before public launch.</p>
+      <h3>Who is responsible for your data?</h3>
+      <p>The ChiiTech service operator is responsible for deciding why and how personal data is processed. The operator's full registered legal name, business address and designated privacy contact must be published here before public onboarding. A company using ChiiTech remains responsible for the personal data it uploads about its customers, employees and suppliers.</p>
+      <h3>Information we process</h3>
+      <ul>
+        <li>Account and identity details, including name, email address, Google sign-in identity, role and invitation status.</li>
+        <li>Organisation details and business records entered or imported, such as sales, expenses, orders, stock, customer and supplier details, tax settings, receipts and audit records.</li>
+        <li>Security and service information needed to authenticate accounts, enforce role permissions, prevent misuse, troubleshoot errors and maintain the service.</li>
+        <li>Questions, selected business figures and staged import information submitted to the AI assistant or AI import-review feature.</li>
+      </ul>
+      <h3>Why we use it</h3>
+      <p>We use information to create and secure accounts; provide company workspaces; process business records; generate dashboards, audit trails, tax calculations and forecasts; analyse staged imports; respond to support requests; protect the service; and meet applicable legal obligations. We do not sell customer or business records.</p>
+      <h3>Service providers and international processing</h3>
+      <p>ChiiTech uses Supabase for authentication, database and file-storage services. The production database is hosted in the EU West (Ireland) region. Google is used when a person chooses Google sign-in. The AI assistant and import-analysis feature send the relevant question, selected figures or staged import data to the configured AI provider (currently Groq) so it can generate a response. These providers process information under their own service terms and applicable data-processing arrangements. Data may therefore be processed outside Nigeria. The operator must confirm and document the applicable safeguards and provider retention terms before launch.</p>
+      <h3>Access, sharing and security</h3>
+      <p>Company data is intended to be separated by organisation and role. Workers receive access assigned by their company administrator; auditors receive a restricted read-only view. Platform administration is separately restricted. We use authentication, access controls and managed infrastructure, but no internet service can guarantee absolute security. Users should only upload information they are authorised to process and should avoid sending unnecessary sensitive personal information to AI features.</p>
+      <h3>Retention and account closure</h3>
+      <p>We retain records while needed to provide the service, maintain audit history, resolve disputes and meet legal obligations. Closing an account in the current product deactivates the account or company; it does not necessarily erase all historical records immediately. Backups, security records and legally required records may remain for a limited period. A final retention schedule and deletion-request process must be published before launch.</p>
+      <h3>Your data-protection rights</h3>
+      <p>Subject to applicable law, individuals may request access to, correction of, deletion of, restriction of or portability of their personal data, object to certain processing, and withdraw consent where consent is the legal basis. A company administrator may export available company audit information from the product. Individuals may also raise a concern with the Nigeria Data Protection Commission. Requests should be directed to the operator's published privacy contact once supplied.</p>
+      <h3>Children</h3>
+      <p>ChiiTech is a business service and is not designed for children. Do not create an account for a child or upload children's personal information unless there is a lawful basis and appropriate safeguards.</p>
+      <p class="legal-disclaimer">Before launch, the operator must add its legal name, address and privacy contact; confirm provider contracts, international-transfer safeguards and retention periods; and obtain review by a Nigerian data-protection lawyer. This draft is not a certification of NDPA compliance.</p>
     </div>
 
     <div id="legal-terms" class="legal-pane hidden">
-      <h3 style="margin-top:0;">Terms &amp; Conditions</h3>
-      <p class="text-muted" style="font-size:11px;">Last updated: placeholder — set this to your real launch date.</p>
-      <p>By creating a ChiiTech account you agree to use the service lawfully and only enter business data you
-        have the right to store. Subscription fees, where applicable, are described on the Billing &amp; payouts
-        page and may change with notice.</p>
-      <h3>Accounts &amp; access</h3>
-      <p>A company admin is responsible for the workers they invite and the access levels they grant. ChiiTech
-        is not liable for actions taken by a worker account the admin authorised.</p>
-      <h3>Service “as is”</h3>
-      <p>ChiiTech is provided for running real small-business records. Forecasts, audit scores, and tax estimates are
-        decision-support tools, not professional accounting, legal, or tax advice — verify anything material
-        with a licensed professional before relying on it.</p>
-      <h3>Limitation of liability</h3>
-      <p>ChiiTech is provided without warranties of any kind to the fullest extent the law allows. We are not
-        liable for indirect or consequential losses arising from use of the software.</p>
-      <p class="text-muted" style="font-size:11.5px;">This is a template, not legal advice — have it reviewed
-        before relying on it for a live product.</p>
+      <h3 style="margin-top:0;">Terms of Service</h3>
+      <p class="text-muted" style="font-size:11px;">Last updated: 17 November 2026</p>
+      <p>These terms govern access to ChiiTech, a business-management and audit-support platform. By creating an account or using a workspace, you agree to these terms on behalf of yourself and, where applicable, the organisation you represent.</p>
+      <h3>Accounts and eligibility</h3>
+      <p>You must provide accurate account information, protect your sign-in credentials and promptly report suspected unauthorised access. Google sign-in does not itself grant a role. Workspace access is assigned only after the relevant company-registration or invitation process succeeds.</p>
+      <h3>Company owners, workers and auditors</h3>
+      <p>A company administrator controls the organisation's workspace and is responsible for inviting team members, assigning permissions and ensuring they are authorised to access the records. Workers must use only the permissions assigned to them. External auditors receive read-only access and must keep company information confidential and use it only for the agreed review.</p>
+      <h3>Your business data</h3>
+      <p>You retain responsibility for the accuracy, legality and ownership of information entered or uploaded. You confirm that you have the rights and permissions required to process personal data about customers, employees, suppliers and other people. You must not upload unlawful material, attempt to access another organisation's data, interfere with the service or use it for fraud.</p>
+      <h3>AI, forecasts and professional advice</h3>
+      <p>AI-generated explanations, import findings, anomaly signals, forecasts, tax estimates and audit-support outputs are decision-support tools. They may be incomplete or wrong and are not a substitute for a qualified accountant, auditor, lawyer or tax professional. Verify important conclusions against original documents and applicable law before acting on them. An anomaly flag is not proof of fraud or misconduct.</p>
+      <h3>Availability, exports and changes</h3>
+      <p>We may maintain, update or temporarily suspend parts of the service for security, maintenance or operational reasons. You should keep your own appropriate copies of important source documents and exports. We will take reasonable steps to communicate material service changes where practicable.</p>
+      <h3>Fees and payment</h3>
+      <p>Any fee must be clearly shown and accepted before a payment is taken. The current Paystack connection control is a setup/demo indicator and does not itself collect payments. No payment details should be submitted unless a clearly enabled checkout is presented inside ChiiTech. Separate payment terms will be shown before any paid subscription is activated.</p>
+      <h3>Suspension and closure</h3>
+      <p>We may restrict access where reasonably necessary to protect users, investigate misuse, comply with law or address unpaid fees after a payment arrangement is activated. Account closure in the current product deactivates access; it is not a promise of immediate permanent erasure of every record.</p>
+      <h3>Liability and governing law</h3>
+      <p>To the extent permitted by applicable law, ChiiTech is provided as an operational software tool and we are not responsible for indirect losses or decisions made solely from unverified outputs. Nothing in these terms excludes liability that cannot lawfully be excluded. These terms are intended to be governed by the laws of the Federal Republic of Nigeria, subject to mandatory consumer and data-protection rights.</p>
+      <p class="legal-disclaimer">These terms require review by a Nigerian lawyer before public launch, particularly the operator identity, dispute process, service levels, liability limits and any future subscription/payment terms.</p>
     </div>
 
     <div id="legal-cookies" class="legal-pane hidden">
-      <h3 style="margin-top:0;">Cookie &amp; Data Storage Policy</h3>
-      <p><b>This build does not use tracking cookies.</b> Your business data — products, sales, expenses,
-        customers, and everything else — is stored server-side in a managed database, not in your browser.
-        Your browser only holds your current sign-in session (cleared automatically when you close the tab),
-        kept in <code style="background:var(--surface-3);padding:1px 6px;border-radius:4px;color:var(--neon);">sessionStorage</code>,
-        not a cookie. If ChiiTech adds analytics or third-party embeds later (e.g. Paystack's own checkout may
-        set its own cookies, governed by its own policy), this section will be updated to reflect that.</p>
-      <h3>Deleting your data</h3>
-      <p>Closing your browser tab ends your session but does not delete anything — your data lives on the
-        server, not your device. Use the account-deletion option in Settings to deactivate your account or
-        close your company's account; see that page for exactly what happens and how it can be undone.</p>
+      <h3 style="margin-top:0;">Cookies and Local Storage</h3>
+      <p class="text-muted" style="font-size:11px;">Last updated: 17 November 2026</p>
+      <p>The current ChiiTech browser client stores its sign-in session and short-lived login-throttling information in browser <code>sessionStorage</code>. These items are scoped to the browser tab/session and are not used as advertising trackers. Business records are loaded from the ChiiTech backend rather than being treated as a permanent local browser database.</p>
+      <h3>Third-party sign-in</h3>
+      <p>If you choose Continue with Google, Google may use its own cookies or browser storage on Google's pages to complete authentication. Those technologies are controlled by Google and are subject to Google's privacy and cookie notices.</p>
+      <h3>AI and external services</h3>
+      <p>When you use AI-powered features, relevant questions, selected figures or staged import data are sent to the configured AI provider to generate the requested response. This transfer is described in the Privacy Policy. ChiiTech does not currently describe or rely on advertising-tracking cookies.</p>
+      <h3>Managing storage</h3>
+      <p>You can clear site data through your browser settings. Clearing session storage signs you out locally, but it does not delete server-side company records or close your account. Company data and account closure are handled through the service and applicable data-protection process.</p>
+      <p class="legal-disclaimer">This notice should be rechecked whenever analytics, embedded services, payment checkout or new browser-storage mechanisms are introduced.</p>
     </div>
 
     <div id="legal-refund" class="legal-pane hidden">
-      <h3 style="margin-top:0;">Refund Policy</h3>
-      <p>ChiiTech subscription billing is not yet connected to a live payment processor in this build — no
-        charges are currently possible, so no refunds have ever been necessary. Once billing goes live via
-        Paystack, this page must state clearly: what's refundable (e.g. unused subscription time), the request
-        process, and the processing timeframe, matching Paystack's own merchant refund rules.</p>
-      <p class="text-muted" style="font-size:11.5px;">Placeholder — replace with your real refund terms before
-        accepting live payments.</p>
+      <h3 style="margin-top:0;">Refund and Billing Policy</h3>
+      <p class="text-muted" style="font-size:11px;">Last updated: 17 November 2026</p>
+      <p>At the time of this notice, ChiiTech's Paystack connection control is a demo/setup indicator only. It does not process a subscription payment, and an in-app subscription checkout is not currently enabled. Do not treat a displayed connection status or plan selection as proof that a payment has been collected.</p>
+      <h3>If a payment is introduced</h3>
+      <p>Before paid subscriptions are activated, ChiiTech will publish the applicable plan price, billing interval, renewal and cancellation rules, refund eligibility, refund-request channel and expected processing timeframe. These terms will be shown before the customer confirms a charge. Any refund will be handled through the payment provider and applicable Nigerian law.</p>
+      <h3>Incorrect or duplicate charges</h3>
+      <p>If you believe a charge has been taken in error, retain the payment reference and contact the official ChiiTech billing contact published at checkout. That contact and the final refund procedure must be supplied before payment collection is enabled.</p>
+      <p class="legal-disclaimer">No subscription refund promise or processing timeframe is stated here because in-app payment collection is not active. This policy must be completed and legally reviewed before the first live charge.</p>
     </div>
+
   </div>
 </div>
 
