@@ -245,7 +245,7 @@ Branch: `feature/premium-dashboards-cleanup`.
 
 Branch: `feature/priority-1-to-7-brand-auth-legal-mobile`.
 
-- Consolidated the CSS design tokens to one charcoal / emerald / white palette. Removed legacy indigo/violet declarations and hard-coded violet accents so older component rules cannot reintroduce the previous theme.
+- Consolidated the CSS design tokens to one charcoal / emerald / white palette and removed the duplicate token override. Updated canvas chart defaults and the health gauge so no legacy violet remains in CSS or chart/gauge JavaScript.
 - Reworked first-time Google OAuth onboarding: new identities choose Business Owner, Auditor or Worker. Owner creates a company; worker/auditor must accept the corresponding email-bound, single-use invitation. Existing linked accounts continue to route from their trusted database profile.
 - Added clear pending-approval handling for invited workers; auditor role continues through the existing auditor invitation and read-only access path.
 - Repaired legal tab switching so each tab shows its own content. Removed the public build identifier and fake support email/WhatsApp details. Made the registration consent checkbox explicit and visible.
