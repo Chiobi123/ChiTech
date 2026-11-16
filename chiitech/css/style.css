@@ -9,23 +9,20 @@
      Every colour used anywhere in the app is one of the variables
      below — change a value here to re-theme the whole app at once.
      ============================================================ */
-  /* Design tokens — deep indigo-black fintech palette.
-     Near-black indigo base with ONE restrained violet accent for
-     actions/links; semantic red/amber for status only. Nothing else
-     is coloured, so the screen stays calm at a glance. */
-  --bg:#080A16;
-  --surface:#101020;
-  --surface-2:#161628;
-  --surface-3:#1D1D33;
-  --border:#262640;
-  --neon:#8B7CF6;
-  --neon-deep:#6A5AE0;
-  --neon-dim:rgba(139,124,246,0.10);
-  --text:#EFEDF7;
-  --muted:#9A96B0;
-  --danger:#F16A6A;
-  --danger-dim:rgba(241,106,106,0.10);
-  --warn:#E8BE4F;
+  /* Single source of truth: charcoal surfaces, emerald actions, white text. */
+  --bg:#090C0B;
+  --surface:#111715;
+  --surface-2:#17201D;
+  --surface-3:#202B27;
+  --border:#293631;
+  --neon:#20C997;
+  --neon-deep:#12A77C;
+  --neon-dim:rgba(32,201,151,.12);
+  --text:#FFFFFF;
+  --muted:#A2AEA8;
+  --danger:#F07878;
+  --danger-dim:rgba(240,120,120,.12);
+  --warn:#DDB65D;
   --radius:14px;
   --radius-sm:10px;
 }
@@ -42,7 +39,7 @@ body{
 
 /* ---------- Decorative background ----------
    The backdrop itself is defined once, near the bottom of this file
-   ("VISUAL REFRESH"): a few soft violet glows, pure CSS gradients only
+   ("VISUAL REFRESH"): a few soft emerald glows, pure CSS gradients only
    (no images, no network request) and, importantly, fully STATIC. An
    earlier version animated it continuously, which forces the browser
    to repaint a full-viewport gradient every frame for as long as the
@@ -65,9 +62,9 @@ a{color:var(--neon);text-decoration:none;}
   to{ opacity:1; transform:translateY(0); }
 }
 @keyframes livePulse{
-  0%{ box-shadow:0 0 0 0 rgba(139,124,246,0.45); }
-  70%{ box-shadow:0 0 0 7px rgba(139,124,246,0); }
-  100%{ box-shadow:0 0 0 0 rgba(139,124,246,0); }
+  0%{ box-shadow:0 0 0 0 rgba(32,201,151,0.45); }
+  70%{ box-shadow:0 0 0 7px rgba(32,201,151,0); }
+  100%{ box-shadow:0 0 0 0 rgba(32,201,151,0); }
 }
 @keyframes popIn{
   from{ opacity:0; transform:translateY(6px) scale(0.98); }
@@ -87,14 +84,14 @@ a{color:var(--neon);text-decoration:none;}
 .card:hover, .stat:hover{
   transform:translateY(-2px);
   box-shadow:0 12px 26px -16px rgba(0,0,0,0.22);
-  border-color:rgba(139,124,246,0.35);
+  border-color:rgba(32,201,151,0.35);
 }
 .stat .value{ transition:color .2s ease; }
 
 .btn{ transition:transform .12s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease; }
 .btn:hover{ transform:translateY(-1px); }
 .btn:active{ transform:translateY(0) scale(0.97); }
-.btn-primary:hover{ box-shadow:0 6px 18px -6px rgba(139,124,246,0.35); }
+.btn-primary:hover{ box-shadow:0 6px 18px -6px rgba(32,201,151,0.35); }
 
 .nav-link{ transition:background .15s ease, color .15s ease, transform .15s ease, border-color .15s ease; }
 .nav-link:hover{ transform:translateX(2px); }
@@ -170,7 +167,7 @@ tr:hover .badge{ transform:translateY(-1px); }
 .nav-link.active{
   background:var(--neon-dim);
   color:var(--neon);
-  border-color:rgba(139,124,246,0.25);
+  border-color:rgba(32,201,151,0.25);
 }
 .nav-icon{width:18px;text-align:center;}
 .sidebar-foot{
@@ -239,7 +236,7 @@ tr:hover .badge{ transform:translateY(-1px); }
   overflow:hidden;
 }
 /* A thin coloured accent along the top edge of every stat card, tinted
-   to match the card's own state (violet = accent, amber = watch, red =
+   to match the card's own state (emerald = accent, amber = watch, red =
    problem) so the dashboard reads at a glance before you read a single
    number. Static gradient — painted once, costs nothing. */
 .stat::before{
@@ -390,7 +387,7 @@ tbody tr:hover{background:var(--surface-2);}
 }
 .msg{max-width:80%;padding:10px 13px;border-radius:12px;font-size:13px;line-height:1.55;}
 .msg.user{align-self:flex-end;background:var(--surface-3);color:var(--text);}
-.msg.ai{align-self:flex-start;background:rgba(139,124,246,0.08);border:1px solid rgba(139,124,246,0.25);color:var(--text);}
+.msg.ai{align-self:flex-start;background:rgba(32,201,151,0.08);border:1px solid rgba(32,201,151,0.25);color:var(--text);}
 .chat-input-row{display:flex;gap:8px;}
 .suggestion{
   display:inline-block;background:var(--surface-2);border:1px solid var(--border);
@@ -551,7 +548,7 @@ tbody tr:hover{background:var(--surface-2);}
    faint rails with a short pulse travelling along each one. Static
    geometry, tiny animation, no images and no canvas. */
 .auth-flow{max-width:300px;margin:2px 0 26px;}
-.auth-flow svg{display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(0 0 12px rgba(139,124,246,0.35));}
+.auth-flow svg{display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(0 0 12px rgba(32,201,151,0.35));}
 .flow-pulse path{stroke-dasharray:9 210;stroke-dashoffset:0;animation:flowRun 7s linear infinite;}
 .flow-pulse .p2{animation-duration:9s;animation-delay:-3s;opacity:.75;}
 .flow-pulse .p3{animation-duration:11s;animation-delay:-6s;opacity:.55;}
@@ -627,7 +624,7 @@ tbody tr:hover{background:var(--surface-2);}
 .auth-tab{flex:1;text-align:center;padding:9px 0;border-radius:9px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;transition:background .15s ease,color .15s ease;}
 .auth-tab:hover{color:var(--text);background:var(--surface-3);}
 .auth-tab.active{background:var(--neon-deep);color:#FFFFFF;}
-.auth-tab.active:hover{background:#5B4AD4;color:#FFFFFF;}
+.auth-tab.active:hover{background:#0F936F;color:#FFFFFF;}
 .auth-pane{display:none;}
 .auth-pane.active{display:block;}
 /* The pane fades in when you switch tabs, so it's obvious the form
@@ -641,8 +638,8 @@ tbody tr:hover{background:var(--surface-2);}
 
 /* ---------- Auth path highlight cards ---------- */
 .auth-highlight{
-  border:1px solid rgba(139,124,246,0.35);
-  background:rgba(139,124,246,0.07);
+  border:1px solid rgba(32,201,151,0.35);
+  background:rgba(32,201,151,0.07);
   border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:12px;line-height:1.7;
 }
 .auth-highlight.alt{border-style:dashed;}
@@ -663,7 +660,7 @@ tbody tr:hover{background:var(--surface-2);}
 }
 .register-callout{
   margin-top:18px;padding:14px 16px;border-radius:12px;
-  background:var(--neon-dim);border:1px solid rgba(139,124,246,0.3);
+  background:var(--neon-dim);border:1px solid rgba(32,201,151,0.3);
 }
 .register-callout-title{font-weight:700;color:var(--neon);font-size:13px;margin-bottom:4px;}
 .register-callout-body{font-size:11.5px;color:var(--muted);line-height:1.5;}
@@ -743,7 +740,7 @@ tbody tr:hover{background:var(--surface-2);}
 .forgot-title{font-weight:700;font-size:13px;color:var(--neon);margin-bottom:10px;}
 .forgot-result{
   margin-top:12px;padding:12px 14px;border-radius:9px;
-  background:var(--neon-dim);border:1px solid rgba(139,124,246,0.3);font-size:12.5px;line-height:1.6;
+  background:var(--neon-dim);border:1px solid rgba(32,201,151,0.3);font-size:12.5px;line-height:1.6;
 }
 
 /* ---------- About / contact page ---------- */
@@ -1013,16 +1010,16 @@ tbody tr:hover{background:var(--surface-2);}
 }
 
 /* ============================================================
-   VISUAL REFRESH — depth, glow and polish on the indigo-black /
-   violet / soft-white identity. Layout and breakpoints above are
+   VISUAL REFRESH — depth, glow and polish on the charcoal-black /
+   emerald / soft-white identity. Layout and breakpoints above are
    untouched; this layer only adds atmosphere and finish.
    ============================================================ */
 body::before{
   content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
-    radial-gradient(560px 380px at 12% -4%, rgba(124,92,246,0.12), transparent 65%),
-    radial-gradient(640px 420px at 88% 8%, rgba(124,92,246,0.09), transparent 65%),
-    radial-gradient(700px 520px at 50% 115%, rgba(139,124,246,0.05), transparent 60%);
+    radial-gradient(560px 380px at 12% -4%, rgba(32,201,151,0.12), transparent 65%),
+    radial-gradient(640px 420px at 88% 8%, rgba(32,201,151,0.09), transparent 65%),
+    radial-gradient(700px 520px at 50% 115%, rgba(32,201,151,0.05), transparent 60%);
 }
 #app,.auth-layout,.about-wrap{position:relative;z-index:1;}
 .login-brand{
@@ -1056,12 +1053,12 @@ body::before{
 .card-title{letter-spacing:.2px;}
 .page-title{letter-spacing:.2px;}
 .btn-primary{
-  background:linear-gradient(100deg,#7161EA,#5646CE);
+  background:linear-gradient(100deg,#20C997,#12A77C);
   border-color:transparent;
-  box-shadow:0 1px 2px rgba(0,0,0,0.12),0 10px 24px -14px rgba(139,124,246,0.6);
+  box-shadow:0 1px 2px rgba(0,0,0,0.12),0 10px 24px -14px rgba(32,201,151,0.6);
   transition:transform .12s ease,box-shadow .15s ease,background .15s ease;
 }
-.btn-primary:hover{background:linear-gradient(100deg,#6A5AE0,#4F3EC9);box-shadow:0 4px 18px rgba(139,124,246,0.32);}
+.btn-primary:hover{background:linear-gradient(100deg,#12A77C,#0E8F6B);box-shadow:0 4px 18px rgba(32,201,151,0.32);}
 .btn-primary:active{transform:translateY(1px);}
 .btn{transition:transform .12s ease,border-color .15s ease,background .15s ease;}
 .stat{position:relative;overflow:hidden;}
@@ -1072,21 +1069,21 @@ body::before{
 }
 .stat .value{font-variant-numeric:tabular-nums;}
 table tbody tr{transition:background .12s ease;}
-table tbody tr:hover{background:rgba(139,124,246,0.04);}
+table tbody tr:hover{background:rgba(32,201,151,0.04);}
 .nav-link{transition:background .12s ease,color .12s ease,border-color .15s ease;}
 .nav-link.active{box-shadow:inset 2px 0 0 var(--neon);}
 input,select,textarea{transition:border-color .15s ease,box-shadow .15s ease;}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--neon);box-shadow:0 0 0 3px rgba(139,124,246,0.18);}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--neon);box-shadow:0 0 0 3px rgba(32,201,151,0.18);}
 a{color:var(--neon);}
 :focus-visible{outline:2px solid var(--neon);outline-offset:2px;border-radius:6px;}
 .badge{letter-spacing:.2px;}
-.dept-badge.on{box-shadow:0 0 0 3px rgba(139,124,246,0.15);}
+.dept-badge.on{box-shadow:0 0 0 3px rgba(32,201,151,0.15);}
 .flag-pill{box-shadow:0 0 0 3px rgba(255,107,107,0.15);}
 .mobile-nav .nav-item.active{text-shadow:none;}
 ::-webkit-scrollbar{width:10px;height:10px;}
 ::-webkit-scrollbar-thumb{background:#2A2A44;border-radius:8px;border:2px solid var(--bg);}
 ::-webkit-scrollbar-track{background:transparent;}
-::selection{background:rgba(139,124,246,0.22);}
+::selection{background:rgba(32,201,151,0.22);}
 
 /* ============================================================
    GLASS MORPHISM — frosted surfaces over the living background.
@@ -1120,7 +1117,7 @@ a{color:var(--neon);}
   backdrop-filter:none;
 }
 #toast{
-  background:#08080F;color:#EFEDF7;
+  background:#090C0B;color:#FFFFFF;
   -webkit-backdrop-filter:blur(12px);
   backdrop-filter:blur(12px);
   border:1px solid rgba(0,0,0,0.4);
@@ -1131,28 +1128,8 @@ a{color:var(--neon);}
 
 
 
-/* ============================================================
-   CHIITECH FINTECH REFRESH — charcoal / pure white / emerald.
-   Visual-only layer: preserves all DOM structure, IDs, routes,
-   breakpoints, form controls, event hooks and application logic.
-   ============================================================ */
-:root{
-  --bg:#090C0B;
-  --surface:#111715;
-  --surface-2:#17201D;
-  --surface-3:#202B27;
-  --border:#293631;
-  --neon:#20C997;
-  --neon-deep:#12A77C;
-  --neon-dim:rgba(32,201,151,.12);
-  --text:#FFFFFF;
-  --muted:#A2AEA8;
-  --danger:#F07878;
-  --danger-dim:rgba(240,120,120,.12);
-  --warn:#DDB65D;
-  --radius:15px;
-  --radius-sm:10px;
-}
+/* The charcoal / white / emerald tokens above are authoritative. This visual layer
+   only defines atmosphere and component finishes; it does not redefine the palette. */
 html{background:var(--bg);}
 body{
   background:
@@ -1455,7 +1432,7 @@ pre{max-width:100%;overflow:auto;background:#0B120E;color:#DCE8E0;border-radius:
 
 /* ============================================================
    FINAL THEME TOKENS — shared authenticated workspace + auth UI.
-   These override the legacy violet tokens at their source, so every
+   These override the legacy emerald tokens at their source, so every
    module (including screens rendered after login) uses the same theme.
    ============================================================ */
 :root{
@@ -1642,4 +1619,65 @@ pre{max-width:100%;overflow:auto;background:#0B120E;color:#DCE8E0;border-radius:
 @media(max-width:700px){
  #sec-superadmin .card,#sec-auditor .card,#sec-dashboard .card{padding:16px;}
  #sec-auditor .auditor-kpis .stat{min-height:96px;padding:13px!important;}
+}
+
+
+/* Priority 1–6 finishing pass: consistent onboarding, consent and mobile ergonomics. */
+.auth-consent{
+  display:flex!important;visibility:visible!important;opacity:1!important;
+  align-items:flex-start!important;gap:10px!important;width:100%;
+  padding:11px 12px!important;margin:12px 0!important;
+  color:#DCE8E0!important;background:#17201D!important;
+  border:1px solid #405148!important;border-radius:10px;
+  line-height:1.55;font-size:12px;
+}
+.auth-consent input[type=checkbox]{
+  display:inline-block!important;visibility:visible!important;opacity:1!important;
+  width:18px!important;height:18px!important;min-height:18px!important;
+  flex:0 0 18px!important;margin:1px 0 0!important;accent-color:#20C997;
+}
+.auth-consent a{color:#62E3B9!important;text-decoration:underline;}
+.oauth-role-grid{display:grid;grid-template-columns:1fr;gap:10px;margin:14px 0;}
+.oauth-role-card{
+  display:flex;align-items:flex-start;gap:12px;width:100%;padding:14px;
+  text-align:left;color:#fff;background:#141E19;border:1px solid #34463D;
+  border-radius:12px;cursor:pointer;transition:border-color .16s,background .16s,transform .16s;
+}
+.oauth-role-card:hover{background:#192720;border-color:#20C997;transform:translateY(-1px);}
+.oauth-role-card:focus-visible{outline:2px solid #62E3B9;outline-offset:3px;}
+.oauth-role-card .role-icon{display:grid;place-items:center;flex:0 0 36px;height:36px;border-radius:10px;background:rgba(32,201,151,.12);color:#62E3B9;font-size:18px;}
+.oauth-role-card b{display:block;color:#fff;font-size:13px;margin-bottom:3px;}
+.oauth-role-card small{display:block;color:#A2AEA8;font-size:11.5px;line-height:1.5;}
+.oauth-step-note{padding:10px 12px;margin:10px 0 14px;border-radius:10px;background:#17201D;border:1px solid #34463D;color:#B9C7BF;font-size:11.5px;line-height:1.55;}
+.oauth-back{display:inline-flex;align-items:center;gap:6px;margin-bottom:12px;font-size:12px;color:#62E3B9;}
+.legal-pane{line-height:1.7;}
+.legal-pane h3{margin-top:22px;}
+.legal-pane p,.legal-pane li{font-size:13px;line-height:1.75;}
+.legal-pane ul{padding-left:20px;color:#E5EEE8;}
+.legal-pane .legal-disclaimer{padding:12px 14px;border:1px solid rgba(221,182,93,.28);border-radius:10px;background:rgba(221,182,93,.07);color:#E8D6A7;font-size:12px;}
+main .section,.main,.main-inner{min-width:0;max-width:100%;}
+main .section .card,main .section .stat{min-width:0;}
+main .section canvas{display:block;max-width:100%;}
+@media(max-width:900px){
+  .main-inner{padding-left:14px;padding-right:14px;}
+  .topbar,.card-head,.chart-controls{flex-wrap:wrap;align-items:flex-start;}
+  .topbar>*{min-width:0;}
+  .card-head>*{min-width:0;max-width:100%;}
+  .section .grid{min-width:0;}
+  .section table{display:block;max-width:100%;overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;white-space:nowrap;}
+  .section table th,.section table td{white-space:nowrap;}
+  .mobile-nav{padding-bottom:env(safe-area-inset-bottom,0px);}
+  .mobile-nav .nav-item{min-height:48px;}
+}
+@media(max-width:560px){
+  .main-inner{padding-left:10px;padding-right:10px;}
+  .section .grid-2,.section .grid-3{grid-template-columns:minmax(0,1fr);}
+  .section .grid-4{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .section .topbar{gap:10px;}
+  .section .topbar .btn,.section .topbar button{width:100%;}
+  .section .card-head{gap:10px;}
+  .section .card-head input,.section .card-head select{width:100%;max-width:100%!important;}
+  .section .chart-canvas-wrap{max-width:100%;overflow:hidden;}
+  .oauth-role-card{padding:12px;}
+  .auth-consent{font-size:11.5px;}
 }
