@@ -464,7 +464,7 @@ async function registerCompanyWithOAuth(){
 
 /** Join an existing company using the Google identity and a single-use worker invite. */
 async function acceptGoogleWorkerInvite(){
-  const token=(document.getElementById('oauth-worker-token').value||'').replace(/\\s+/g,'');
+  const token=(document.getElementById('oauth-worker-token').value||'').replace(/\s+/g,'');
   const name=document.getElementById('oauth-worker-name').value.trim();
   const {data:{user}}=await sb.auth.getUser();
   if(!user){authError('Your Google session expired. Sign in with Google again.');return;}
@@ -493,8 +493,8 @@ async function acceptGoogleWorkerInvite(){
 /** Join as an invited external auditor. The existing invitation RPC assigns the role;
  *  finishAuditorSignIn then checks the company code and enforces read-only access. */
 async function acceptGoogleAuditorInvite(){
-  const code=(document.getElementById('oauth-auditor-code').value||'').replace(/\\s+/g,'').toUpperCase();
-  const token=(document.getElementById('oauth-auditor-token').value||'').replace(/\\s+/g,'');
+  const code=(document.getElementById('oauth-auditor-code').value||'').replace(/\s+/g,'').toUpperCase();
+  const token=(document.getElementById('oauth-auditor-token').value||'').replace(/\s+/g,'');
   const name=document.getElementById('oauth-auditor-name').value.trim();
   const {data:{user}}=await sb.auth.getUser();
   if(!user){authError('Your Google session expired. Sign in with Google again.');return;}
