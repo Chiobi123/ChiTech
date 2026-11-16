@@ -10,7 +10,7 @@
      TLS handshake on a slow link right when the user presses "Sign in". -->
 <link rel="preconnect" href="https://qmypqghktxlscibgxgxo.supabase.co" crossorigin>
 <link rel="dns-prefetch" href="https://qmypqghktxlscibgxgxo.supabase.co">
-<link rel="stylesheet" href="css/style.css?v=20261116b">
+<link rel="stylesheet" href="css/style.css?v=20261116c">
 <!-- Charts are drawn locally in js/charts.js using the native Canvas API —
      no CDN or external chart library required, so this works fully offline
      and isn't at the mercy of a blocked network request. -->
@@ -19,9 +19,30 @@
 <!-- Boot veil: covers everything until session validation resolves, so a
      refresh never flashes the sign-in form or a stale dashboard. Removed
      by the boot handler in app.js. -->
-<div id="boot-veil" style="position:fixed;inset:0;background:#090C0B;z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
-  <div style="font-size:26px;font-weight:800;letter-spacing:2px;">CHIITECH</div>
-  <div style="font-size:12.5px;color:#A2AEA8;">Loading your workspace…</div>
+<div id="boot-veil" role="status" aria-live="polite" aria-label="Loading ChiiTech workspace" style="position:fixed;inset:0;background:#090C0B;z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;">
+  <div class="boot-skeleton" aria-hidden="true">
+    <aside class="boot-side">
+      <div class="boot-brand boot-shimmer"></div>
+      <div class="boot-nav boot-shimmer"></div><div class="boot-nav short boot-shimmer"></div>
+      <div class="boot-nav boot-shimmer"></div><div class="boot-nav short boot-shimmer"></div>
+      <div class="boot-nav boot-shimmer"></div><div class="boot-nav short boot-shimmer"></div>
+      <div class="boot-nav boot-shimmer"></div>
+    </aside>
+    <div class="boot-main">
+      <div class="boot-heading boot-shimmer"></div>
+      <div class="boot-subheading boot-shimmer"></div>
+      <div class="boot-stats">
+        <div class="boot-card"><div class="boot-line boot-shimmer"></div><div class="boot-value boot-shimmer"></div></div>
+        <div class="boot-card"><div class="boot-line boot-shimmer"></div><div class="boot-value boot-shimmer"></div></div>
+        <div class="boot-card"><div class="boot-line boot-shimmer"></div><div class="boot-value boot-shimmer"></div></div>
+      </div>
+      <div class="boot-panels">
+        <div class="boot-panel"><div class="boot-line boot-shimmer"></div><div class="boot-bars"><i style="--h:38%"></i><i style="--h:64%"></i><i style="--h:48%"></i><i style="--h:82%"></i><i style="--h:70%"></i><i style="--h:94%"></i></div></div>
+        <div class="boot-panel"><div class="boot-line boot-shimmer"></div><div class="boot-line boot-shimmer" style="width:82%;margin-top:22px"></div><div class="boot-line boot-shimmer" style="width:68%;margin-top:18px"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="boot-loading-label">Preparing your ChiiTech workspace…</div>
 </div>
 <!--
   CHIITECH — page structure, top to bottom:
