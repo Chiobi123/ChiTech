@@ -1681,3 +1681,6 @@ main .section canvas{display:block;max-width:100%;}
   .oauth-role-card{padding:12px;}
   .auth-consent{font-size:11.5px;}
 }
+
+.chip-select button.chip-opt{font-family:inherit;font-weight:500;border:0;cursor:pointer;background:transparent;}
+.chip-select button.chip-opt.active{background:var(--neon-deep);color:#fff;font-weight:700;}
