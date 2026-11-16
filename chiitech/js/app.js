@@ -76,7 +76,9 @@ function scheduleDashboardRefresh(table){
 }
 async function refreshDashboardTable(table){
   if(!session||!session.companyId||!state)return;
-  const {data,error}=await sb.from(table).select('*').eq('company_id',session.companyId);
+  let request=sb.from(table).select('*').eq('company_id',session.companyId);
+  if(table==='audit_log') request=request.order('time',{ascending:false}).limit(500);
+  const {data,error}=await request;
   if(error)throw error;
   const rows=data||[];
   if(table==='sales')state.sales=rows.map(SYNC_DEFS.sales.fromRow);
