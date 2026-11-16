@@ -10,7 +10,7 @@ answer to "how far along is this?".
 | GitHub | `github.com/Chiobi123/ChiTech` |
 | Frontend host | Cloudflare Pages project `chiitech` (deploy dir `chiitech/`) |
 | Supabase project | `qmypqghktxlscibgxgxo` (live, existing — never reset) |
-| Last frontend asset version | `20261101f` (in `chiitech/index.html`) |
+| Last frontend asset version | `20261116e` (feature branch; not yet deployed) |
 | Live site | `https://chiitech.pages.dev` — verified in sync with local on 2026-10-23 |
 | Local migrations | 43 files (`01` → `42_deep_import_analysis`, plus the recovered live `22_restore_auditor_access`) |
 | Live DB migration count | **25** (01-22 recorded + 39, 40, 41 applied 2026-10-24; 42 in repo) |
@@ -93,8 +93,7 @@ answer to "how far along is this?".
   outliers → strengths, weaknesses, recommended actions
 - Final write is a transactional RPC, never a direct table write
 - Super Admin isolated from company data; platform ops via `SECURITY DEFINER` RPCs
-- `security_alerts` table + rules (admin actions, flagged records, large expenses/sales,
-  completed imports); resolve action in the console
+- Former security-alert table and rules are scheduled for retirement in migration 43; historical rows are copied to a restricted archive table.
 - Super Admin password change via `supabase.auth.updateUser`
 - Flight recorder: `audit_log`, capped queries, latency indexes
 
@@ -137,7 +136,6 @@ answer to "how far along is this?".
   `deep_analyse_import_batch()` + Edge Function `import_deep` mode returns
   structured anomalies, patterns, cross-references, and prioritized actions.
   Deterministic analysis remains the audited baseline; LLM output is advisory.
-- **Alert delivery.** Email/SMS/push for security alerts. The database center is ready.
 - **Bank / POS statement reconciliation**, and any real accounting-software import.
 - **Full Excel formula/value provenance.** Values are read; formulas are not traced.
 - **Real payment collection.** Billing/payouts and platform revenue need a licensed
@@ -211,6 +209,19 @@ The database needs reconciling deliberately, with a backup, before any push.
 4. ~~Deploy the current frontend~~ **DONE** — `20261022b` live, then `20261101f`
    live 2026-11-11 (re-theme + one-screen auth + panelled dashboard).
 5. **Pick a product gap:**
-   - **Alert delivery** — Email/SMS/push for `security_alerts` (DB ready, needs provider)
    - **Reconciliation documentation** — Formalize the 22→25 drift and migration repair plan
    - **Bank/POS import** — Extend the staged import pipeline for statement formats
+
+
+## 2026-11-16 — premium role dashboards and alert retirement (feature branch)
+
+Branch: `feature/premium-dashboards-cleanup`.
+
+- Reworked the shared canvas line renderer to use smooth Bézier curves, restrained area gradients, cleaner axis density and endpoint-only markers. Business Admin, Auditor and Growth line charts share this renderer; Benford's comparison line is curved too.
+- Refined card surfaces, spacing, chart proportions and mobile breakpoints across Business Admin, Auditor and Super Admin.
+- Moved Auditor summary KPIs directly beneath its read-only overview.
+- Fixed Business Admin gross-profit calculation and selected-period end boundary; future-dated records are excluded, and negative gross profit is represented accurately in the charts.
+- Removed alert UI, client payload mapping, resolver and import side-effect. Super Admin plan distribution now charts company counts, not estimated plan-value totals under a revenue label.
+- Added migration `20261116170000_43_retire_security_alerts.sql`. It archives historical alert rows privately, removes alert triggers/functions/table, and replaces `platform_overview()` without the alert payload.
+- **Not deployed.** Live schema must be checked against this migration and backed up before application. No production database changes have been made.
+- Authenticated browser tests for all roles and full live event verification remain outstanding.
