@@ -35,6 +35,80 @@ let cart = [];
 let currentSection = null;
 let navStack = []; // section-name history for the Back button
 
+/* Dashboard analytics + Supabase Realtime lifecycle. */
+let dashboardRangeDays = 30;
+let dashboardRealtimeChannel = null;
+let dashboardRealtimeCompanyId = null;
+let dashboardRefreshTimer = null;
+let dashboardRefreshInFlight = false;
+let dashboardPendingTables = new Set();
+const DASHBOARD_REALTIME_TABLES = ['sales','expenses','products','customers','orders','debts','audit_log','audit_findings'];
+
+function setDashboardLiveStatus(state, label){
+  const el=document.getElementById('dashboard-live-status');
+  if(!el) return;
+  el.dataset.state=state;
+  const text=el.querySelector('span:last-child');
+  if(text) text.textContent=label;
+}
+function stopDashboardRealtime(){
+  if(dashboardRefreshTimer){clearTimeout(dashboardRefreshTimer);dashboardRefreshTimer=null;}
+  dashboardPendingTables.clear();
+  if(dashboardRealtimeChannel && typeof sb!=='undefined'){try{sb.removeChannel(dashboardRealtimeChannel);}catch(e){}}
+  dashboardRealtimeChannel=null;dashboardRealtimeCompanyId=null;
+}
+function scheduleDashboardRefresh(table){
+  if(table) dashboardPendingTables.add(table);
+  if(dashboardRefreshTimer) clearTimeout(dashboardRefreshTimer);
+  dashboardRefreshTimer=setTimeout(async()=>{
+    dashboardRefreshTimer=null;
+    if(dashboardRefreshInFlight||!session||!state||!session.companyId) return;
+    const tables=Array.from(dashboardPendingTables);dashboardPendingTables.clear();
+    if(!tables.length)return;
+    dashboardRefreshInFlight=true;
+    try{
+      await Promise.all(tables.map(refreshDashboardTable));
+      if(currentSection)renderSection(currentSection);
+      setDashboardLiveStatus('live','Live updates on');
+    }catch(e){console.error('dashboard realtime refresh:',e);setDashboardLiveStatus('reconnecting','Reconnecting to live data');}
+    finally{dashboardRefreshInFlight=false;if(dashboardPendingTables.size)scheduleDashboardRefresh();}
+  },350);
+}
+async function refreshDashboardTable(table){
+  if(!session||!session.companyId||!state)return;
+  const {data,error}=await sb.from(table).select('*').eq('company_id',session.companyId);
+  if(error)throw error;
+  const rows=data||[];
+  if(table==='sales')state.sales=rows.map(SYNC_DEFS.sales.fromRow);
+  else if(table==='expenses')state.expenses=rows.map(SYNC_DEFS.expenses.fromRow);
+  else if(table==='products')state.products=rows.map(SYNC_DEFS.products.fromRow);
+  else if(table==='customers')state.customers=rows.map(SYNC_DEFS.customers.fromRow);
+  else if(table==='orders')state.orders=rows.map(SYNC_DEFS.orders.fromRow);
+  else if(table==='debts')state.debts=rows.map(r=>({id:r.id,direction:r.direction,party:r.party,amount:Number(r.amount),dueDate:r.due_date,note:r.note,status:r.status,settledAt:r.settled_at?new Date(r.settled_at).getTime():null}));
+  else if(table==='audit_log'){state.auditLog=rows.map(INSERT_ONLY_DEFS.auditLog.fromRow).sort((a,b)=>(a.time||0)-(b.time||0));state.__syncedAuditLogIds=new Set(state.auditLog.map(x=>x.id));}
+  else if(table==='audit_findings')state.findings=rows.map(r=>({id:r.id,title:r.title,description:r.description,severity:r.severity,status:r.status,raisedBy:r.raised_by,createdAt:r.created_at?new Date(r.created_at).getTime():null,resolvedAt:r.resolved_at?new Date(r.resolved_at).getTime():null,resolvedBy:r.resolved_by}));
+  if(state.__synced&&['sales','expenses','products','customers','orders'].includes(table))state.__synced[table]=JSON.parse(JSON.stringify(state[table]));
+}
+function startDashboardRealtime(companyId){
+  if(!companyId||!session||session.role!=='company_admin')return;
+  if(dashboardRealtimeChannel&&dashboardRealtimeCompanyId===companyId)return;
+  stopDashboardRealtime();dashboardRealtimeCompanyId=companyId;
+  setDashboardLiveStatus('connecting','Connecting to live data');
+  let channel=sb.channel('chiitech-dashboard-'+companyId);
+  DASHBOARD_REALTIME_TABLES.forEach(table=>{channel=channel.on('postgres_changes',{event:'*',schema:'public',table,filter:'company_id=eq.'+companyId},()=>scheduleDashboardRefresh(table));});
+  dashboardRealtimeChannel=channel.subscribe(status=>{
+    if(status==='SUBSCRIBED')setDashboardLiveStatus('live','Live updates on');
+    else if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'||status==='CLOSED')setDashboardLiveStatus('reconnecting','Reconnecting to live data');
+  });
+}
+function setDashboardRange(days){
+  const next=Number(days);if(![7,30,90].includes(next))return;
+  dashboardRangeDays=next;
+  document.querySelectorAll('.dashboard-range [data-range]').forEach(el=>el.classList.toggle('active',Number(el.dataset.range)===next));
+  renderDashboard();
+}
+
+
 /* ---------------- boot ---------------- */
 window.addEventListener('DOMContentLoaded', async () => {
   session = loadSession();
@@ -212,7 +286,9 @@ async function bootApp(opts){
 function auditorBootTrace(msg){ return; }
 
   document.getElementById('delete-account-link').classList.remove('hidden');
+  stopDashboardRealtime();
   state = await loadBusiness(session.companyId);
+  if(session.role==='company_admin') startDashboardRealtime(session.companyId);
   const company = currentCompany();
   document.getElementById('sidebar-sub').textContent = company ? company.name : 'Business console';
   document.getElementById('sidebar-plan').textContent = (company ? company.plan : 'Founding') + ' plan';
@@ -885,7 +961,7 @@ function renderGettingStarted(){
   const remaining = steps.filter(s=>!s.done);
   if(!remaining.length || session.role==='worker'){ el.innerHTML=''; return; }
   el.innerHTML = `
-    <div class="card" style="border-color:rgba(139,124,246,0.3);">
+    <div class="card getting-started-inner">
       <div class="card-head"><div class="card-title">Getting started (${steps.length-remaining.length}/${steps.length})</div></div>
       ${steps.map((s,i)=>`
         <div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;${s.done?'opacity:0.5;':''}">
@@ -905,97 +981,64 @@ function renderGettingStarted(){
 
 function renderDashboard(){
   renderGettingStarted();
-  const start = todayRange();
-  const todaySales = state.sales.filter(s=>s.time>=start);
-  const todayExp = state.expenses.filter(e=>e.time>=start);
-  const salesTotal = todaySales.reduce((a,s)=>a+s.total,0);
-  const cost = todaySales.reduce((a,s)=>a+s.cost,0);
-  const expTotal = todayExp.reduce((a,e)=>a+e.amount,0);
-  const profit = salesTotal - cost - expTotal;
-
-  animateStatNumber('d-sales', salesTotal, fmtN);
-  animateStatNumber('d-profit', profit, fmtN);
-  animateStatNumber('d-expenses', expTotal, fmtN);
-
-  const lowStock = state.products.filter(p=>p.stock<=p.reorder).length;
-  document.getElementById('d-lowstock').textContent = lowStock;
-  document.getElementById('d-lowstock-card').className = 'stat ' + (lowStock>0?'warn':'pos');
-
-  if(typeof mountHealthGauge==='function') mountHealthGauge(computeHealthScore());
-
-  const days = [...Array(7)].map((_,i)=>{
-    const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-(6-i));
-    const next = d.getTime()+86400000;
-    const daySales = state.sales.filter(s=>s.time>=d.getTime() && s.time<next);
-    return {
-      label: d.toLocaleDateString('en-NG',{weekday:'short'}),
-      total: daySales.reduce((a,s)=>a+s.total,0),
-      cost: daySales.reduce((a,s)=>a+s.cost,0),
-    };
-  });
-
-  // --- Sales trend chart: bar / line / doughnut, switchable ---
-  document.querySelectorAll('#d-chart-type .chip-opt').forEach(el=>el.classList.toggle('active', el.dataset.chart===state.growth.dashboardChartType));
-  const chartType = state.growth.dashboardChartType || 'bar';
-  if(chartType==='doughnut'){
-    chiDoughnut('d-chart', { labels: days.map(d=>d.label), values: days.map(d=>d.total), centerLabel: fmtN(days.reduce((a,d)=>a+d.total,0)) });
-  } else if(chartType==='line'){
-    chiLine('d-chart', { labels: days.map(d=>d.label), series:[{label:'Sales', data: days.map(d=>d.total)}] });
-  } else {
-    chiBar('d-chart', { labels: days.map(d=>d.label), series:[{label:'Sales', data: days.map(d=>d.total)}] });
+  const now=new Date();
+  const start=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  start.setDate(start.getDate()-(dashboardRangeDays-1));
+  const periodSales=state.sales.filter(s=>s.time>=start.getTime()&&s.time<now.getTime()+86400000);
+  const periodExpenses=state.expenses.filter(e=>e.time>=start.getTime()&&e.time<now.getTime()+86400000);
+  const revenue=periodSales.reduce((sum,s)=>sum+(Number(s.total)||0),0);
+  const cost=periodSales.reduce((sum,s)=>sum+(Number(s.cost)||0),0);
+  const expenses=periodExpenses.reduce((sum,e)=>sum+(Number(e.amount)||0),0);
+  const netProfit=revenue-cost-expenses;
+  animateStatNumber('d-sales',revenue,fmtN);
+  animateStatNumber('d-profit',netProfit,fmtN);
+  animateStatNumber('d-expenses',expenses,fmtN);
+  const lowStock=state.products.filter(p=>Number(p.stock)<=Number(p.reorder)).length;
+  const lowEl=document.getElementById('d-lowstock');if(lowEl)lowEl.textContent=lowStock;
+  const lowCard=document.getElementById('d-lowstock-card');if(lowCard)lowCard.className='stat '+(lowStock>0?'warn':'pos');
+  const caption=document.getElementById('d-period-caption');
+  if(caption)caption.textContent='Last '+dashboardRangeDays+' days · '+start.toLocaleDateString('en-NG',{day:'numeric',month:'short'})+' – '+now.toLocaleDateString('en-NG',{day:'numeric',month:'short',year:'numeric'});
+  const daily=[];
+  for(let i=0;i<dashboardRangeDays;i++){
+    const day=new Date(start);day.setDate(start.getDate()+i);
+    const from=day.getTime(),to=from+86400000;
+    const daySales=periodSales.filter(s=>s.time>=from&&s.time<to);
+    daily.push({label:dashboardRangeDays===7?day.toLocaleDateString('en-NG',{weekday:'short'}):day.toLocaleDateString('en-NG',{day:'numeric',month:'short'}),revenue:daySales.reduce((sum,s)=>sum+(Number(s.total)||0),0),cost:daySales.reduce((sum,s)=>sum+(Number(s.cost)||0),0)});
   }
-  document.getElementById('d-trend-total').textContent = fmtN(days.reduce((a,d)=>a+d.total,0)) + ' this week';
-
-  // --- Revenue vs cost of goods, switchable chart type ---
-  document.querySelectorAll('#d-revcost-type .chip-opt').forEach(el=>el.classList.toggle('active', el.dataset.chart===(state.growth.revCostChartType||'bar')));
-  const revCostType = state.growth.revCostChartType || 'bar';
-  if(revCostType==='doughnut'){
-    chiDoughnut('d-revcost-chart', {
-      labels: ['Cost of goods','Gross profit'],
-      values: [days.reduce((a,d)=>a+d.cost,0), days.reduce((a,d)=>a+Math.max(0,d.total-d.cost),0)],
-      colors: [CHIITECH_CHART_COLORS.warn, CHIITECH_CHART_COLORS.neon],
-    });
-  } else if(revCostType==='line'){
-    chiLine('d-revcost-chart', {
-      labels: days.map(d=>d.label),
-      series: [
-        {label:'Cost of goods', data: days.map(d=>d.cost), color: CHIITECH_CHART_COLORS.warn},
-        {label:'Revenue', data: days.map(d=>d.total), color: CHIITECH_CHART_COLORS.neon},
-      ],
-    });
-  } else {
-    chiBar('d-revcost-chart', {
-      labels: days.map(d=>d.label),
-      series: [
-        {label:'Cost of goods', data: days.map(d=>d.cost), color: CHIITECH_CHART_COLORS.warn},
-        {label:'Gross profit', data: days.map(d=>Math.max(0,d.total-d.cost)), color: CHIITECH_CHART_COLORS.neon},
-      ],
-      stacked: true,
-    });
-  }
-
-  // --- Sales by payment method, doughnut ---
-  const byPayment = {};
-  state.sales.forEach(s=>{ byPayment[s.payment] = (byPayment[s.payment]||0) + s.total; });
-  const paymentLabels = Object.keys(byPayment);
-  chiDoughnut('d-payment-chart', {
-    labels: paymentLabels.length?paymentLabels:['No sales yet'],
-    values: paymentLabels.length?paymentLabels.map(l=>byPayment[l]):[1],
-    centerLabel: paymentLabels.length ? fmtN(Object.values(byPayment).reduce((a,b)=>a+b,0)) : '—',
-  });
-
-  const score = computeHealthScore();
-  document.getElementById('d-health-score').textContent = score;
-  document.getElementById('d-health-ring').style.background =
-    `conic-gradient(var(--neon) 0 ${score}%, var(--border) ${score}% 100%)`;
-  const openFlags = state.expenses.filter(e=>e.flag).length;
-  document.getElementById('d-health-text').innerHTML =
-    `<b style="color:var(--text)">${lowStock===0?'Stock levels healthy.':lowStock+' product(s) need reordering.'}</b><br>` +
-    `${state.sales.length} sales and ${state.expenses.length} expenses logged to the audit trail.`;
-  document.getElementById('d-flag-pill').innerHTML = openFlags>0
-    ? `<span class="flag-pill"><span class="flag-dot"></span>${openFlags} expense${openFlags>1?'s':''} flagged for review</span>`
-    : '';
+  const totalEl=document.getElementById('d-trend-total');if(totalEl)totalEl.textContent=fmtN(revenue)+' total revenue';
+  chiLine('d-chart',{labels:daily.map(d=>d.label),series:[{label:'Revenue',data:daily.map(d=>d.revenue),color:CHIITECH_CHART_COLORS.neon}]});
+  chiLine('d-revcost-chart',{labels:daily.map(d=>d.label),series:[
+    {label:'Revenue',data:daily.map(d=>d.revenue),color:CHIITECH_CHART_COLORS.neon},
+    {label:'Gross profit',data:daily.map(d=>Math.max(0,d.revenue-d.cost)),color:CHIITECH_CHART_COLORS.warn}
+  ]});
+  const byPayment={};
+  periodSales.forEach(s=>{const key=(s.payment||'Unspecified').toString();byPayment[key]=(byPayment[key]||0)+(Number(s.total)||0);});
+  const paymentLabels=Object.keys(byPayment);
+  chiDoughnut('d-payment-chart',{labels:paymentLabels.length?paymentLabels:['No sales in this period'],values:paymentLabels.length?paymentLabels.map(k=>byPayment[k]):[1],centerLabel:paymentLabels.length?fmtN(revenue):'No data'});
+  const openDebts=(state.debts||[]).filter(d=>d.status==='open');
+  const receivables=state.customers.reduce((sum,x)=>sum+Math.max(0,Number(x.balanceDue)||0),0)+openDebts.filter(d=>d.direction==='owed_to_me').reduce((sum,d)=>sum+(Number(d.amount)||0),0);
+  const overdue=openDebts.filter(d=>d.direction==='i_owe'&&d.dueDate&&new Date(d.dueDate).getTime()<Date.now()).length;
+  const flags=state.expenses.filter(e=>e.flag).length;
+  const setText=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
+  setText('d-attention-lowstock',lowStock);setText('d-attention-flags',flags);
+  setText('d-attention-receivables','₦'+fmtN(receivables));setText('d-attention-overdue',overdue);
+  renderRecentDashboardActivity();
   renderPulse();
+}
+
+
+
+function renderRecentDashboardActivity(){
+  const el=document.getElementById('d-recent-activity');if(!el)return;
+  const items=[];
+  (state.sales||[]).forEach(s=>items.push({time:s.time,type:'Sale',detail:s.customerName||s.invoiceNo||'Recorded sale',amount:Number(s.total)||0,icon:'ti-receipt'}));
+  (state.expenses||[]).forEach(e=>items.push({time:e.time,type:'Expense',detail:e.category||e.note||'Business expense',amount:Number(e.amount)||0,icon:'ti-wallet'}));
+  (state.orders||[]).forEach(o=>items.push({time:o.placedAt,type:'Order',detail:o.customerName||'Customer order',amount:Number(o.total)||0,icon:'ti-truck'}));
+  items.sort((a,b)=>(b.time||0)-(a.time||0));
+  el.innerHTML=items.slice(0,7).map(item=>{
+    const date=item.time?new Date(item.time).toLocaleString('en-NG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+    return '<div class="activity-item"><span class="activity-icon"><i class="ti '+item.icon+'"></i></span><span class="activity-copy"><b>'+escapeHtml(item.type)+' · '+escapeHtml(item.detail)+'</b><small>'+escapeHtml(date)+'</small></span><strong class="'+(item.type==='Expense'?'activity-negative':'')+'">'+(item.type==='Expense'?'−':'+')+'₦'+fmtN(item.amount)+'</strong></div>';
+  }).join('')||'<div class="empty-state">No business activity has been recorded yet.</div>';
 }
 
 /* ================= MONEY PULSE (small-business answers) ================
