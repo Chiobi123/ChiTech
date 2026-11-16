@@ -87,7 +87,7 @@ async function refreshDashboardTable(table){
   else if(table==='debts')state.debts=rows.map(r=>({id:r.id,direction:r.direction,party:r.party,amount:Number(r.amount),dueDate:r.due_date,note:r.note,status:r.status,settledAt:r.settled_at?new Date(r.settled_at).getTime():null}));
   else if(table==='audit_log'){state.auditLog=rows.map(INSERT_ONLY_DEFS.auditLog.fromRow).sort((a,b)=>(a.time||0)-(b.time||0));state.__syncedAuditLogIds=new Set(state.auditLog.map(x=>x.id));}
   else if(table==='audit_findings')state.findings=rows.map(r=>({id:r.id,title:r.title,description:r.description,severity:r.severity,status:r.status,raisedBy:r.raised_by,createdAt:r.created_at?new Date(r.created_at).getTime():null,resolvedAt:r.resolved_at?new Date(r.resolved_at).getTime():null,resolvedBy:r.resolved_by}));
-  if(state.__synced&&['sales','expenses','products','customers','orders'].includes(table))state.__synced[table]=JSON.parse(JSON.stringify(state[table]));
+  if(state.__synced&&['sales','expenses','products','customers','orders','findings'].includes(table==='audit_findings'?'findings':table))state.__synced[table==='audit_findings'?'findings':table]=JSON.parse(JSON.stringify(state[table==='audit_findings'?'findings':table]));
 }
 function startDashboardRealtime(companyId){
   if(!companyId||!session||session.role!=='company_admin')return;
@@ -1004,7 +1004,7 @@ function renderDashboard(){
     const day=new Date(start);day.setDate(start.getDate()+i);
     const from=day.getTime(),to=from+86400000;
     const daySales=periodSales.filter(s=>s.time>=from&&s.time<to);
-    daily.push({label:dashboardRangeDays===7?day.toLocaleDateString('en-NG',{weekday:'short'}):day.toLocaleDateString('en-NG',{day:'numeric',month:'short'}),revenue:daySales.reduce((sum,s)=>sum+(Number(s.total)||0),0),cost:daySales.reduce((sum,s)=>sum+(Number(s.cost)||0),0)});
+    daily.push({label:(i===0||i===dashboardRangeDays-1||i%(dashboardRangeDays===7?1:dashboardRangeDays===30?5:14)===0)?(dashboardRangeDays===7?day.toLocaleDateString('en-NG',{weekday:'short'}):day.toLocaleDateString('en-NG',{day:'numeric',month:'short'})):'',revenue:daySales.reduce((sum,s)=>sum+(Number(s.total)||0),0),cost:daySales.reduce((sum,s)=>sum+(Number(s.cost)||0),0)});
   }
   const totalEl=document.getElementById('d-trend-total');if(totalEl)totalEl.textContent=fmtN(revenue)+' total revenue';
   chiLine('d-chart',{labels:daily.map(d=>d.label),series:[{label:'Revenue',data:daily.map(d=>d.revenue),color:CHIITECH_CHART_COLORS.neon}]});
