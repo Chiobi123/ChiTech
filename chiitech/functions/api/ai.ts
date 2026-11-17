@@ -1,4 +1,4 @@
-interface Env { AI?: { run: (model:string,input:Record<string,unknown>)=>Promise<any> }; }
+interface Env { AI?: { run: (model:string,input:Record<string,unknown>)=>Promise<any> }; SUPABASE_SERVICE_ROLE_KEY?: string; }
 interface Ctx { request:Request; env:Env; }
 const SB="https://qmypqghktxlscibgxgxo.supabase.co";
 const KEY="sb_publishable_TTO8Oaxa7Gwoa6lUDz8hZQ_RDCQmhc0";
@@ -98,7 +98,8 @@ async function handle(ctx:Ctx){
  const messages=[{role:"system",content:system},...history,{role:"user",content:user}];
  const inputTokens=Math.ceil(JSON.stringify(messages).length/4);
  const estimate=Math.ceil(inputTokens*0.0055+OUT*0.0364);
- const qr=await sb("/rest/v1/rpc/reserve_ai_quota",token,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({p_estimated_neurons:estimate})});
+ if(!env.SUPABASE_SERVICE_ROLE_KEY)return json({error:"ChiiTech AI server configuration is incomplete. Please try again later."},503);
+ const qr=await sb("/rest/v1/rpc/reserve_ai_quota",env.SUPABASE_SERVICE_ROLE_KEY,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({p_user_id:u.id,p_company_id:p.company_id,p_estimated_neurons:estimate})});
  if(!qr.ok)return json({error:"AI usage controls are not ready. Please try again shortly."},503);
  const quota=await qr.json();
  if(!quota?.allowed){
