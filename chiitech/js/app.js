@@ -2280,15 +2280,16 @@ function askAI(preset){
     addMsg('ai',answer,true);
     aiHistory.push({q:question,a:String(answer).replace(/<[^>]*>/g,'').slice(0,1000)});
     if(aiHistory.length>8)aiHistory=aiHistory.slice(-8);
-  }).catch(()=>{
+  }).catch(error=>{
     const win=document.getElementById('chat-window');if(win.lastChild)win.removeChild(win.lastChild);
-    addMsg('ai',answerQuestion(question),true);
+    addMsg('ai',escapeHtml(error?.message||'ChiiTech AI is temporarily unavailable. Please try again shortly.'),false);
   });
 }
 
 /* Cloudflare Pages AI gateway. Tenant identity and business context are
    derived server-side from the verified Supabase session and RLS. */
 async function aiChat(question){
+  if(/^(hi|hello|hey|good morning|good afternoon|good evening|how far|how you dey)[!.?\\s]*$/i.test(question)) return `Hey ${escapeHtml(session?.name||'there')}! Good to see you. How's business going today?`;
   const {data:authData,error:authError}=await sb.auth.getSession();
   const token=authData?.session?.access_token;
   if(authError||!token)throw new Error('Your session has expired. Please sign in again.');
