@@ -49,7 +49,7 @@ const CHIITECH_CHART_COLORS = {
   danger: '#F16A6A',
   warn: '#E8BE4F',
   blue: '#72B7A1',
-  purple: '#A7B6AE',
+  slate: '#A7B6AE',
 };
 
 /** Rotating palette used when a chart has more than one series/segment. */
@@ -57,7 +57,7 @@ const CHI_PALETTE = [
   CHIITECH_CHART_COLORS.neon,
   CHIITECH_CHART_COLORS.warn,
   CHIITECH_CHART_COLORS.blue,
-  CHIITECH_CHART_COLORS.purple,
+  CHIITECH_CHART_COLORS.slate,
   CHIITECH_CHART_COLORS.danger,
 ];
 
@@ -139,7 +139,7 @@ function chiObserve(canvas, redraw){
 /**
  * chiBar('canvas-id', {
  *   labels: ['Mon','Tue',...],
- *   series: [{label:'Sales', data:[1,2,3], color:'#8B7CF6'}, ...],
+ *   series: [{label:'Sales', data:[1,2,3], color:'#20C997'}, ...],
  *   stacked: false,     // true = bars stack on top of each other
  *   currency: true       // true = format values as ₦ on hover/axis
  * })

@@ -383,15 +383,23 @@ async function loginWithGoogle(){
 
 /** Shown when a signed-in OAuth identity has no ChiiTech profile:
  *  no dashboard, no role — onboarding form plus guidance. */
-function showUnlinkedNotice(email){
+function showUnlinkedNotice(userOrEmail){
   clearSession(); session = null; myCompany = null;
+  const user = userOrEmail && typeof userOrEmail==='object' ? userOrEmail : null;
+  const email = user?.email || String(userOrEmail||'unknown address');
+  const metadata = user?.user_metadata || {};
+  const suggestedName = String(metadata.full_name || metadata.name || metadata.display_name || '').trim();
   try{ document.getElementById('app').classList.add('hidden'); }catch(e){}
   try{ document.getElementById('login-screen').classList.remove('hidden'); }catch(e){}
   try{
     document.getElementById('oauth-email').textContent = email;
+    ['oauth-name','oauth-worker-name','oauth-auditor-name'].forEach(id=>{
+      const field=document.getElementById(id);
+      if(field && !field.value) field.value=suggestedName;
+    });
+    showOAuthRoleChooser();
     showAuthView('oauth');
   }catch(e){}
-  authError(`Signed in with Google as ${email}, but that address isn't linked to a workspace yet. Create your company above, or accept a team invitation — your existing email/password login still works.`);
 }
 
 /** Waiting room: invite accepted but admin hasn't approved yet. The login
@@ -415,7 +423,24 @@ function noSuchInvitation(token){
   return `No invitation matches “…${tail}”. Most likely: (1) an old/used token — ask your admin for the newest one, (2) a partial copy — open the invitation LINK instead of typing, (3) wrong account type — worker tokens go in Join, auditor tokens here (either works, but the link is safest).`;
 }
 
-function hideOAuthSignup(){ try{ showAuthView('signin'); }catch(e){} }
+function hideOAuthSignup(){ try{ showOAuthRoleChooser(); showAuthView('signin'); }catch(e){} }
+
+function showOAuthRoleChooser(){
+  document.querySelectorAll('#auth-view-oauth .oauth-step').forEach(el=>el.classList.add('hidden'));
+  const chooser=document.getElementById('oauth-role-choice');
+  if(chooser) chooser.classList.remove('hidden');
+  const err=document.getElementById('auth-error');
+  if(err) err.classList.add('hidden');
+}
+
+function chooseOAuthRole(role){
+  if(!['owner','worker','auditor'].includes(role)) return;
+  document.querySelectorAll('#auth-view-oauth .oauth-step').forEach(el=>el.classList.add('hidden'));
+  const pane=document.getElementById('oauth-role-'+role);
+  if(pane) pane.classList.remove('hidden');
+  const err=document.getElementById('auth-error');
+  if(err) err.classList.add('hidden');
+}
 
 /** Google sign-up for owners: creates the company under the current OAuth
  *  identity (no password involved) and signs them in as company_admin. */
@@ -437,6 +462,51 @@ async function registerCompanyWithOAuth(){
   setTimeout(()=> toast(`Company created! Your company code is ${rpcData[0].company_code}.`, 6000), 400);
 }
 
+/** Join an existing company using the Google identity and a single-use worker invite. */
+async function acceptGoogleWorkerInvite(){
+  const token=(document.getElementById('oauth-worker-token').value||'').replace(/\s+/g,'');
+  const name=document.getElementById('oauth-worker-name').value.trim();
+  const {data:{user}}=await sb.auth.getUser();
+  if(!user){authError('Your Google session expired. Sign in with Google again.');return;}
+  if(isSuperAdmin(user.email)){authError('The reserved platform account cannot join a company as a worker.');return;}
+  if(!token||!name){authError('Enter your full name and worker invitation token.');return;}
+  const {error:metaError}=await sb.auth.updateUser({data:{full_name:name,name}});
+  if(metaError){authError('Could not save your Google profile name. Please try again.');return;}
+  const {error}=await sb.rpc('accept_invitation',{p_token:token});
+  if(error){authError(noSuchInvitation(token));return;}
+  const built=await buildSessionFromProfile(user);
+  if(!built||built.role!=='worker'){
+    await sb.auth.signOut();clearSession();session=null;
+    authError('The invitation was accepted but the worker profile could not be verified. Contact the company administrator.');
+    return;
+  }
+  if(built.active===false){
+    await sb.auth.signOut();clearSession();session=null;
+    showWaitingRoom('worker','Your worker invitation was accepted. Your company administrator must assign your departments and approve your access before you can enter the workspace.');
+    return;
+  }
+  clearSession();session=built;saveSession(session);
+  await bootApp({identityVerified:true});
+  setTimeout(()=>toast('Your worker access is active. Welcome to the company workspace.',5000),400);
+}
+
+/** Join as an invited external auditor. The existing invitation RPC assigns the role;
+ *  finishAuditorSignIn then checks the company code and enforces read-only access. */
+async function acceptGoogleAuditorInvite(){
+  const code=(document.getElementById('oauth-auditor-code').value||'').replace(/\s+/g,'').toUpperCase();
+  const token=(document.getElementById('oauth-auditor-token').value||'').replace(/\s+/g,'');
+  const name=document.getElementById('oauth-auditor-name').value.trim();
+  const {data:{user}}=await sb.auth.getUser();
+  if(!user){authError('Your Google session expired. Sign in with Google again.');return;}
+  if(isSuperAdmin(user.email)){authError('The reserved platform account cannot register as an auditor.');return;}
+  if(!code||!token||!name){authError('Enter your full name, company code and auditor invitation token.');return;}
+  const {error:metaError}=await sb.auth.updateUser({data:{full_name:name,name}});
+  if(metaError){authError('Could not save your Google profile name. Please try again.');return;}
+  const {error}=await sb.rpc('accept_auditor_invite',{p_token:token});
+  if(error){authError(noSuchInvitation(token));return;}
+  await finishAuditorSignIn(code,true);
+}
+
 /** Google login for already-linked accounts: role comes from the profiles
  *  table only — OAuth never grants a role by itself. */
 async function finishOAuthLogin(){
@@ -454,7 +524,7 @@ async function finishOAuthLogin(){
   scrubAuthFragment();
   const built = await buildSessionFromProfile(user);
   if(built === 'deleted'){ await sb.auth.signOut(); hideOAuthSignup(); authError('This account has been closed.'); return; }
-  if(!built){ showUnlinkedNotice(user.email || 'unknown address'); return; }
+  if(!built){ showUnlinkedNotice(user); return; }
   if(built.active===false){ await sb.auth.signOut(); hideOAuthSignup(); authError('Your account is waiting for your admin to approve it. Ask them to assign your access first.'); return; }
   clearSession(); session = built; saveSession(session);
   hideOAuthSignup();
@@ -705,9 +775,19 @@ async function logout(){
 
 /* ---------------- Legal screen (unchanged) ---------------- */
 function showLegal(which){
+  const allowed = ['privacy','terms','cookies','refund'];
+  if(!allowed.includes(which)) which='privacy';
   document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('about-screen')?.classList.add('hidden');
   document.getElementById('legal-screen').classList.remove('hidden');
-  document.querySelectorAll('[data-legal]').forEach(el=>el.classList.toggle('active', el.dataset.legal===which));
+  document.querySelectorAll('[data-legal]').forEach(el=>{
+    const active = el.dataset.legal===which;
+    el.classList.toggle('active',active);
+    el.setAttribute('aria-pressed',String(active));
+  });
+  document.querySelectorAll('.legal-pane').forEach(el=>{
+    el.classList.toggle('hidden',el.id!=='legal-'+which);
+  });
 }
 function hideLegal(){
   document.getElementById('legal-screen').classList.add('hidden');
