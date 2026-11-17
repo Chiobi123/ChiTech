@@ -46,9 +46,9 @@ async function scan(dir) {
     const full = join(dir, item.name);
     if (item.isDirectory()) await scan(full);
     else {
-      const rel = relative(dist, full).replaceAll('\\\\', '/');
-      const isPagesFunctionSource = rel.startsWith('functions/') && /\\.ts$/i.test(item.name);
-      if (/\\.(md|sql|pdf|zip|toml|ts|json)$/i.test(item.name) && !isPagesFunctionSource) forbidden.push(rel);
+      const rel = relative(dist, full).replaceAll('\\', '/');
+      const isPagesFunctionSource = rel.startsWith('functions/') && /\.ts$/i.test(item.name);
+      if (/\.(md|sql|pdf|zip|toml|ts|json)$/i.test(item.name) && !isPagesFunctionSource) forbidden.push(rel);
     }
   }
 }
