@@ -3,13 +3,14 @@
 ## Status (2026-11-17, verified against live)
 
 This folder holds **50** SQL files, including the current AI quota migrations
-47 and 48. The live Supabase project records **47** applied migrations; the
-latest recorded version is `20261117070004`.
+47 and 48. The live Supabase project records **48** applied migrations; the
+latest recorded version is `20261117070253`.
 
-Migrations 47 and 48 were applied successfully to the existing production
+Migrations 47, 48 and 49 were applied successfully to the existing production
 project. Migration 47 creates daily platform/company/user AI usage accounting.
-Migration 48 restricts quota reservations to the trusted server role so
-end-user sessions cannot directly drain the shared AI allowance.
+Migration 48 hardened the quota RPC, and migration 49 restored the simpler
+self-scoped authenticated call: the RPC derives the caller's company from
+`auth.uid()` and cannot consume another company's allocation.
 
 The historical migration-history discrepancies below still matter: do not
 assume every repository SQL file maps one-to-one to a recorded live migration.
