@@ -10,7 +10,7 @@ sales, expenses, products, customers, orders, tax, an append-only audit trail, a
 external-auditor read-only console, and a platform super-admin console.
 
 - **Frontend:** static HTML/CSS/JS, single page (`index.html` + `js/*.js`), no build step.
-- **Backend:** Supabase (Postgres + Auth + RLS + Edge Functions).
+- **Backend:** Supabase (Postgres + Auth + RLS) plus Cloudflare Pages Functions for server-side AI gateway routes.
 - **Hosting:** Cloudflare Pages, project name `chiitech`, deploy directory `chiitech/`.
 
 ## 2. Repository layout
@@ -36,6 +36,7 @@ ChiiTech_Professional 10/          <- git repo root (github.com/Chiobi123/ChiTec
       migrations/                  <- 41 SQL files, applied in filename order
       functions/ai-assist/         <- Edge Function (server-side LLM layer)
     loadtest/k6-staging.js         <- k6 load test (not deployed)
+    functions/api/ai.ts            <- authenticated Cloudflare Workers AI gateway
     _headers                       <- CSP + cache policy (not a doc)
     .pagesignore                   <- what must never be published
     *.md, *.pdf                    <- internal docs, excluded from deploy
