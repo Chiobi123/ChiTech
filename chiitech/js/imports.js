@@ -249,27 +249,25 @@ function renderImportReview(){
  *  server-side key, evidence-bound prose, silent fallback to the
  *  deterministic findings already on screen. */
 async function explainImportWithAI(){
-  const box = document.getElementById('imp-ai-result');
-  if(!importDraft || !box) return;
-  box.innerHTML = '<div class="text-muted">Asking the AI…</div>';
-  try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(()=>ctrl.abort(), 30000);
-    const {data, error} = await sb.functions.invoke('ai-assist', {
-      body: { mode:'import_deep', company_id: session.companyId, batch_id: importDraft.batchId },
-      signal: ctrl.signal
+  const box=document.getElementById('imp-ai-result');
+  if(!importDraft||!box||!session||session.role!=='company_admin')return;
+  box.innerHTML='<div class="text-muted">Reviewing the staged records…</div>';
+  try{
+    const {data:authData,error:authError}=await sb.auth.getSession();
+    const token=authData?.session?.access_token;
+    if(authError||!token)throw new Error('Your session has expired. Please sign in again.');
+    const response=await fetch('/api/ai',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({mode:'import_deep',batch_id:importDraft.batchId})
     });
-    clearTimeout(timer);
-    if(!error && data && data.answer){
-      if(data.structured){
-        renderStructuredAIReview(box, data.structured);
-        return;
-      }
-      box.innerHTML = `<div class="playbook">✦ ${importEsc(data.answer).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>')}</div>`;
-      return;
-    }
-  } catch(e){ /* fall through */ }
-  box.innerHTML = '<div class="text-muted">AI unavailable right now — the automated findings above remain the audited baseline.</div>';
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'AI import review is unavailable.');
+    if(data.structured){renderStructuredAIReview(box,data.structured);return;}
+    if(data.answer){box.innerHTML='<div class="playbook">✦ '+importEsc(data.answer).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>')+'</div>';return;}
+    throw new Error('AI returned no review.');
+  }catch(e){
+    box.innerHTML='<div class="text-muted">'+importEsc(e.message||'AI unavailable right now')+' — the automated findings above remain the audited baseline.</div>';
+  }
 }
 
 /** Render structured AI findings (anomalies, patterns, cross-references, recommendations). */
