@@ -2268,58 +2268,43 @@ function addMsg(role, text, isHtml){
   win.scrollTop = win.scrollHeight;
 }
 
-let aiHistory = []; // last 3 exchanges — short conversational memory
+let aiHistory = []; // eight recent exchanges for contextual follow-ups
 
 function askAI(preset){
-  const input = document.getElementById('ai-input');
-  const question = (preset || input.value).trim();
-  if(!question) return;
-  addMsg('user', question, false);
-  input.value = '';
-  addMsg('ai', 'Thinking…', false);
+  const input=document.getElementById('ai-input');
+  const question=(preset||input.value).trim();
+  if(!question)return;
+  addMsg('user',question,false);input.value='';addMsg('ai','Thinking…',false);
   aiChat(question).then(answer=>{
-    const win = document.getElementById('chat-window');
-    if(win.lastChild) win.removeChild(win.lastChild);
-    addMsg('ai', answer, true);
-    aiHistory.push({q: question, a: String(answer).replace(/<[^>]*>/g, '').slice(0, 500)});
-    if(aiHistory.length > 3) aiHistory = aiHistory.slice(-3);
+    const win=document.getElementById('chat-window');if(win.lastChild)win.removeChild(win.lastChild);
+    addMsg('ai',answer,true);
+    aiHistory.push({q:question,a:String(answer).replace(/<[^>]*>/g,'').slice(0,1000)});
+    if(aiHistory.length>8)aiHistory=aiHistory.slice(-8);
   }).catch(()=>{
-    const win = document.getElementById('chat-window');
-    if(win.lastChild) win.removeChild(win.lastChild);
-    try { addMsg('ai', answerQuestion(question), true); }
-    catch(e){ addMsg('ai', 'Sorry — I could not answer that. Try asking about sales, stock, cash, customers or tax.', false); }
+    const win=document.getElementById('chat-window');if(win.lastChild)win.removeChild(win.lastChild);
+    addMsg('ai',answerQuestion(question),true);
   });
 }
 
-/** LLM layer with deterministic fallback: figures are computed locally from
- *  live state (never raw ledgers); the function only writes prose around
- *  them. Any failure — offline, timeout, quota — falls back silently. */
+/* Cloudflare Pages AI gateway. Tenant identity and business context are
+   derived server-side from the verified Supabase session and RLS. */
 async function aiChat(question){
-  let figures;
-  try {
-    const weekCut = Date.now() - 7*864e5;
-    figures = {
-      sales_today: state.sales.filter(s=>s.time>=todayRange()).reduce((a,s)=>a+s.total,0),
-      expenses_today: state.expenses.filter(e=>e.time>=todayRange()).reduce((a,e)=>a+e.amount,0),
-      sales_7d: state.sales.filter(s=>s.time>=weekCut).reduce((a,s)=>a+s.total,0),
-      low_stock: state.products.filter(p=>p.stock<=p.reorder).map(p=>({name:p.name, stock:p.stock})),
-      owed_to_me: state.customers.filter(c=>(c.balanceDue||0)>0).map(c=>({name:c.name, amount:c.balanceDue})),
-      flagged_expenses: state.expenses.filter(e=>e.flag).length,
-      health_score: computeHealthScore()
-    };
-  } catch(e){ return answerQuestion(question); }
-  try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(()=>ctrl.abort(), 12000);
-    const {data, error} = await sb.functions.invoke('ai-assist', {
-      body: { mode:'chat', company_id: session.companyId, question, figures,
-        history: aiHistory.map(h=>({q:h.q, a:h.a})) },
-      signal: ctrl.signal
+  const {data:authData,error:authError}=await sb.auth.getSession();
+  const token=authData?.session?.access_token;
+  if(authError||!token)throw new Error('Your session has expired. Please sign in again.');
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),25000);
+  try{
+    const response=await fetch('/api/ai',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({mode:'chat',question,history:aiHistory.map(h=>({q:h.q,a:h.a}))}),
+      signal:ctrl.signal
     });
-    clearTimeout(timer);
-    if(!error && data && data.answer) return escapeHtml(data.answer).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-  } catch(e){ /* fall through to local baseline */ }
-  return answerQuestion(question);
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)throw new Error(data.error||'ChiiTech AI is temporarily unavailable.');
+    if(!data.answer)throw new Error('ChiiTech AI returned an empty response.');
+    return escapeHtml(data.answer).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+  }finally{clearTimeout(timer);}
 }
 
 function answerQuestion(q){
@@ -2399,7 +2384,7 @@ function answerQuestion(q){
     return `You have ${state.customers.length} customer(s) on record. See the Customers page for their tiers and lifetime value.`;
   }
   if(/^(hi|hello|hey)\b/.test(ql)){
-    return `Hello! I can answer questions about sales, stock, customers, orders, tax, or your audit status — try one of the suggestions below, or just ask.`;
+    return `Hey ${escapeHtml(session?.name||'there')}! Good to see you. How's business going today?`;
   }
-  return `I can help with sales, stock, profit, tax, orders, customers, debts, team and audit-readiness questions — try one of the suggestions below, or ask me something specific.`;
+  return `I can't reach the ChiiTech AI service right now, so I don't want to guess about your workspace. Please try again shortly.`;
 }
