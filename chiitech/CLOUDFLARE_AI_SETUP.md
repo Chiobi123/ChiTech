@@ -8,7 +8,8 @@ Gemini or Anthropic API key is required.
 1. Cloudflare Dashboard → Workers & Pages → the existing \`chiitech\` Pages project.
 2. Settings → Bindings → Production → Add → Workers AI.
 3. Variable name must be exactly \`AI\`.
-4. Save and redeploy the production Pages project.
+4. Add a production secret named `SUPABASE_SERVICE_ROLE_KEY` containing the existing Supabase project's service-role key. This key must remain a server-side secret and must never be added to frontend JavaScript, HTML, GitHub, or logs.
+5. Save and redeploy the production Pages project.
 
 Do not change the Pages build root or add a Wrangler configuration file.
 The existing Pages project root is \`chiitech/\`; Pages discovers its
