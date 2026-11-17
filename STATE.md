@@ -270,4 +270,4 @@ Branch: `feature/priority-1-to-7-brand-auth-legal-mobile`.
 - Remove the legacy Groq API secret from Supabase Edge Function secrets only after confirming no other deployed function uses it. Never expose or print secret values.
 - Neuron budget is estimated using published model rates; calibrate against Cloudflare analytics before increasing limits.
 
-- Security hardening follow-up migration 48 makes quota reservation callable only by the trusted server role. The Cloudflare Pages Function now requires `SUPABASE_SERVICE_ROLE_KEY` as a server-side secret solely for the reservation RPC; all business-record reads still use the end-user JWT and RLS.
+- Quota reservation is self-scoped: the RPC derives user/company from the authenticated JWT and can only consume that company's dynamic allocation. Migration 49 restores this safe authenticated flow, so no Supabase service-role secret is needed in Cloudflare.
