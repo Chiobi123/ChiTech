@@ -255,3 +255,17 @@ Branch: `feature/priority-1-to-7-brand-auth-legal-mobile`.
 - No production frontend deployment yet. Cloudflare Pages did not provide a preview deployment for this branch (both short and full preview hostnames returned `Deployment Not Found`), so browser verification of the changed frontend is blocked until a preview build is available. Migration 46 was applied to live Supabase under recorded version `20261116232906`; both invitation RPC definitions were verified after application. Live public audit on 2026-11-16 observed build `20261116d`; production frontend deployment must be verified after branch validation.
 - Before launch: operator legal identity, business address, privacy/support contact, data-retention schedule, provider data-processing terms and cross-border safeguards still require confirmation and legal review.
 - Google invitation display-name persistence migration 46 is applied and verified. It reads Google profile name metadata only for display; authorization still derives from database invitation and profile state.
+
+
+## AI runtime replacement — 2026-11-17
+
+- Replaced user-facing chat and import-review calls with the Cloudflare Pages Function at `chiitech/functions/api/ai.ts` (`POST /api/ai`).
+- Primary model configured as `@cf/zai-org/glm-4.7-flash` via native Cloudflare Workers AI binding `AI`.
+- Legacy Groq-backed Supabase `ai-assist` source is retired and deployed function replaced with HTTP 410. Do not call or restore it.
+- Gateway validates Supabase Auth, derives company and role from the active profile, and retrieves records using the caller JWT so existing RLS applies. Client-supplied company IDs and financial figures are not trusted.
+- Added migration 47: atomic daily estimated-Neuron reservations with an 8,000 internal global budget, 2,000 safety reserve, dynamic equal company allocations, 30% normal per-user share, and shared-pool access until 70% company utilisation.
+- Added `AI_ARCHITECTURE.md` and `CLOUDFLARE_AI_SETUP.md`.
+- Updated privacy disclosures and frontend cache versions. Greetings are answered naturally without an inference call; AI service/quota errors are displayed instead of silently falling back to generic canned responses.
+- **Production activation is not yet complete:** add a Production Workers AI binding named `AI` to the existing Cloudflare Pages project and redeploy. Do not claim AI is live until the binding is configured and `/api/ai` is smoke-tested against production.
+- Remove the legacy Groq API secret from Supabase Edge Function secrets only after confirming no other deployed function uses it. Never expose or print secret values.
+- Neuron budget is estimated using published model rates; calibrate against Cloudflare analytics before increasing limits.
