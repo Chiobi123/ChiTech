@@ -21,7 +21,7 @@ const site = join(root, 'chiitech');
 const dist = join(root, 'dist');
 
 // Runtime files only. Anything not listed here is internal and stays unpublished.
-const RUNTIME = ['index.html', '_headers', 'css', 'js'];
+const RUNTIME = ['index.html', '_headers', 'css', 'js', 'functions'];
 
 const indexHtml = await readFile(join(site, 'index.html'), 'utf8');
 const version = (indexHtml.match(/\?v=([0-9A-Za-z]+)/) || [])[1] || 'none';
@@ -45,7 +45,11 @@ async function scan(dir) {
   for (const item of await readdir(dir, { withFileTypes: true })) {
     const full = join(dir, item.name);
     if (item.isDirectory()) await scan(full);
-    else if (/\.(md|sql|pdf|zip|toml|ts|json)$/i.test(item.name)) forbidden.push(relative(dist, full));
+    else {
+      const rel = relative(dist, full).replaceAll('\\\\', '/');
+      const isPagesFunctionSource = rel.startsWith('functions/') && /\\.ts$/i.test(item.name);
+      if (/\\.(md|sql|pdf|zip|toml|ts|json)$/i.test(item.name) && !isPagesFunctionSource) forbidden.push(rel);
+    }
   }
 }
 await scan(dist);
