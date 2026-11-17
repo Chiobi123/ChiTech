@@ -7,7 +7,7 @@ Primary model: \`@cf/zai-org/glm-4.7-flash\`. No paid external AI-provider API k
 1. Cloudflare Dashboard → Workers & Pages → the existing \`chiitech\` Pages project.
 2. Settings → Bindings → Production → Add → Workers AI.
 3. Variable name must be exactly \`AI\`.
-4. Add a production secret named `SUPABASE_SERVICE_ROLE_KEY` containing the existing Supabase project's service-role key. This key must remain a server-side secret and must never be added to frontend JavaScript, HTML, GitHub, or logs.
+4. Open Settings → Variables and Secrets → Add. Create an encrypted Production secret named `SUPABASE_SERVICE_ROLE_KEY` containing the existing Supabase project's service-role key. Never put this key in frontend JavaScript, HTML, GitHub, or logs.
 5. Save and redeploy the production Pages project.
 
 Do not change the Pages build root or add a Wrangler configuration file.
