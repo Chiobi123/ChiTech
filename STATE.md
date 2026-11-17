@@ -269,3 +269,5 @@ Branch: `feature/priority-1-to-7-brand-auth-legal-mobile`.
 - **Production activation is not yet complete:** add a Production Workers AI binding named `AI` to the existing Cloudflare Pages project and redeploy. Do not claim AI is live until the binding is configured and `/api/ai` is smoke-tested against production.
 - Remove the legacy Groq API secret from Supabase Edge Function secrets only after confirming no other deployed function uses it. Never expose or print secret values.
 - Neuron budget is estimated using published model rates; calibrate against Cloudflare analytics before increasing limits.
+
+- Security hardening follow-up migration 48 makes quota reservation callable only by the trusted server role. The Cloudflare Pages Function now requires `SUPABASE_SERVICE_ROLE_KEY` as a server-side secret solely for the reservation RPC; all business-record reads still use the end-user JWT and RLS.
