@@ -7,8 +7,7 @@ Primary model: \`@cf/zai-org/glm-4.7-flash\`. No paid external AI-provider API k
 1. Cloudflare Dashboard → Workers & Pages → the existing \`chiitech\` Pages project.
 2. Settings → Bindings → Production → Add → Workers AI.
 3. Variable name must be exactly \`AI\`.
-4. Open Settings → Variables and Secrets → Add. Create an encrypted Production secret named `SUPABASE_SERVICE_ROLE_KEY` containing the existing Supabase project's service-role key. Never put this key in frontend JavaScript, HTML, GitHub, or logs.
-5. Save and redeploy the production Pages project.
+4. Save and redeploy the production Pages project.
 
 Do not change the Pages build root or add a Wrangler configuration file.
 The existing Pages project root is \`chiitech/\`; Pages discovers its
@@ -19,7 +18,9 @@ The gateway validates the Supabase access token, derives the company and
 role from the user's active database profile, and retrieves business records
 using the caller's JWT so Supabase RLS remains the authorization boundary.
 The request body cannot choose a different tenant. Deep import review is
-company-admin-only.
+company-admin-only. Quota reservations use the signed-in user's JWT and the
+RPC derives their user/company identity itself; a user can only consume their
+own company's allocation, never another company's budget.
 
 The database quota manager reserves up to 8,000 estimated Neurons per day
 globally and leaves 2,000 of the free 10,000 daily Neurons as a safety
