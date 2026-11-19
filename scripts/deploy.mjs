@@ -21,7 +21,10 @@ const site = join(root, 'chiitech');
 const dist = join(root, 'dist');
 
 // Runtime files only. Anything not listed here is internal and stays unpublished.
-const RUNTIME = ['index.html', '_headers', 'css', 'js', 'functions'];
+// `functions` is deliberately NOT copied into dist: Cloudflare requires the
+// functions directory at the project root, adjacent to the output dir — never
+// inside it (https://developers.cloudflare.com/pages/functions/get-started/).
+const RUNTIME = ['index.html', '_headers', 'css', 'js'];
 
 const indexHtml = await readFile(join(site, 'index.html'), 'utf8');
 const version = (indexHtml.match(/\?v=([0-9A-Za-z]+)/) || [])[1] || 'none';
@@ -59,15 +62,23 @@ if (forbidden.length) {
   process.exit(1);
 }
 
+let exitCode = 0;
+const stagedFunctions = join(root, 'functions');
 try {
+  // Stage Pages Functions at the project root (adjacent to dist/) — wrangler
+  // only compiles a functions/ directory that is NOT inside the static root.
+  await rm(stagedFunctions, { recursive: true, force: true });
+  await cp(join(site, 'functions'), stagedFunctions, { recursive: true });
   execSync('wrangler pages deploy dist --project-name chiitech', { cwd: root, stdio: 'inherit' });
 } catch {
   console.error('\nDeploy failed.');
   console.error('If this is an auth error, run: npm run login:cf\n');
-  process.exit(1);
+  exitCode = 1;
 } finally {
   await rm(dist, { recursive: true, force: true });
+  await rm(stagedFunctions, { recursive: true, force: true });
 }
+if (exitCode) process.exit(exitCode);
 
 console.log('\nDeployed. Now verify:');
 console.log('  1. Open https://chiitech.pages.dev and hard-reload.');

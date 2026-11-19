@@ -12,3 +12,7 @@
 
 # deploy staging output (built by scripts/deploy.mjs)
 /dist/
+
+# Pages Functions staged at the project root during deploy only
+# (source of truth is chiitech/functions — leading / keeps that unaffected)
+/functions/
