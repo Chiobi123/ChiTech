@@ -271,3 +271,11 @@ Branch: `feature/priority-1-to-7-brand-auth-legal-mobile`.
 - Neuron budget is estimated using published model rates; calibrate against Cloudflare analytics before increasing limits.
 
 - Quota reservation is self-scoped: the RPC derives user/company from the authenticated JWT and can only consume that company's dynamic allocation. Migration 49 restores this safe authenticated flow, so no Supabase service-role secret is needed in Cloudflare.
+
+## Production deployment and AI activation — 2026-11-19
+
+- Deployed the accumulated `main` work to production (`npm run deploy`): final deployment `baa87b02`, `chiitech.pages.dev` serves asset version `20261117a`; README catch-all still returns the app shell; live CSS byte-identical to local.
+- Fixed `scripts/deploy.mjs`: Pages Functions had been staged inside `dist/`, which Cloudflare never compiles (docs require the functions directory at the project root, outside the static root). Functions are now staged at the project root adjacent to `dist/` for the deploy only and removed afterwards on success *and* failure; root `/functions/` is gitignored. Commit `fix(deploy): stage Pages Functions at project root so the AI bundle compiles`.
+- Enabled the Production Workers AI binding `AI` on the existing Pages project via the Cloudflare API (`deployment_configs.*.ai_bindings: {"AI":{}}` on both environments), echoing the existing compatibility date/flags unchanged, then redeployed.
+- Smoke test passed: `POST /api/ai` without a session returns `401 {"error":"Please sign in again."}` — was `405` while functions were undeployed and `503` before the binding. The "production activation not yet complete" line in the 2026-11-17 section is now satisfied.
+- Local migration files verified current against live (`npm run db:status`: 51 local files, 49 recorded live; 47–49 applied under SQL-editor stamps `20261117065832`/`070004`/`070253`).
