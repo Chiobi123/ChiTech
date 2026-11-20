@@ -27,8 +27,9 @@ globally and leaves 2,000 of the free 10,000 daily Neurons as a safety
 buffer. Active companies share the company pool. A single-user company may
 use its whole allocation; teams have a 30% normal individual share and can
 draw on the shared pool until 70% of the company allocation is consumed.
-Neuron usage is estimated from the published GLM-4.7-Flash input/output
-rates and must be calibrated against Cloudflare analytics.
+Neuron usage is estimated from each routed model's published input/output
+rates (GPT-OSS, Gemma and Qwen — see `ai.ts` `MODELS`) and must be
+calibrated against Cloudflare analytics.
 
 No paid model is an automatic fallback. Benchmark a model replacement before
 changing the model ID and its quota rates.
