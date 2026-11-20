@@ -761,6 +761,7 @@ async function deleteMyAccount(){
 
 async function logout(){
   if(typeof stopDashboardRealtime==='function') stopDashboardRealtime();
+  if(typeof resetAIConversation==='function') resetAIConversation('');
   clearSession();
   session = null;
   myCompany = null;
