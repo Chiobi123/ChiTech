@@ -2274,10 +2274,12 @@ function addMsg(role, text, isHtml){
 
 let aiHistory = [];
 let aiHistoryIdentity = '';
+let aiHistoryAuthScope = '';
 
 function resetAIConversation(identity){
   aiHistory=[];
   aiHistoryIdentity=identity||'';
+  aiHistoryAuthScope='';
   const win=document.getElementById('chat-window');
   if(win){
     win.innerHTML='';
@@ -2319,6 +2321,10 @@ async function aiChat(question,requestIdentity){
   const liveIdentity=[session?.email,session?.companyId||'',session?.role].map(x=>String(x||'').trim().toLowerCase()).join('|');
   if(!session||liveIdentity!==requestIdentity||aiHistoryIdentity!==requestIdentity)throw new Error('Your signed-in workspace changed. Please refresh before continuing.');
   const historyScope=userId+':'+session.companyId;
+  // Include the immutable Supabase Auth user ID in the in-memory scope too.
+  // This catches account recreation or auth-user changes even if email/role/company look identical.
+  if(aiHistoryAuthScope && aiHistoryAuthScope!==historyScope) aiHistory=[];
+  aiHistoryAuthScope=historyScope;
   const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),60000);
   try{
     const response=await fetch('/api/ai',{
