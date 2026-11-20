@@ -2428,3 +2428,49 @@ function answerQuestion(q){
   }
   return `I can't reach the ChiiTech AI service right now, so I don't want to guess about your workspace. Please try again shortly.`;
 }
+
+
+/* Keep the AI composer above Android/iOS keyboards and the fixed mobile nav. */
+(function installAIComposerViewportGuard(){
+  const input = document.getElementById('ai-input');
+  const composer = input?.closest('.chat-input-row');
+  if(!input || !composer) return;
+  const vv = window.visualViewport;
+  let focused = false;
+  let raf = 0;
+  const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
+  const setFocusState = (value) => {
+    focused = value;
+    document.body.classList.toggle('ai-composer-focused', value && isMobile());
+    if(value) scheduleReveal();
+  };
+  const scheduleReveal = () => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      if(!focused || !isMobile()) return;
+      const rect = composer.getBoundingClientRect();
+      const viewportBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+      const safeBottom = 12;
+      if(rect.bottom > viewportBottom - safeBottom || rect.top < 0){
+        composer.scrollIntoView({block:'nearest',behavior:'auto'});
+      }
+    });
+  };
+  input.addEventListener('focus', () => setFocusState(true));
+  input.addEventListener('blur', () => {
+    window.setTimeout(() => {
+      if(document.activeElement !== input) setFocusState(false);
+    }, 180);
+  });
+  vv?.addEventListener('resize', scheduleReveal, {passive:true});
+  vv?.addEventListener('scroll', scheduleReveal, {passive:true});
+  window.addEventListener('resize', () => {
+    if(!isMobile()) document.body.classList.remove('ai-composer-focused');
+    else if(focused) document.body.classList.add('ai-composer-focused');
+    scheduleReveal();
+  }, {passive:true});
+  document.addEventListener('visibilitychange', () => {
+    if(document.hidden) document.body.classList.remove('ai-composer-focused');
+    else if(focused && isMobile()) scheduleReveal();
+  });
+})();
