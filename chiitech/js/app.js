@@ -2293,7 +2293,7 @@ async function aiChat(question){
   const {data:authData,error:authError}=await sb.auth.getSession();
   const token=authData?.session?.access_token;
   if(authError||!token)throw new Error('Your session has expired. Please sign in again.');
-  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),25000);
+  const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),60000);
   try{
     const response=await fetch('/api/ai',{
       method:'POST',
@@ -2305,6 +2305,9 @@ async function aiChat(question){
     if(!response.ok)throw new Error(data.error||'ChiiTech AI is temporarily unavailable.');
     if(!data.answer)throw new Error('ChiiTech AI returned an empty response.');
     return escapeHtml(data.answer).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+  }catch(e){
+    if(e?.name==='AbortError')throw new Error('The assistant took too long to reply. Please try again.');
+    throw e;
   }finally{clearTimeout(timer);}
 }
 
