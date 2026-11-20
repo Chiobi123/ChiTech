@@ -2430,52 +2430,46 @@ function answerQuestion(q){
 }
 
 
-/* Keep the AI composer above Android/iOS keyboards and the fixed mobile nav. */
+/* Keep the AI composer above Android/iOS keyboards and system navigation.
+   Uses the visual viewport when the keyboard opens, hides the app's own
+   mobile nav while typing, and recalculates after rotation/resizes. */
 (function installAIComposerViewportGuard(){
-  const input = document.getElementById('ai-input');
-  const composer = input?.closest('.chat-input-row');
-  if(!input || !composer) return;
-  const vv = window.visualViewport;
-  let focused = false;
-  let raf = 0;
-  const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
-  const setFocusState = (value) => {
-    focused = value;
-    document.body.classList.toggle('ai-composer-focused', value && isMobile());
-    if(value) scheduleReveal();
-  };
-  const scheduleReveal = () => {
+  const input=document.getElementById('ai-input');
+  const composer=input?.closest('.chat-input-row');
+  if(!input||!composer)return;
+  let focused=false,raf=0;
+  const vv=window.visualViewport;
+  const mobile=()=>window.matchMedia('(max-width:900px)').matches;
+  const viewportBottom=()=>vv ? vv.offsetTop+vv.height : window.innerHeight;
+  function reveal(){
     cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => {
-      if(!focused || !isMobile()) return;
-      const rect = composer.getBoundingClientRect();
-      const viewportBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
-      const keyboardGap = vv ? Math.max(0, window.innerHeight - viewportBottom) : 0;
-      document.documentElement.style.setProperty('--ai-keyboard-gap', keyboardGap + 'px');
-      const safeBottom = 12;
-      if(rect.bottom > viewportBottom - safeBottom || rect.top < 0){
+    raf=requestAnimationFrame(()=>{
+      if(!focused||!mobile())return;
+      const bottom=viewportBottom();
+      const keyboardGap=Math.max(0,window.innerHeight-bottom);
+      document.documentElement.style.setProperty('--ai-keyboard-gap',keyboardGap+'px');
+      const rect=composer.getBoundingClientRect();
+      const safeInset=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)'))||0;
+      const clearance=Math.max(12,safeInset+8);
+      if(rect.bottom>bottom-clearance||rect.top<0){
         composer.scrollIntoView({block:'nearest',behavior:'auto'});
       }
     });
-  };
-  input.addEventListener('focus', () => setFocusState(true));
-  input.addEventListener('blur', () => {
-    window.setTimeout(() => {
-      if(document.activeElement !== input) {
-        setFocusState(false);
-        document.documentElement.style.removeProperty('--ai-keyboard-gap');
-      }
-    }, 180);
-  });
-  vv?.addEventListener('resize', scheduleReveal, {passive:true});
-  vv?.addEventListener('scroll', scheduleReveal, {passive:true});
-  window.addEventListener('resize', () => {
-    if(!isMobile()) document.body.classList.remove('ai-composer-focused');
-    else if(focused) document.body.classList.add('ai-composer-focused');
-    scheduleReveal();
-  }, {passive:true});
-  document.addEventListener('visibilitychange', () => {
-    if(document.hidden) document.body.classList.remove('ai-composer-focused');
-    else if(focused && isMobile()) scheduleReveal();
-  });
+  }
+  function setFocused(value){
+    focused=value&&mobile();
+    document.body.classList.toggle('ai-composer-focused',focused);
+    if(focused)reveal();
+    else document.documentElement.style.removeProperty('--ai-keyboard-gap');
+  }
+  input.addEventListener('focus',()=>setFocused(true));
+  input.addEventListener('blur',()=>window.setTimeout(()=>{
+    if(document.activeElement!==input)setFocused(false);
+  },180));
+  vv?.addEventListener('resize',reveal,{passive:true});
+  vv?.addEventListener('scroll',reveal,{passive:true});
+  window.addEventListener('resize',()=>{if(!mobile())setFocused(false);else if(focused)reveal();},{passive:true});
+  window.addEventListener('orientationchange',()=>window.setTimeout(reveal,250),{passive:true});
+  window.addEventListener('pageshow',()=>{if(focused)reveal();},{passive:true});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&focused)reveal();});
 })();
