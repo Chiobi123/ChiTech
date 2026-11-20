@@ -1739,7 +1739,7 @@ body::before{
   content:"";
   position:fixed;
   inset:0;
-  z-index:-1;
+  z-index:0;
   pointer-events:none;
   background-image:url("../assets/chiitech-finance-bg.png");
   background-position:center center;
@@ -1752,7 +1752,7 @@ body::after{
   content:"";
   position:fixed;
   inset:0;
-  z-index:-1;
+  z-index:0;
   pointer-events:none;
   background:linear-gradient(180deg,rgba(4,10,7,.68),rgba(4,10,7,.78));
 }
