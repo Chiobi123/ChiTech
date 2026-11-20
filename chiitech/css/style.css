@@ -1728,25 +1728,66 @@ main .section canvas{display:block;max-width:100%;}
 }
 
 
-/* Approved ChiiTech finance artwork layer.
-   The original JPEG is installed at assets/chiitech-finance-bg.jpg.
-   Artwork itself is never altered; opacity and overlay are display-only. */
-body{background:#080d0a!important;isolation:isolate;}
+/* Approved ChiiTech artwork: exact uploaded source file, display-only fade.
+   Place the original image at chiitech/assets/chiitech-finance-bg.png.
+   No filters, transforms, crops or edits are applied to the source artwork. */
+body{
+  background:#080d0a!important;
+  isolation:isolate;
+}
 body::before{
   content:"";
   position:fixed;
   inset:0;
   z-index:-1;
   pointer-events:none;
-  background:
-    linear-gradient(180deg,rgba(4,10,7,.84),rgba(4,10,7,.88)),
-    url("../assets/chiitech-finance-bg.jpg") center center / cover no-repeat;
-  opacity:.16;
+  background-image:url("../assets/chiitech-finance-bg.png");
+  background-position:center center;
+  background-size:cover;
+  background-repeat:no-repeat;
+  opacity:.18;
   transform:translateZ(0);
 }
-#app{position:relative;z-index:1;background:transparent!important;}
-#app .app-shell,#app main,#app .main,#app .main-inner,
-#app .section{background-color:transparent;}
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:linear-gradient(180deg,rgba(4,10,7,.68),rgba(4,10,7,.78));
+}
+#app,.auth-layout,.about-wrap{
+  position:relative;
+  z-index:1;
+  background:transparent!important;
+}
+/* Glass-jelly finish across authentication, workspace, AI and modal surfaces. */
+.sidebar,.mobile-topbar,.mobile-nav,.auth-hero,.login-card,
+.card,.stat,.dept-check,.playbook,.rootcause,.modal-card,.modal-content,
+.chat-window,.chat-input-row,.section-explainer{
+  background-color:rgba(12,20,16,.70)!important;
+  -webkit-backdrop-filter:blur(16px) saturate(125%);
+  backdrop-filter:blur(16px) saturate(125%);
+  border-color:rgba(145,235,198,.18);
+  box-shadow:0 14px 38px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.045);
+}
+.auth-hero{
+  background:linear-gradient(145deg,rgba(8,18,12,.72),rgba(6,13,9,.76))!important;
+}
+.login-card{
+  background:linear-gradient(145deg,rgba(15,26,20,.76),rgba(9,17,12,.78))!important;
+}
+.card,.stat,.chat-window{
+  background-color:rgba(12,20,16,.66)!important;
+}
+.chat-input-row{
+  background:rgba(7,14,10,.88)!important;
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .sidebar,.mobile-topbar,.mobile-nav,.auth-hero,.login-card,
+  .card,.stat,.dept-check,.playbook,.rootcause,.modal-card,.modal-content,
+  .chat-window,.chat-input-row,.section-explainer{background:#111A16!important;}
+}
 @media(max-width:700px){
-  body::before{background-position:center center;opacity:.13;}
+  body::before{background-position:center center;opacity:.15;}
 }
