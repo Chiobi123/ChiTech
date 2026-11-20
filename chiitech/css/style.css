@@ -1726,3 +1726,27 @@ main .section canvas{display:block;max-width:100%;}
 @media(max-width:900px) and (orientation:landscape){
   body.ai-composer-focused #sec-ai .chat-input-row{bottom:4px;}
 }
+
+
+/* Approved ChiiTech finance artwork layer.
+   The original JPEG is installed at assets/chiitech-finance-bg.jpg.
+   Artwork itself is never altered; opacity and overlay are display-only. */
+body{background:#080d0a!important;isolation:isolate;}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(4,10,7,.84),rgba(4,10,7,.88)),
+    url("../assets/chiitech-finance-bg.jpg") center center / cover no-repeat;
+  opacity:.16;
+  transform:translateZ(0);
+}
+#app{position:relative;z-index:1;background:transparent!important;}
+#app .app-shell,#app main,#app .main,#app .main-inner,
+#app .section{background-color:transparent;}
+@media(max-width:700px){
+  body::before{background-position:center center;opacity:.13;}
+}
