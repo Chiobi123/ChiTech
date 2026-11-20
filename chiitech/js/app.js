@@ -2432,50 +2432,65 @@ function answerQuestion(q){
 
 /* Keep the AI composer above Android/iOS keyboards and the fixed mobile nav. */
 (function installAIComposerViewportGuard(){
-  const input = document.getElementById('ai-input');
-  const composer = input?.closest('.chat-input-row');
-  if(!input || !composer) return;
-  const vv = window.visualViewport;
-  let focused = false;
-  let raf = 0;
-  const isMobile = () => window.matchMedia('(max-width: 900px)').matches;
-  const setFocusState = (value) => {
-    focused = value;
-    document.body.classList.toggle('ai-composer-focused', value && isMobile());
-    if(value) scheduleReveal();
-  };
-  const scheduleReveal = () => {
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => {
-      if(!focused || !isMobile()) return;
-      const rect = composer.getBoundingClientRect();
-      const viewportBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
-      const keyboardGap = vv ? Math.max(0, window.innerHeight - viewportBottom) : 0;
-      document.documentElement.style.setProperty('--ai-keyboard-gap', keyboardGap + 'px');
-      const safeBottom = 12;
-      if(rect.bottom > viewportBottom - safeBottom || rect.top < 0){
+  const input=document.getElementById('ai-input');
+  const composer=input?.closest('.chat-input-row');
+  if(!input||!composer)return;
+
+  const viewport=window.visualViewport;
+  const isMobile=()=>window.matchMedia('(max-width:900px)').matches;
+  let focused=false;
+  let frame=0;
+
+  function clearKeyboardState(){
+    document.body.classList.remove('ai-composer-focused');
+    document.documentElement.style.removeProperty('--ai-keyboard-gap');
+  }
+  function revealComposer(){
+    cancelAnimationFrame(frame);
+    frame=requestAnimationFrame(()=>{
+      if(!focused||!isMobile())return;
+      const visualBottom=viewport ? viewport.offsetTop+viewport.height : window.innerHeight;
+      const keyboardGap=Math.max(0,window.innerHeight-visualBottom);
+      document.documentElement.style.setProperty('--ai-keyboard-gap',keyboardGap+'px');
+      const rect=composer.getBoundingClientRect();
+      const safeBottom=12;
+      if(rect.bottom>visualBottom-safeBottom||rect.top<0){
         composer.scrollIntoView({block:'nearest',behavior:'auto'});
       }
     });
-  };
-  input.addEventListener('focus', () => setFocusState(true));
-  input.addEventListener('blur', () => {
-    window.setTimeout(() => {
-      if(document.activeElement !== input) {
-        setFocusState(false);
-        document.documentElement.style.removeProperty('--ai-keyboard-gap');
+  }
+  function onFocus(){
+    focused=isMobile();
+    if(focused){
+      document.body.classList.add('ai-composer-focused');
+      revealComposer();
+      requestAnimationFrame(revealComposer);
+    }
+  }
+  function onBlur(){
+    window.setTimeout(()=>{
+      if(document.activeElement!==input){
+        focused=false;
+        clearKeyboardState();
       }
-    }, 180);
-  });
-  vv?.addEventListener('resize', scheduleReveal, {passive:true});
-  vv?.addEventListener('scroll', scheduleReveal, {passive:true});
-  window.addEventListener('resize', () => {
-    if(!isMobile()) document.body.classList.remove('ai-composer-focused');
-    else if(focused) document.body.classList.add('ai-composer-focused');
-    scheduleReveal();
-  }, {passive:true});
-  document.addEventListener('visibilitychange', () => {
-    if(document.hidden) document.body.classList.remove('ai-composer-focused');
-    else if(focused && isMobile()) scheduleReveal();
+    },180);
+  }
+
+  input.addEventListener('focus',onFocus);
+  input.addEventListener('blur',onBlur);
+  viewport?.addEventListener('resize',revealComposer,{passive:true});
+  viewport?.addEventListener('scroll',revealComposer,{passive:true});
+  window.addEventListener('resize',()=>{
+    if(!isMobile()){
+      focused=false;
+      clearKeyboardState();
+    }else if(focused){
+      document.body.classList.add('ai-composer-focused');
+      revealComposer();
+    }
+  },{passive:true});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden)clearKeyboardState();
+    else if(focused&&isMobile())revealComposer();
   });
 })();
