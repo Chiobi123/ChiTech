@@ -2283,7 +2283,7 @@ function resetAIConversation(identity){
   const win=document.getElementById('chat-window');
   if(win){
     win.innerHTML='';
-    if(identity) addMsg('ai','Hey! Good to have you here. Ask me about your ChiiTech workspace, follow up on something we've discussed, or just tell me what is on your mind.',false);
+    if(identity) addMsg('ai','Hey! Good to have you here. Ask me about your ChiiTech workspace, follow up on a previous question, or just tell me what is on your mind.',false);
   }
   const input=document.getElementById('ai-input');
   if(input) input.value='';
