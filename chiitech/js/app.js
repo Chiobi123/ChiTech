@@ -236,6 +236,10 @@ async function bootApp(opts){
   // Defensive gate: session.role was rebuilt from the profiles table by the
   // caller (boot validation or fresh login). An unknown role renders nothing.
   if(!session || !['super_admin','company_admin','worker','auditor'].includes(session.role)){ logout(); return; }
+  // A chat transcript belongs only to the identity and workspace that created it.
+  // Clear it whenever a different account, role, or company enters this app.
+  const aiIdentity = [session.email,session.companyId||'',session.role].map(x=>String(x||'').trim().toLowerCase()).join('|');
+  if(typeof resetAIConversation==='function' && aiHistoryIdentity!==aiIdentity) resetAIConversation(aiIdentity);
   document.getElementById('login-screen').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
 
@@ -2268,43 +2272,65 @@ function addMsg(role, text, isHtml){
   win.scrollTop = win.scrollHeight;
 }
 
-let aiHistory = []; // eight recent exchanges for contextual follow-ups
+let aiHistory = [];
+let aiHistoryIdentity = '';
+
+function resetAIConversation(identity){
+  aiHistory=[];
+  aiHistoryIdentity=identity||'';
+  const win=document.getElementById('chat-window');
+  if(win){
+    win.innerHTML='';
+    if(identity) addMsg('ai','Hey! Good to have you here. Ask me about your ChiiTech workspace, follow up on something we've discussed, or just tell me what is on your mind.',false);
+  }
+  const input=document.getElementById('ai-input');
+  if(input) input.value='';
+}
 
 function askAI(preset){
   const input=document.getElementById('ai-input');
   const question=(preset||input.value).trim();
   if(!question)return;
+  const requestIdentity=aiHistoryIdentity;
+  if(!requestIdentity || !session)return;
   addMsg('user',question,false);input.value='';addMsg('ai','Thinking…',false);
-  aiChat(question).then(answer=>{
+  aiChat(question,requestIdentity).then(answer=>{
+    if(aiHistoryIdentity!==requestIdentity)return;
     const win=document.getElementById('chat-window');if(win.lastChild)win.removeChild(win.lastChild);
     addMsg('ai',answer,true);
     aiHistory.push({q:question,a:String(answer).replace(/<[^>]*>/g,'').slice(0,1000)});
     if(aiHistory.length>8)aiHistory=aiHistory.slice(-8);
   }).catch(error=>{
+    if(aiHistoryIdentity!==requestIdentity)return;
     const win=document.getElementById('chat-window');if(win.lastChild)win.removeChild(win.lastChild);
     addMsg('ai',escapeHtml(error?.message||'ChiiTech AI is temporarily unavailable. Please try again shortly.'),false);
   });
 }
 
-/* Cloudflare Pages AI gateway. Tenant identity and business context are
-   derived server-side from the verified Supabase session and RLS. */
-async function aiChat(question){
+/* Cloudflare Pages AI gateway. The backend derives tenant identity from the
+   verified Supabase session; client history is sent only with an identity
+   scope and is discarded server-side whenever that scope does not match. */
+async function aiChat(question,requestIdentity){
   if(/^(hi|hello|hey|good morning|good afternoon|good evening|how far|how you dey)[!.?\\s]*$/i.test(question)) return `Hey ${escapeHtml(session?.name||'there')}! Good to see you. How's business going today?`;
   const {data:authData,error:authError}=await sb.auth.getSession();
   const token=authData?.session?.access_token;
-  if(authError||!token)throw new Error('Your session has expired. Please sign in again.');
+  const userId=authData?.session?.user?.id;
+  if(authError||!token||!userId)throw new Error('Your session has expired. Please sign in again.');
+  const liveIdentity=[session?.email,session?.companyId||'',session?.role].map(x=>String(x||'').trim().toLowerCase()).join('|');
+  if(!session||liveIdentity!==requestIdentity||aiHistoryIdentity!==requestIdentity)throw new Error('Your signed-in workspace changed. Please refresh before continuing.');
+  const historyScope=userId+':'+session.companyId;
   const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),60000);
   try{
     const response=await fetch('/api/ai',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({mode:'chat',question,history:aiHistory.map(h=>({q:h.q,a:h.a}))}),
+      body:JSON.stringify({mode:'chat',question,history_scope:historyScope,history:aiHistory.map(h=>({q:h.q,a:h.a}))}),
       signal:ctrl.signal
     });
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(data.error||'ChiiTech AI is temporarily unavailable.');
     if(!data.answer)throw new Error('ChiiTech AI returned an empty response.');
-    return escapeHtml(data.answer).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+    return escapeHtml(data.answer).replace(/\\*\\*(.+?)\\*\\*/g,'<b>$1</b>').replace(/\\n/g,'<br>');
   }catch(e){
     if(e?.name==='AbortError')throw new Error('The assistant took too long to reply. Please try again.');
     throw e;
