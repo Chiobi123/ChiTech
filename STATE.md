@@ -288,3 +288,14 @@ Branch: `feature/priority-1-to-7-brand-auth-legal-mobile`.
 - Browser conversation history resets on logout and whenever the signed-in email, role or company changes. Requests carry a user-ID/company-ID scope; the gateway derives the scope from the verified Supabase token and discards mismatched history.
 - Frontend cache version bumped to `20261120b`.
 - Source changes are committed to `main`; production deployment and authenticated three-model smoke tests remain pending until Cloudflare deployment is completed and verified.
+
+## 2026-11-20 — production verification, router fix and cleanup
+
+- The pending deployment and smoke tests above are done: GitHub `main` is at `9183ebd`; Cloudflare Pages production serves it (git-linked deployment `2e3def5e` plus direct upload `5444bb5c`); `chiitech.pages.dev` serves asset version `20261120b`, HTML with `max-age=0, must-revalidate`, `js`/`css` immutable behind `?v=`.
+- Unauthenticated `/api/ai` battery against production passes 5/5 (405 GET, 401 missing/bogus token, 400 bad mode, 400 empty question). Homepage loads with zero console errors and zero failed requests.
+- Router unit test extracted from the real `ai.ts` source passes 15/15 after fixing one gap: "What is causing …" now routes to Qwen. `import_deep` always selects Gemma; ordinary workspace questions stay on GPT-OSS; only the selected model is called.
+- Real inference verified against all three model IDs in the configured account. Observed billing Neuron rates match the `ai.ts` estimates exactly (gpt-oss 2.2545432, qwen 31.74545 observed vs computed).
+- ChiiTech-only boundary verified with the real production chat system prompt, 7/7: ChiiTech identity, FabluX handled as a separate project, jailbreak refusal, cross-company refusal, no invented monthly figure, grounded totals quoted exactly.
+- Docs aligned: stale GLM/Groq primary-model references removed from `AI_ANALYSIS_SPEC.md`, `CLOUDFLARE_AI_SETUP.md`, `CHIITECH_AI_HANDOFF.md`, `PRD.md` and `README.md`; `AI_ARCHITECTURE.md` remains the single current architecture document.
+- Obsolete Supabase Edge Function secrets removed after confirming the only deployed function (`ai-assist`, HTTP 410 stub) reads none of them: `GROQ_API_KEY`, `AI_BASE_URL`, `AI_MODEL`, `AI_MAX_PER_DAY`. Platform-managed `SUPABASE_*` secrets untouched. The retired function itself is kept as the deployed guard.
+- Still open: (1) `reserve_ai_quota` debits before inference and has no refund path, so a failed or empty model response still consumes quota — needs a new SECURITY DEFINER refund RPC applied in the SQL Editor with owner approval; (2) authenticated end-to-end isolation tests (account/workspace/role, `history_scope` mismatch, quota enforcement) need an authorized test account — a manual test script was supplied in the final report; (3) the Cloudflare API token pasted in chat for direct model tests should be revoked by its owner.
