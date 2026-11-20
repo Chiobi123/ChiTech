@@ -88,11 +88,11 @@ Plus legal pages (privacy/terms), the boot veil, and toasts.
 - Column auto-detection for sales/expenses/products/customers. XLSX via lazily
   loaded SheetJS (only when an `.xlsx` is chosen).
 - Optional LLM deep analysis: server-side `deep_analyse_import_batch()` RPC
-  (capped 200 rows + last 90d company history) → Edge Function `ai-assist`
-  (`import_deep` mode, Groq) → structured JSON (anomalies, patterns,
-  cross-references, prioritized recommendations). Deterministic analysis remains
-  the audited baseline; LLM output is advisory and falls back to prose if the AI
-  is unavailable.
+  (capped 200 rows + last 90d company history) → Pages Function `/api/ai`
+  (`import_deep` mode, Gemma via Workers AI) → structured JSON (anomalies,
+  patterns, cross-references, prioritized recommendations). Deterministic
+  analysis remains the audited baseline; LLM output is advisory and the
+  gateway returns a clear error if the AI is unavailable.
 
 ### 4.5 Security controls
 - RLS on every table; `app_private.can_access_company()` = own company only,

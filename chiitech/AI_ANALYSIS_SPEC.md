@@ -15,8 +15,10 @@ Pages Function at \`/api/ai\` using Cloudflare Workers AI.
 - No provider key, service-role key or other secret is shipped to browser.
 
 ## Model
-Primary: \`@cf/zai-org/glm-4.7-flash\`. Do not add a paid fallback.
-Benchmark alternatives before changing the model. See
+Three-model task router: \`@cf/openai/gpt-oss-20b\` (conversation),
+\`@cf/google/gemma-4-26b-a4b-it\` (import/extraction) and
+\`@cf/qwen/qwen3.8-27b\` (advanced reasoning). Do not add a paid fallback.
+Benchmark alternatives before changing a model. See
 \`AI_ARCHITECTURE.md\` and \`CLOUDFLARE_AI_SETUP.md\`.
 
 ## Financial correctness

@@ -84,7 +84,7 @@ Editor before execution.
 
 ## AI runtime (updated 2026-11-17)
 
-The production AI gateway is the Cloudflare Pages Function `chiitech/functions/api/ai.ts` at `/api/ai`, using the native Workers AI binding named `AI`. The primary model is `@cf/zai-org/glm-4.7-flash`. The legacy Groq-backed Supabase `ai-assist` endpoint is retired and returns HTTP 410. Configure the Workers AI binding in Cloudflare Pages production settings; see `CLOUDFLARE_AI_SETUP.md`. The gateway derives company identity from the authenticated user's active profile, retrieves records using the caller JWT/RLS, and reserves daily usage through `reserve_ai_quota`. Do not restore Groq or call the retired endpoint from frontend code.
+The production AI gateway is the Cloudflare Pages Function `chiitech/functions/api/ai.ts` at `/api/ai`, using the native Workers AI binding named `AI`. The router selects one of three Workers AI models per request: `@cf/openai/gpt-oss-20b` (conversation), `@cf/google/gemma-4-26b-a4b-it` (import analysis) and `@cf/qwen/qwen3.8-27b` (advanced reasoning). The legacy Groq-backed Supabase `ai-assist` endpoint is retired and returns HTTP 410. Configure the Workers AI binding in Cloudflare Pages production settings; see `CLOUDFLARE_AI_SETUP.md`. The gateway derives company identity from the authenticated user's active profile, retrieves records using the caller JWT/RLS, and reserves daily usage through `reserve_ai_quota`. Do not restore Groq or call the retired endpoint from frontend code.
 
 ## Current architecture changes
 

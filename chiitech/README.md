@@ -388,7 +388,7 @@ Implemented and working in the browser:
 
 Live backend (Supabase — no longer simulated):
 - Authentication is real (Supabase Auth + RLS); department visibility is enforced in UI and refused in data
-- The AI assistant answers from live company data with an optional server-side LLM layer (`ai-assist` Edge Function) and deterministic fallback
+- The AI assistant answers from live company data through the server-side `/api/ai` Pages Function, which routes each request to one of three Cloudflare Workers AI models (GPT-OSS for conversation, Gemma for import analysis, Qwen for advanced reasoning)
 
 Simulated for the prototype (needs real integrations to go live):
 - Bank/POS statement reconciliation (no bank feed connected yet — the trial balance check is an internal consistency check, not a substitute)
@@ -431,9 +431,9 @@ Simulated for the prototype (needs real integrations to go live):
 2. Move the hash-chain and Benford's Law checks server-side so they can't be bypassed
    by editing the client. **Still open.**
 3. Replace the rule-based assistant with a real LLM call, passing it the same business
-   data the dashboard already uses. **Partly done** — the `ai-assist` Edge Function
-   provides an optional server-side LLM layer; the deterministic fallback is still the
-   default path, and the import analysis has no LLM at all.
+   data the dashboard already uses. **Done** — the `/api/ai` Pages Function runs three
+   routed Workers AI models over the same data the dashboard uses, and import deep
+   analysis is served by the same gateway.
 4. ~~Add real authentication and server-side enforcement of department permissions.~~
    **Done** — Supabase Auth plus RLS; department visibility is refused by data, not just
    hidden in the UI. Remaining hardening: MFA, auth rate limits, email verification.

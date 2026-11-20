@@ -1,7 +1,7 @@
 # ChiiTech Cloudflare Workers AI setup
 
 The only user-facing AI route is the Pages Function at \`/api/ai\`.
-Primary model: \`@cf/zai-org/glm-4.7-flash\`. No paid external AI-provider API key is required.
+Routed models: \`@cf/openai/gpt-oss-20b\`, \`@cf/google/gemma-4-26b-a4b-it\` and \`@cf/qwen/qwen3.8-27b\` (see \`AI_ARCHITECTURE.md\`). No paid external AI-provider API key is required.
 
 ## One-time production binding
 1. Cloudflare Dashboard → Workers & Pages → the existing \`chiitech\` Pages project.
