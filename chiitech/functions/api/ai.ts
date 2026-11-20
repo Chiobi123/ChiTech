@@ -10,8 +10,8 @@ const MODELS = {
 function chooseModel(question:string, mode:string){
  if(mode==="import_deep") return MODELS.extraction;
  const q=question.toLowerCase();
- if(/\\b(compare|comparison|forecast|predict|scenario|root cause|diagnos|strategy|strategic|evaluate|trade.?off|why did|why has|what caused|deep analysis|complex analysis|risk assessment)\\b/.test(q)) return MODELS.reasoning;
- if(/\\b(extract|categorize|categorise|classify|classification|summari[sz]e (this|the|my) (document|file|spreadsheet|report)|analyse (this|the) import|analyze (this|the) import|spreadsheet|csv|xlsx|imported records)\\b/.test(q)) return MODELS.extraction;
+ if(/\b(compare|comparison|forecast|predict|scenario|root cause|diagnos|strategy|strategic|evaluate|trade.?off|why did|why has|what caused|deep analysis|complex analysis|risk assessment)\b/.test(q)) return MODELS.reasoning;
+ if(/\b(extract|categorize|categorise|classify|classification|summari[sz]e (this|the|my) (document|file|spreadsheet|report)|analyse (this|the) import|analyze (this|the) import|spreadsheet|csv|xlsx|imported records)\b/.test(q)) return MODELS.extraction;
  return MODELS.conversation;
 }
 const cutoff=new Date(Date.now()-365*86400000).toISOString();
