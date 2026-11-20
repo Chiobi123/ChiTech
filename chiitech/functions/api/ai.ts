@@ -10,7 +10,7 @@ const MODELS = {
 function chooseModel(question:string, mode:string){
  if(mode==="import_deep") return MODELS.extraction;
  const q=question.toLowerCase();
- if(/\b(compare|comparison|forecast|predict|scenario|root cause|diagnos|strategy|strategic|evaluate|trade.?off|why (is|are|was|were|has|have|did|does)|what caused|deep analysis|complex analysis|risk assessment)\b/.test(q)) return MODELS.reasoning;
+ if(/\b(compare|comparison|forecast|predict|scenario|root cause|diagnos|strategy|strategic|evaluate|trade.?off|why (is|are|was|were|has|have|did|does)|what caused|what (is|are|was|were) causing|what'?s causing|deep analysis|complex analysis|risk assessment)\b/.test(q)) return MODELS.reasoning;
  if(/\b(extract|categorize|categorise|classify|classification|summari[sz]e (this|the|my) (document|file|spreadsheet|report)|analyse (this|the) import|analyze (this|the) import|spreadsheet|csv|xlsx|imported records)\b/.test(q)) return MODELS.extraction;
  return MODELS.conversation;
 }
