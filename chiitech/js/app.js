@@ -2323,7 +2323,11 @@ async function aiChat(question,requestIdentity){
   const historyScope=userId+':'+session.companyId;
   // Include the immutable Supabase Auth user ID in the in-memory scope too.
   // This catches account recreation or auth-user changes even if email/role/company look identical.
-  if(aiHistoryAuthScope && aiHistoryAuthScope!==historyScope) aiHistory=[];
+  if(aiHistoryAuthScope && aiHistoryAuthScope!==historyScope){
+    resetAIConversation(requestIdentity);
+    addMsg('user',question,false);
+    addMsg('ai','Thinking…',false);
+  }
   aiHistoryAuthScope=historyScope;
   const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),60000);
   try{
