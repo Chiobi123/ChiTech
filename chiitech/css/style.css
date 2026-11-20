@@ -1750,3 +1750,103 @@ body::before{
 @media(max-width:700px){
   body::before{background-position:center center;opacity:.13;}
 }
+
+
+/* ============================================================
+   CHIITECH FINANCE ARTWORK + GLASS FINISH
+   The source image is displayed as-is; only the separate CSS
+   opacity/overlay controls how strongly it blends into the UI.
+   ============================================================ */
+body{
+  background:#080d0a!important;
+  isolation:isolate;
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background-image:url("../assets/chiitech-finance-bg.jpg");
+  background-position:center center;
+  background-size:cover;
+  background-repeat:no-repeat;
+  opacity:.22;
+  transform:translateZ(0);
+}
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  background:linear-gradient(180deg,rgba(4,10,7,.48),rgba(4,10,7,.62));
+}
+#app,.app,.auth-layout,.about-wrap{
+  position:relative;
+  z-index:1;
+  background:transparent!important;
+}
+.app-shell,.main,.main-inner,.section{background-color:transparent;}
+/* Glass/jelly treatment is intentionally restrained to preserve legibility. */
+.sidebar,.mobile-topbar,.mobile-nav,.auth-hero,.login-card,
+.card,.stat,.dept-check,.playbook,.rootcause,.modal-card,.modal-content,
+.chat-window,.chat-input-row,.section-explainer,.user-chip,.topbar .btn{
+  background-color:rgba(12,20,16,.72)!important;
+  -webkit-backdrop-filter:blur(15px) saturate(125%);
+  backdrop-filter:blur(15px) saturate(125%);
+  border-color:rgba(145,235,198,.18)!important;
+  box-shadow:0 14px 38px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.045);
+}
+.auth-hero{
+  background:linear-gradient(145deg,rgba(8,18,12,.68),rgba(6,13,9,.72))!important;
+}
+.login-card{
+  background:linear-gradient(145deg,rgba(15,26,20,.74),rgba(9,17,12,.78))!important;
+}
+.card,.stat,.chat-window{background-color:rgba(13,22,17,.70)!important;}
+.chat-input-row{
+  position:relative;
+  z-index:2;
+  display:flex;
+  gap:8px;
+  padding:6px;
+  border:1px solid rgba(112,231,190,.2)!important;
+  border-radius:13px;
+}
+.chat-input-row #ai-input{min-width:0;flex:1;}
+.chat-input-row .btn{flex:0 0 44px;min-width:44px;}
+@media(max-width:900px){
+  body::before{background-position:center center;opacity:.18;}
+  #sec-ai.section.active{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px));}
+  #sec-ai .chat-input-row{
+    position:sticky;
+    bottom:calc(8px + env(safe-area-inset-bottom,0px));
+    margin-top:10px;
+  }
+  body.ai-composer-focused .mobile-nav{
+    display:none!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+  }
+  body.ai-composer-focused #app main{
+    padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))!important;
+  }
+  body.ai-composer-focused #sec-ai.section.active{animation:none;transform:none;}
+  body.ai-composer-focused #sec-ai .chat-input-row{
+    position:fixed;
+    left:10px;
+    right:10px;
+    bottom:calc(var(--ai-keyboard-gap,0px) + 8px + env(safe-area-inset-bottom,0px));
+    z-index:120;
+    width:auto;
+    box-shadow:0 10px 30px rgba(0,0,0,.38);
+  }
+  body.ai-composer-focused #sec-ai .chat-window{scroll-margin-bottom:120px;}
+}
+@media(max-width:900px) and (orientation:landscape){
+  body.ai-composer-focused #sec-ai .chat-input-row{bottom:8px;}
+}
+@media(prefers-reduced-motion:reduce){
+  body::before{transform:none;}
+}
