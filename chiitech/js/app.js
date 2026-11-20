@@ -2450,6 +2450,8 @@ function answerQuestion(q){
       if(!focused || !isMobile()) return;
       const rect = composer.getBoundingClientRect();
       const viewportBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+      const keyboardGap = vv ? Math.max(0, window.innerHeight - viewportBottom) : 0;
+      document.documentElement.style.setProperty('--ai-keyboard-gap', keyboardGap + 'px');
       const safeBottom = 12;
       if(rect.bottom > viewportBottom - safeBottom || rect.top < 0){
         composer.scrollIntoView({block:'nearest',behavior:'auto'});
@@ -2459,7 +2461,10 @@ function answerQuestion(q){
   input.addEventListener('focus', () => setFocusState(true));
   input.addEventListener('blur', () => {
     window.setTimeout(() => {
-      if(document.activeElement !== input) setFocusState(false);
+      if(document.activeElement !== input) {
+        setFocusState(false);
+        document.documentElement.style.removeProperty('--ai-keyboard-gap');
+      }
     }, 180);
   });
   vv?.addEventListener('resize', scheduleReveal, {passive:true});
