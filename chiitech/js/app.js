@@ -2311,7 +2311,7 @@ function askAI(preset){
    verified Supabase session; client history is sent only with an identity
    scope and is discarded server-side whenever that scope does not match. */
 async function aiChat(question,requestIdentity){
-  if(/^(hi|hello|hey|good morning|good afternoon|good evening|how far|how you dey)[!.?\\s]*$/i.test(question)) return `Hey ${escapeHtml(session?.name||'there')}! Good to see you. How's business going today?`;
+  if(/^(hi|hello|hey|good morning|good afternoon|good evening|how far|how you dey)[!.?\s]*$/i.test(question)) return `Hey ${escapeHtml(session?.name||'there')}! Good to see you. How's business going today?`;
   const {data:authData,error:authError}=await sb.auth.getSession();
   const token=authData?.session?.access_token;
   const userId=authData?.session?.user?.id;
@@ -2330,7 +2330,7 @@ async function aiChat(question,requestIdentity){
     const data=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(data.error||'ChiiTech AI is temporarily unavailable.');
     if(!data.answer)throw new Error('ChiiTech AI returned an empty response.');
-    return escapeHtml(data.answer).replace(/\\*\\*(.+?)\\*\\*/g,'<b>$1</b>').replace(/\\n/g,'<br>');
+    return escapeHtml(data.answer).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
   }catch(e){
     if(e?.name==='AbortError')throw new Error('The assistant took too long to reply. Please try again.');
     throw e;
