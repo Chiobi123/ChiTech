@@ -279,3 +279,12 @@ Branch: `feature/priority-1-to-7-brand-auth-legal-mobile`.
 - Enabled the Production Workers AI binding `AI` on the existing Pages project via the Cloudflare API (`deployment_configs.*.ai_bindings: {"AI":{}}` on both environments), echoing the existing compatibility date/flags unchanged, then redeployed.
 - Smoke test passed: `POST /api/ai` without a session returns `401 {"error":"Please sign in again."}` — was `405` while functions were undeployed and `503` before the binding. The "production activation not yet complete" line in the 2026-11-17 section is now satisfied.
 - Local migration files verified current against live (`npm run db:status`: 51 local files, 49 recorded live; 47–49 applied under SQL-editor stamps `20261117065832`/`070004`/`070253`).
+
+## 2026-11-20 — AI isolation and three-model routing
+
+- Replaced the single hardcoded GLM model with a task router: GPT-OSS 20B for normal conversation/workspace questions, Gemma 4 26B A4B for import/extraction/structured analysis, and Qwen 3.8 27B for advanced reasoning, comparisons, root-cause analysis and forecasts.
+- Quota reservation now uses model-specific published Neuron rates with a 25% estimation buffer; the existing database quota RPC and allocation policy are unchanged.
+- Added strict product/account/workspace instructions. ChiiTech answers are scoped to the authenticated user's current ChiiTech company; unrelated projects, including FabluX, are not business context.
+- Browser conversation history resets on logout and whenever the signed-in email, role or company changes. Requests carry a user-ID/company-ID scope; the gateway derives the scope from the verified Supabase token and discards mismatched history.
+- Frontend cache version bumped to `20261120b`.
+- Source changes are committed to `main`; production deployment and authenticated three-model smoke tests remain pending until Cloudflare deployment is completed and verified.
