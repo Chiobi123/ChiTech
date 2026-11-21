@@ -24,7 +24,7 @@ const dist = join(root, 'dist');
 // `functions` is deliberately NOT copied into dist: Cloudflare requires the
 // functions directory at the project root, adjacent to the output dir — never
 // inside it (https://developers.cloudflare.com/pages/functions/get-started/).
-const RUNTIME = ['index.html', '_headers', 'css', 'js'];
+const RUNTIME = ['index.html', '_headers', 'css', 'js', 'assets'];
 
 const indexHtml = await readFile(join(site, 'index.html'), 'utf8');
 const version = (indexHtml.match(/\?v=([0-9A-Za-z]+)/) || [])[1] || 'none';
