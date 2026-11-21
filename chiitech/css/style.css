@@ -1040,12 +1040,8 @@ body::before{
 
 /* ---------- Collapsible explainers (retired) ----------
    Guidance now shows in full everywhere — folded text hid meaning.
-   Kept as plain blocks; the toggle builder below is no longer called. */
+   Kept as plain blocks. */
 .section-explainer{position:relative;}
-.explainer-toggle{
-  display:inline-block;margin-top:6px;font-size:11.5px;color:var(--neon);
-  cursor:pointer;background:none;border:none;padding:0;
-}
 .card{
   background:var(--surface);
   box-shadow:0 1px 2px rgba(0,0,0,0.05);
@@ -1729,27 +1725,12 @@ main .section canvas{display:block;max-width:100%;}
 
 
 /* Approved ChiiTech finance artwork layer.
-   The original JPEG is installed at assets/chiitech-finance-bg.jpg.
+   The original PNG is installed at assets/chiitech-finance-bg.png.
    Artwork itself is never altered; opacity and overlay are display-only. */
 body{background:#080d0a!important;isolation:isolate;}
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  z-index:-1;
-  pointer-events:none;
-  background:
-    linear-gradient(180deg,rgba(4,10,7,.84),rgba(4,10,7,.88)),
-    url("../assets/chiitech-finance-bg.jpg") center center / cover no-repeat;
-  opacity:.16;
-  transform:translateZ(0);
-}
 #app{position:relative;z-index:1;background:transparent!important;}
 #app .app-shell,#app main,#app .main,#app .main-inner,
 #app .section{background-color:transparent;}
-@media(max-width:700px){
-  body::before{background-position:center center;opacity:.13;}
-}
 
 
 /* ============================================================
@@ -1767,11 +1748,11 @@ body::before{
   inset:0;
   z-index:0;
   pointer-events:none;
-  background-image:url("../assets/chiitech-finance-bg.jpg");
+  background-image:url("../assets/chiitech-finance-bg.png");
   background-position:center center;
   background-size:cover;
   background-repeat:no-repeat;
-  opacity:.22;
+  opacity:.16;
   transform:translateZ(0);
 }
 body::after{
