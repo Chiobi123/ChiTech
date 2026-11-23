@@ -128,7 +128,7 @@
 
     <!-- SIGN IN (the only main view — no codes, roles or setup here) -->
     <div id="auth-view-signin" class="auth-pane active">
-      <div class="field"><label>Email</label><input id="login-email" type="text" placeholder="you@business.com"></div>
+      <div class="field"><label>Email</label><input id="login-email" type="email" autocomplete="email" placeholder="you@business.com"></div>
       <div class="field"><label>Password</label><input id="login-pass" type="password" placeholder="Your password"></div>
       <button class="btn btn-primary btn-block" id="login-btn" onclick="login()">Sign in</button>
       <p style="margin-top:10px;"><a href="#" onclick="showAuthView('forgot');return false;">Forgot password?</a></p>
@@ -204,7 +204,7 @@
     <div id="auth-view-register" class="auth-pane">
       <div class="field"><label>Company name</label><input id="reg-company" placeholder="e.g. Adaeze Fashion House"></div>
       <div class="field"><label>Your name</label><input id="reg-name" placeholder="e.g. Adaeze Okafor"></div>
-      <div class="field"><label>Email</label><input id="reg-email" type="text" placeholder="you@business.com"></div>
+      <div class="field"><label>Email</label><input id="reg-email" type="email" autocomplete="email" placeholder="you@business.com"></div>
       <div class="field"><label>Password</label><input id="reg-password" type="password" minlength="8" placeholder="8+ characters"></div>
       <label class="dept-check auth-consent"><input type="checkbox" id="reg-consent" required aria-required="true"> I accept the <a href="#" onclick="showLegal('terms');return false;">Terms</a> &amp; <a href="#" onclick="showLegal('privacy');return false;">Privacy Policy</a></label>
       <button class="btn btn-primary btn-block" onclick="registerCompany()">Create company &amp; sign in</button>
@@ -225,7 +225,7 @@
         For team members whose company admin has already approved them.
         First time here? Accept your invitation under “Have a worker invitation?” on the sign-in screen.
       </p>
-      <div class="field"><label>Work email</label><input id="login-worker-email" type="text" placeholder="you@business.com"></div>
+      <div class="field"><label>Work email</label><input id="login-worker-email" type="email" autocomplete="email" placeholder="you@business.com"></div>
       <div class="field"><label>Password</label><input id="login-worker-pass" type="password" placeholder="Your password"></div>
       <button class="btn btn-primary btn-block" onclick="loginAsWorker()">Sign in as worker</button>
       <button class="btn btn-block" style="margin-top:8px;" onclick="loginWithGoogle()">Continue with Google</button>
@@ -240,7 +240,7 @@
       </p>
       <div class="field"><label>Invitation token</label><input id="join-worker-token" placeholder="Paste the token from your invitation"></div>
       <div class="field"><label>Full name</label><input id="join-worker-name" placeholder="e.g. Ifeoma Balogun"></div>
-      <div class="field"><label>Work email</label><input id="join-worker-email" type="text" placeholder="you@business.com"></div>
+      <div class="field"><label>Work email</label><input id="join-worker-email" type="email" autocomplete="email" placeholder="you@business.com"></div>
       <div class="field"><label>Password</label><input id="join-worker-pass" type="password" placeholder="Choose a password"></div>
       <button class="btn btn-primary btn-block" onclick="joinAsWorker()">Create my account</button>
       <p style="margin-top:14px;"><a href="#" onclick="showAuthView('signin');return false;">&larr; Back to sign in</a></p>
@@ -259,7 +259,7 @@
           Read-only, always.
         </p>
         <div class="field"><label>Company code</label><input id="login-auditor-code" placeholder="e.g. CHI-1234" style="text-transform:uppercase;"></div>
-        <div class="field"><label>Email</label><input id="login-auditor-email" type="text" placeholder="you@firm.com"></div>
+        <div class="field"><label>Email</label><input id="login-auditor-email" type="email" autocomplete="email" placeholder="you@firm.com"></div>
         <div class="field"><label>Password</label><input id="login-auditor-pass" type="password" placeholder="Your password"></div>
         <button class="btn btn-primary btn-block" onclick="loginAuditorReturning()">Sign in as auditor</button>
       </div>
@@ -271,7 +271,7 @@
         </p>
         <div class="field"><label>Company code</label><input id="accept-auditor-code" placeholder="e.g. CHI-1234" style="text-transform:uppercase;"></div>
         <div class="field"><label>Full name</label><input id="accept-auditor-name" placeholder="e.g. Adaeze Okafor"></div>
-        <div class="field"><label>Email (the invited address)</label><input id="accept-auditor-email" type="text" placeholder="you@firm.com"></div>
+        <div class="field"><label>Email (the invited address)</label><input id="accept-auditor-email" type="email" autocomplete="email" placeholder="you@firm.com"></div>
         <div class="field"><label>Invitation token</label><input id="accept-auditor-token" placeholder="Paste the token from your invitation"></div>
         <div class="field"><label>Password</label><input id="accept-auditor-pass" type="password" placeholder="8+ characters"></div>
         <button class="btn btn-primary btn-block" onclick="acceptAuditorInvite()">Accept invitation</button>
@@ -287,7 +287,7 @@
           We&apos;ll email a reset link to the address your account uses — click
           it to choose a new password.
         </p>
-        <div class="field"><label>Your email</label><input id="forgot-admin-email" type="text" placeholder="you@business.com"></div>
+        <div class="field"><label>Your email</label><input id="forgot-admin-email" type="email" autocomplete="email" placeholder="you@business.com"></div>
         <button class="btn btn-block" onclick="resetAdminPassword()">Email me a reset link</button>
       </div>
 
@@ -1239,7 +1239,7 @@
       <div class="card">
         <div class="card-head"><div class="card-title">Invite worker</div></div>
         <div class="form-row">
-          <div class="field"><label>Worker email</label><input id="invite-email" type="text" placeholder="worker@business.com"></div>
+          <div class="field"><label>Worker email</label><input id="invite-email" type="email" autocomplete="email" placeholder="worker@business.com"></div>
           <div class="field"><label>Initial departments (optional — can assign later)</label><div id="invite-depts" class="dept-checklist"></div></div>
         </div>
         <button class="btn btn-primary" onclick="inviteWorker()">Send invitation</button>
@@ -1281,7 +1281,7 @@
       <div class="card">
         <div class="card-head"><div class="card-title">Invite auditor by email</div><div class="card-sub">Same pattern as workers: single-use emailed token, then you approve. The old code-based grants below keep working.</div></div>
         <div class="form-row">
-          <div class="field"><label>Auditor email</label><input id="invite-auditor-email" type="text" placeholder="accountant@firm.com"></div>
+          <div class="field"><label>Auditor email</label><input id="invite-auditor-email" type="email" autocomplete="email" placeholder="accountant@firm.com"></div>
           <div class="field"><label>&nbsp;</label><button class="btn btn-primary" onclick="inviteAuditorUI()">Send invitation</button></div>
         </div>
         <div id="auditor-invite-status" class="text-muted" style="margin-top:8px;font-size:12px;">Invitations you send appear below with their tokens.</div>
