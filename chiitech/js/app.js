@@ -1240,19 +1240,23 @@ async function saveBusinessSettings(){
   const currency=document.getElementById('biz-currency').value, timezone=document.getElementById('biz-timezone').value;
   try{new Intl.NumberFormat(defaults.locale,{style:'currency',currency}).format(1);new Intl.DateTimeFormat(defaults.locale,{timeZone:timezone}).format(new Date());}
   catch(e){toast('Check the selected currency or timezone.');return;}
+  const previous=state.regionalSettings||{};
+  if(previous.currency&&previous.currency!==currency&&!confirm('This changes the currency label and formatting for the workspace. It does NOT convert existing balances or historical transactions. Continue?'))return;
   state.regionalSettings={country,currency,locale:defaults.locale,timezone,dateFormat:document.getElementById('biz-date-format').value,numberFormat:document.getElementById('biz-number-format').value,financialYearStart:Number(document.getElementById('biz-financial-year').value)||1};
   const status=document.getElementById('business-settings-status');status.textContent='Saving…';
   await saveBusiness(session.companyId,state);
-  status.textContent='Save request completed. Refresh and reopen Settings to verify persistence.';
+  if(JSON.stringify(state.__synced&&state.__synced.regionalSettings)===JSON.stringify(state.regionalSettings))status.textContent='Saved successfully.';
+  else status.textContent='Save could not be confirmed. Check your connection and try again.';
   renderSection('settings');
 }
 function showAccountSecurityInfo(){
   toast('Use Forgot password on the sign-in screen for password recovery. Do not share invitation links or verification codes.',5000);
 }
-function getBusinessLocale(){return (state&&state.regionalSettings&&state.regionalSettings.locale)||'en-NG';}
+function getBusinessLocale(){const r=state&&state.regionalSettings||{};if(r.dateFormat==='DMY')return 'en-GB';if(r.dateFormat==='MDY')return 'en-US';if(r.dateFormat==='YMD')return 'sv-SE';return r.locale||'en-NG';}
 function getBusinessCurrency(){return (state&&state.regionalSettings&&state.regionalSettings.currency)||'NGN';}
 function formatBusinessAmount(value){
-  try{return new Intl.NumberFormat(getBusinessLocale(),{style:'currency',currency:getBusinessCurrency(),maximumFractionDigits:2}).format(Number(value)||0);}
+  const r=state&&state.regionalSettings||{};const numberLocale=r.numberFormat==='decimal-comma'?'de-DE':r.numberFormat==='comma'?'en-US':getBusinessLocale();
+  try{return new Intl.NumberFormat(numberLocale,{style:'currency',currency:getBusinessCurrency(),maximumFractionDigits:2}).format(Number(value)||0);}
   catch(e){return new Intl.NumberFormat('en-NG',{maximumFractionDigits:2}).format(Number(value)||0);}
 }
 
