@@ -41,6 +41,7 @@ let dashboardRealtimeChannel = null;
 let dashboardRealtimeCompanyId = null;
 let dashboardRefreshTimer = null;
 let dashboardRefreshInFlight = false;
+try{ if(typeof document!=='undefined') applyPersonalTheme(); }catch(e){}
 let dashboardPendingTables = new Set();
 const DASHBOARD_REALTIME_TABLES = ['sales','expenses','products','customers','orders','debts','audit_log','audit_findings'];
 
@@ -313,7 +314,7 @@ function auditorBootTrace(msg){ return; }
   setupCollapsibleLists();
   makeDivCollapsible('audit-log');
 
-  const order = ['dashboard','sales','products','customers','orders','expenses','tax','audit','growth','ai','team','billing','auditoraccess'];
+  const order = ['dashboard','sales','products','customers','orders','expenses','tax','audit','growth','ai','team','billing','auditoraccess','settings'];
   if(session.role!=='super_admin' && billingLocked()){
     if(session.role!=='company_admin'){
       await sb.auth.signOut(); clearSession(); session = null;
@@ -388,6 +389,7 @@ function renderSection(name){
     else if(name==='orders') safeRender('Orders', renderOrders);
     else if(name==='expenses') safeRender('Expenses', renderExpenses);
     else if(name==='tax') safeRender('Tax analysis', renderTax);
+     else if(name==='settings') safeRender('Settings', renderSettings);
     else if(name==='audit') safeRender('Audit trail', renderAudit);
     else if(name==='growth') safeRender('Growth engine', renderGrowth);
     else if(name==='billing') safeRender('Billing', renderBilling);
@@ -537,7 +539,7 @@ function toast(msg, duration){
   toast._t = setTimeout(()=>t.classList.remove('show'), duration||2400);
 }
 
-function fmtN(n){ return '\u20A6' + Math.round(n||0).toLocaleString('en-NG'); }
+function fmtN(n){ return formatBusinessAmount(n); }
 /** Every table's primary key in Supabase is a uuid, so new rows get a
  *  real UUID from the moment they're created in the browser — the same
  *  id is used for the insert once data.js's sync runs. That's what lets
@@ -711,7 +713,7 @@ function renderOrders(){
   const rows = [...state.orders].reverse();
   const statuses = ['Pending','Processing','Delivered','Cancelled'];
   tbody.innerHTML = rows.map(o=>`<tr>
-    <td>${new Date(o.placedAt).toLocaleString('en-NG',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'})}</td>
+    <td>${new Date(o.placedAt).toLocaleString(getBusinessLocale(),{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'})}</td>
     <td>${escapeHtml(o.channel)}</td><td>${escapeHtml(o.customerName)}</td><td>${escapeHtml(o.items)}</td><td>${fmtN(o.total)}</td>
     <td><select onchange="updateOrderStatus('${o.id}',this.value)" style="padding:4px 8px;font-size:12px;">
       ${statuses.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}
@@ -863,7 +865,7 @@ function renderSales(){
   tbody.innerHTML = rows.map(s=>{ const rc = receiptsFor('sale', s.id).length;
     return `<tr>
     <td>${s.invoiceNo||'—'}</td>
-    <td>${new Date(s.time).toLocaleString('en-NG',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'})}</td>
+    <td>${new Date(s.time).toLocaleString(getBusinessLocale(),{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'})}</td>
     <td>${escapeHtml(s.itemsSummary||s.productName)}</td>
     <td>${fmtN(s.cost)}</td>
     <td>${fmtN(s.subtotal!==undefined?s.subtotal:s.total)}${s.discount>0?` <span class="badge badge-warn">-${fmtN(s.discount)}</span>`:''}</td>
@@ -902,7 +904,7 @@ function renderExpenses(){
   const rows = [...state.expenses].reverse().slice(0,25);
   tbody.innerHTML = rows.map(e=>{ const rc = receiptsFor('expense', e.id).length;
     return `<tr>
-    <td>${new Date(e.time).toLocaleString('en-NG',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'})}</td>
+    <td>${new Date(e.time).toLocaleString(getBusinessLocale(),{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'})}</td>
     <td>${escapeHtml(e.category)}</td><td>${escapeHtml(e.note||'—')}</td><td>${fmtN(e.amount)}</td>
     <td class="text-muted">${escapeHtml(e.loggedBy||'—')}</td>
     <td>${e.flag
@@ -1006,13 +1008,13 @@ function renderDashboard(){
   const lowEl=document.getElementById('d-lowstock');if(lowEl)lowEl.textContent=lowStock;
   const lowCard=document.getElementById('d-lowstock-card');if(lowCard)lowCard.className='stat '+(lowStock>0?'warn':'pos');
   const caption=document.getElementById('d-period-caption');
-  if(caption)caption.textContent='Last '+dashboardRangeDays+' days · '+start.toLocaleDateString('en-NG',{day:'numeric',month:'short'})+' – '+now.toLocaleDateString('en-NG',{day:'numeric',month:'short',year:'numeric'});
+  if(caption)caption.textContent='Last '+dashboardRangeDays+' days · '+start.toLocaleDateString(getBusinessLocale(),{day:'numeric',month:'short'})+' – '+now.toLocaleDateString(getBusinessLocale(),{day:'numeric',month:'short',year:'numeric'});
   const daily=[];
   for(let i=0;i<dashboardRangeDays;i++){
     const day=new Date(start);day.setDate(start.getDate()+i);
     const from=day.getTime(),to=from+86400000;
     const daySales=periodSales.filter(s=>s.time>=from&&s.time<to);
-    daily.push({label:(i===0||i===dashboardRangeDays-1||i%(dashboardRangeDays===7?1:dashboardRangeDays===30?5:14)===0)?(dashboardRangeDays===7?day.toLocaleDateString('en-NG',{weekday:'short'}):day.toLocaleDateString('en-NG',{day:'numeric',month:'short'})):'',revenue:daySales.reduce((sum,s)=>sum+(Number(s.total)||0),0),cost:daySales.reduce((sum,s)=>sum+(Number(s.cost)||0),0)});
+    daily.push({label:(i===0||i===dashboardRangeDays-1||i%(dashboardRangeDays===7?1:dashboardRangeDays===30?5:14)===0)?(dashboardRangeDays===7?day.toLocaleDateString(getBusinessLocale(),{weekday:'short'}):day.toLocaleDateString(getBusinessLocale(),{day:'numeric',month:'short'})):'',revenue:daySales.reduce((sum,s)=>sum+(Number(s.total)||0),0),cost:daySales.reduce((sum,s)=>sum+(Number(s.cost)||0),0)});
   }
   const totalEl=document.getElementById('d-trend-total');if(totalEl)totalEl.textContent=fmtN(revenue)+' total revenue';
   chiLine('d-chart',{labels:daily.map(d=>d.label),series:[{label:'Revenue',data:daily.map(d=>d.revenue),color:CHIITECH_CHART_COLORS.neon}]});
@@ -1045,7 +1047,7 @@ function renderRecentDashboardActivity(){
   (state.orders||[]).forEach(o=>items.push({time:o.placedAt,type:'Order',detail:o.customerName||'Customer order',amount:Number(o.total)||0,icon:'ti-truck'}));
   items.sort((a,b)=>(b.time||0)-(a.time||0));
   el.innerHTML=items.slice(0,7).map(item=>{
-    const date=item.time?new Date(item.time).toLocaleString('en-NG',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+    const date=item.time?new Date(item.time).toLocaleString(getBusinessLocale(),{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
     return '<div class="activity-item"><span class="activity-icon"><i class="ti '+item.icon+'"></i></span><span class="activity-copy"><b>'+escapeHtml(item.type)+' · '+escapeHtml(item.detail)+'</b><small>'+escapeHtml(date)+'</small></span><strong class="'+(item.type==='Expense'?'activity-negative':'')+'">'+(item.type==='Expense'?'−':'+')+'₦'+fmtN(item.amount)+'</strong></div>';
   }).join('')||'<div class="empty-state">No business activity has been recorded yet.</div>';
 }
@@ -1131,7 +1133,7 @@ function renderDebtsTable(){
     <td>${escapeHtml(d.party)}</td>
     <td>${d.direction==='i_owe' ? '<span class="badge badge-warn">You owe</span>' : '<span class="badge badge-ok">Owes you</span>'}</td>
     <td>${fmtN(d.amount)}</td>
-    <td>${d.dueDate ? new Date(d.dueDate).toLocaleDateString('en-NG') : '—'}${d.status==='open'&&d.dueDate&&new Date(d.dueDate).getTime()<Date.now()?' <span class="badge badge-danger">Overdue</span>':''}</td>
+    <td>${d.dueDate ? new Date(d.dueDate).toLocaleDateString(getBusinessLocale()) : '—'}${d.status==='open'&&d.dueDate&&new Date(d.dueDate).getTime()<Date.now()?' <span class="badge badge-danger">Overdue</span>':''}</td>
     <td>${d.status==='open' ? `<span class="badge badge-muted">Open</span>${session.role==='auditor' ? '' : ` <button class="btn btn-sm" onclick="settleDebt('${d.id}')" style="margin-left:4px;">Settle</button>`}` : '<span class="badge badge-ok">Settled</span>'}</td>
   </tr>`).join('') || `<tr><td colspan="5" class="text-muted">Nothing owed either way. Add the first above.</td></tr>`;
   const admin = session.role==='company_admin';
@@ -1178,6 +1180,82 @@ async function submitReceipt(input){
 }
 
 /* ================= TAX ANALYSIS ================= */
+
+// ---------- SETTINGS: personal preferences and business region ----------
+const CHIITECH_REGION_DEFAULTS = {
+  NG:{currency:'NGN',locale:'en-NG',timezone:'Africa/Lagos'},
+  GH:{currency:'GHS',locale:'en-GH',timezone:'Africa/Accra'},
+  KE:{currency:'KES',locale:'en-KE',timezone:'Africa/Nairobi'},
+  ZA:{currency:'ZAR',locale:'en-ZA',timezone:'Africa/Johannesburg'},
+  US:{currency:'USD',locale:'en-US',timezone:'America/New_York'},
+  GB:{currency:'GBP',locale:'en-GB',timezone:'Europe/London'},
+  CA:{currency:'CAD',locale:'en-CA',timezone:'America/Toronto'},
+  IN:{currency:'INR',locale:'en-IN',timezone:'Asia/Kolkata'},
+  AE:{currency:'AED',locale:'en-AE',timezone:'Asia/Dubai'},
+  AU:{currency:'AUD',locale:'en-AU',timezone:'Australia/Sydney'},
+  DE:{currency:'EUR',locale:'de-DE',timezone:'Europe/Berlin'},
+  FR:{currency:'EUR',locale:'fr-FR',timezone:'Europe/Paris'},
+  SG:{currency:'SGD',locale:'en-SG',timezone:'Asia/Singapore'}
+};
+function getPersonalPreferences(){
+  try{return Object.assign({theme:'system',language:'en',notifications:'all'},JSON.parse(localStorage.getItem('chiitech.preferences.v1')||'{}'));}
+  catch(e){return {theme:'system',language:'en',notifications:'all'};}
+}
+function applyPersonalTheme(){
+  const pref=getPersonalPreferences();
+  const theme=pref.theme==='system'?(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):pref.theme;
+  document.documentElement.dataset.theme=theme;
+  document.documentElement.style.colorScheme=theme;
+}
+function savePersonalPreferences(){
+  const pref={theme:document.getElementById('pref-theme').value,language:document.getElementById('pref-language').value,notifications:document.getElementById('pref-notifications').value};
+  try{localStorage.setItem('chiitech.preferences.v1',JSON.stringify(pref));applyPersonalTheme();document.getElementById('personal-settings-status').textContent='Preferences saved on this device.';}
+  catch(e){document.getElementById('personal-settings-status').textContent='Could not save preferences on this device.';}
+}
+function renderSettings(){
+  const p=getPersonalPreferences();
+  document.getElementById('pref-theme').value=p.theme;
+  document.getElementById('pref-language').value=p.language;
+  document.getElementById('pref-notifications').value=p.notifications;
+  const regional=state.regionalSettings||{};
+  document.getElementById('biz-country').value=regional.country||'NG';
+  document.getElementById('biz-currency').value=regional.currency||'NGN';
+  document.getElementById('biz-timezone').value=regional.timezone||'Africa/Lagos';
+  document.getElementById('biz-date-format').value=regional.dateFormat||'default';
+  document.getElementById('biz-number-format').value=regional.numberFormat||'default';
+  document.getElementById('biz-financial-year').value=String(regional.financialYearStart||1);
+  const admin=session.role==='company_admin';
+  document.getElementById('business-regional-settings').classList.toggle('hidden',!admin);
+}
+function applyCountryDefaults(){
+  const code=document.getElementById('biz-country').value, d=CHIITECH_REGION_DEFAULTS[code]||CHIITECH_REGION_DEFAULTS.NG;
+  document.getElementById('biz-currency').value=d.currency;
+  document.getElementById('biz-timezone').value=d.timezone;
+  document.getElementById('biz-date-format').value='default';
+  document.getElementById('biz-number-format').value='default';
+}
+async function saveBusinessSettings(){
+  if(session.role!=='company_admin'){toast('Only the business administrator can change business settings.');return;}
+  const country=document.getElementById('biz-country').value, defaults=CHIITECH_REGION_DEFAULTS[country]||CHIITECH_REGION_DEFAULTS.NG;
+  const currency=document.getElementById('biz-currency').value, timezone=document.getElementById('biz-timezone').value;
+  try{new Intl.NumberFormat(defaults.locale,{style:'currency',currency}).format(1);new Intl.DateTimeFormat(defaults.locale,{timeZone:timezone}).format(new Date());}
+  catch(e){toast('Check the selected currency or timezone.');return;}
+  state.regionalSettings={country,currency,locale:defaults.locale,timezone,dateFormat:document.getElementById('biz-date-format').value,numberFormat:document.getElementById('biz-number-format').value,financialYearStart:Number(document.getElementById('biz-financial-year').value)||1};
+  const status=document.getElementById('business-settings-status');status.textContent='Saving…';
+  await saveBusiness(session.companyId,state);
+  status.textContent='Save request completed. Refresh and reopen Settings to verify persistence.';
+  renderSection('settings');
+}
+function showAccountSecurityInfo(){
+  toast('Use Forgot password on the sign-in screen for password recovery. Do not share invitation links or verification codes.',5000);
+}
+function getBusinessLocale(){return (state&&state.regionalSettings&&state.regionalSettings.locale)||'en-NG';}
+function getBusinessCurrency(){return (state&&state.regionalSettings&&state.regionalSettings.currency)||'NGN';}
+function formatBusinessAmount(value){
+  try{return new Intl.NumberFormat(getBusinessLocale(),{style:'currency',currency:getBusinessCurrency(),maximumFractionDigits:2}).format(Number(value)||0);}
+  catch(e){return new Intl.NumberFormat('en-NG',{maximumFractionDigits:2}).format(Number(value)||0);}
+}
+
 function saveTaxSettings(){
   state.taxSettings.vatRate = Number(document.getElementById('t-vat-rate').value)||0;
   state.taxSettings.whtRate = Number(document.getElementById('t-wht-rate').value)||0;
@@ -1202,12 +1280,12 @@ function renderTax(){
   document.getElementById('t-net').textContent = fmtN(vatTotal-whtTotal);
 
   document.getElementById('tax-sales-table').innerHTML = [...state.sales].reverse().slice(0,15).map(s=>`
-    <tr><td>${s.invoiceNo||'—'}</td><td>${new Date(s.time).toLocaleDateString('en-NG')}</td>
+    <tr><td>${s.invoiceNo||'—'}</td><td>${new Date(s.time).toLocaleDateString(getBusinessLocale())}</td>
     <td>${fmtN(s.total)}</td><td>${fmtN(s.vat||0)}</td></tr>
   `).join('') || `<tr><td colspan="4" class="text-muted">No sales yet.</td></tr>`;
 
   document.getElementById('tax-expenses-table').innerHTML = whtExpenses.slice(0,15).map(e=>`
-    <tr><td>${new Date(e.time).toLocaleDateString('en-NG')}</td><td>${escapeHtml(e.category)}</td>
+    <tr><td>${new Date(e.time).toLocaleDateString(getBusinessLocale())}</td><td>${escapeHtml(e.category)}</td>
     <td>${fmtN(e.amount)}</td><td>${fmtN(e.amount*state.taxSettings.whtRate/100)}</td></tr>
   `).join('') || `<tr><td colspan="4" class="text-muted">No expenses above the WHT threshold yet.</td></tr>`;
 }
@@ -1352,7 +1430,7 @@ function renderSOPs(listId, coverageId, readOnly){
       <div class="text-muted" style="font-size:12.5px;margin:4px 0;">${escapeHtml(s.description)}</div>
       <div class="text-muted" style="font-size:11px;">
         Responsible: ${escapeHtml(s.responsible)} • Reviewed ${s.frequency.toLowerCase()} •
-        Last reviewed ${new Date(s.lastReviewed).toLocaleDateString('en-NG')}
+        Last reviewed ${new Date(s.lastReviewed).toLocaleDateString(getBusinessLocale())}
       </div>
       ${readOnly ? '' : `<div style="margin-top:8px;">
         <button class="btn btn-sm" onclick="markSOPReviewed('${s.id}')">Mark reviewed today</button>
@@ -1387,7 +1465,7 @@ function renderAudit(){
 
 function monthKeyToLabel(mk){
   const [y, m] = mk.split('-').map(Number);
-  return new Date(y, m-1, 1).toLocaleDateString('en-NG', {month:'long', year:'numeric'});
+  return new Date(y, m-1, 1).toLocaleDateString(getBusinessLocale(), {month:'long', year:'numeric'});
 }
 function renderPeriodStatus(){
   const el = document.getElementById('period-status');
@@ -1436,8 +1514,8 @@ function renderFindings(targetId, editable){
         </div>
         ${f.description ? `<div class="text-muted" style="font-size:12px;margin-top:3px;">${escapeHtml(f.description)}</div>` : ''}
         <div class="text-muted" style="font-size:11px;margin-top:3px;">
-          Raised by ${escapeHtml(f.raisedBy||'—')} on ${new Date(f.createdAt).toLocaleDateString('en-NG')}
-          ${f.status==='resolved' ? ` • resolved by ${escapeHtml(f.resolvedBy||'—')} on ${new Date(f.resolvedAt).toLocaleDateString('en-NG')}` : ''}
+          Raised by ${escapeHtml(f.raisedBy||'—')} on ${new Date(f.createdAt).toLocaleDateString(getBusinessLocale())}
+          ${f.status==='resolved' ? ` • resolved by ${escapeHtml(f.resolvedBy||'—')} on ${new Date(f.resolvedAt).toLocaleDateString(getBusinessLocale())}` : ''}
         </div>
       </div>
       ${editable && f.status!=='resolved' ? `<button class="btn btn-sm" onclick="resolveFinding('${f.id}')">Mark resolved</button>` : ''}
@@ -1506,7 +1584,7 @@ function renderAuditLogRows(targetId, limit){
         <div>${escapeHtml(l.details)} <span class="text-muted">— ${escapeHtml(l.user)}</span></div>
         <div class="log-hash">hash ${l.hash} &larr; ${l.prevHash}</div>
       </div>
-      <div class="log-time">${new Date(l.time).toLocaleString('en-NG',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'})}</div>
+      <div class="log-time">${new Date(l.time).toLocaleString(getBusinessLocale(),{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'})}</div>
     </div>
   `).join('') || `<p class="text-muted" style="font-size:12.5px;">No activity logged yet — record a sale or expense to see the trail build.</p>`;
 }
@@ -1732,7 +1810,7 @@ function computeTimeframeBuckets(tf){
     for(let i=11;i>=0;i--){
       const d = new Date(now); d.setDate(1); d.setMonth(now.getMonth()-i); d.setHours(0,0,0,0);
       const dEnd = new Date(d); dEnd.setMonth(d.getMonth()+1);
-      push(d.toLocaleDateString('en-NG',{month:'short'}), d.getTime(), dEnd.getTime());
+      push(d.toLocaleDateString(getBusinessLocale(),{month:'short'}), d.getTime(), dEnd.getTime());
     }
   } else if(tf==='month'){
     for(let i=29;i>=0;i--){
@@ -1757,7 +1835,7 @@ function computeTimeframeBuckets(tf){
   } else { // 'week' default
     for(let i=6;i>=0;i--){
       const d = new Date(now); d.setHours(0,0,0,0); d.setDate(now.getDate()-i);
-      push(d.toLocaleDateString('en-NG',{weekday:'short'}), d.getTime(), d.getTime()+86400000);
+      push(d.toLocaleDateString(getBusinessLocale(),{weekday:'short'}), d.getTime(), d.getTime()+86400000);
     }
   }
   return buckets;
@@ -1942,7 +2020,7 @@ async function loadInvitations(){
   el.innerHTML = (data||[]).map(inv=>`<tr>
     <td>${escapeHtml(inv.email)}</td>
     <td>${inv.status==='pending' ? `<code>${escapeHtml(inv.token)}</code> <button class="btn btn-sm" onclick="copyCode('${escapeHtml(inv.token)}')" title="Copy exact token">Copy</button> <button class="btn btn-sm btn-primary" onclick="copyInviteLink('${escapeHtml(inv.token)}')" title="Copy a one-tap link instead of typing" style="margin-left:4px;">Link</button>` : escapeHtml(inv.status)}${inv.status==='pending' && new Date(inv.expires_at) < new Date() ? ' (expired)' : ''}</td>
-    <td>${new Date(inv.expires_at).toLocaleDateString('en-NG')}</td>
+    <td>${new Date(inv.expires_at).toLocaleDateString(getBusinessLocale())}</td>
     <td>${inv.status==='pending' ? `<button class="btn btn-sm" onclick="resendInvitation('${inv.id}')">Resend</button> <button class="btn btn-sm" onclick="revokeInvitation('${inv.id}')" style="margin-left:4px;">Revoke</button>` : ''}</td>
   </tr>`).join('') || `<tr><td colspan="4" class="text-muted">No invitations yet.</td></tr>`;
 }
@@ -2033,7 +2111,7 @@ async function loadAuditorInvites(){
   el.innerHTML = (data||[]).map(inv=>`<tr>
     <td>${escapeHtml(inv.email)}</td>
     <td>${inv.status==='pending' ? `<code>${escapeHtml(inv.token)}</code> <button class="btn btn-sm" onclick="copyCode('${escapeHtml(inv.token)}')" title="Copy exact token">Copy</button> <button class="btn btn-sm btn-primary" onclick="copyInviteLink('${escapeHtml(inv.token)}')" title="Copy a one-tap link instead of typing" style="margin-left:4px;">Link</button>` : escapeHtml(inv.status)}${inv.status==='pending' && new Date(inv.expires_at) < new Date() ? ' (expired)' : ''}</td>
-    <td>${new Date(inv.expires_at).toLocaleDateString('en-NG')}</td>
+    <td>${new Date(inv.expires_at).toLocaleDateString(getBusinessLocale())}</td>
     <td>${inv.status==='pending' ? `<button class="btn btn-sm" onclick="revokeAuditorInvite('${inv.id}')">Revoke</button>` : ''}</td>
   </tr>`).join('') || `<tr><td colspan="4" class="text-muted">No auditor invitations yet.</td></tr>`;
 }
@@ -2088,7 +2166,7 @@ function renderBilling(){
   const current = plans.find(p=>p.id===sub.planId) || { name:'Free', price:0 };
   document.getElementById('bill-plan-name').textContent = current.name + ' plan';
   document.getElementById('bill-plan-status').textContent =
-    `Status: ${sub.status}` + (sub.renewsAt ? ` • renews ${new Date(sub.renewsAt).toLocaleDateString('en-NG')}` : '') +
+    `Status: ${sub.status}` + (sub.renewsAt ? ` • renews ${new Date(sub.renewsAt).toLocaleDateString(getBusinessLocale())}` : '') +
     (sub.status==='pending' ? ' — payment confirmation in progress.' : '');
   document.getElementById('bill-plans').innerHTML = plans.map(p=>{
     const mine = p.id===sub.planId && sub.status!=='pending';
@@ -2110,7 +2188,7 @@ function renderBilling(){
 
   const rows = state.billingHistory||[];
   document.getElementById('bill-history-table').innerHTML = rows.length ? rows.map(b=>`
-    <tr><td>${new Date(b.date).toLocaleDateString('en-NG')}</td><td>${escapeHtml(b.description)}</td>
+    <tr><td>${new Date(b.date).toLocaleDateString(getBusinessLocale())}</td><td>${escapeHtml(b.description)}</td>
     <td>${fmtN(b.amount)}</td><td><span class="badge ${b.status==='Paid'?'badge-ok':'badge-warn'}">${escapeHtml(b.status)}</span></td></tr>
   `).join('') : `<tr><td colspan="4" class="text-muted">
     No invoices yet — subscription payments will appear here once confirmed.
@@ -2166,7 +2244,7 @@ async function renderSuperAdmin(){
   const rows = companies.map(c=>`<tr${c.deletedAt ? ' style="opacity:0.55;"' : ''}>
       <td>${escapeHtml(c.name)} ${c.deletedAt ? '<span class="badge badge-muted">Closed</span>' : ''}</td>
       <td>${escapeHtml(c.code)}</td><td>${escapeHtml(c.ownerEmail||'—')}</td><td>${escapeHtml(c.plan)}</td>
-      <td>${Number(c.teamSize||0)}</td><td>${new Date(c.createdAt).toLocaleDateString('en-NG')}</td>
+      <td>${Number(c.teamSize||0)}</td><td>${new Date(c.createdAt).toLocaleDateString(getBusinessLocale())}</td>
       <td>${c.deletedAt ? `<button class="btn btn-sm btn-primary" onclick="restoreCompany('${c.id}')">Restore</button>` : '<span class="text-muted">Platform view only</span>'}</td>
     </tr>`);
   document.getElementById('sa-companies').textContent = companies.length;
@@ -2201,7 +2279,7 @@ async function renderSuperAdmin(){
     <td>${escapeHtml(c?c.name:s.company_id)}</td>
     <td>${escapeHtml(s.plan_id)}</td>
     <td>${s.status==='active'?'<span class="badge badge-ok">Active</span>':s.status==='pending'?'<span class="badge badge-warn">Pending payment</span>':`<span class="badge badge-muted">${escapeHtml(s.status)}</span>`}</td>
-    <td>${s.renews_at?new Date(s.renews_at).toLocaleDateString('en-NG'):'—'}</td>
+    <td>${s.renews_at?new Date(s.renews_at).toLocaleDateString(getBusinessLocale()):'—'}</td>
     <td>${s.status==='pending'?`<button class="btn btn-sm btn-primary" onclick="confirmPlan('${s.company_id}')">Confirm payment</button>`:''}
     ${s.status!=='cancelled'?` <button class="btn btn-sm" onclick="setSubStatus('${s.company_id}','past_due',0)" style="margin-left:4px;" title="Suspend access immediately">Suspend</button>`:''}
     ${s.status==='cancelled'||s.status==='past_due'?` <button class="btn btn-sm" onclick="setSubStatus('${s.company_id}','active',30)" style="margin-left:4px;" title="Reinstate for 30 days">Reinstate</button>`:''}
