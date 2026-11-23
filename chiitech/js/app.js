@@ -1032,7 +1032,7 @@ function renderDashboard(){
   const flags=state.expenses.filter(e=>e.flag).length;
   const setText=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
   setText('d-attention-lowstock',lowStock);setText('d-attention-flags',flags);
-  setText('d-attention-receivables','₦'+fmtN(receivables));setText('d-attention-overdue',overdue);
+  setText('d-attention-receivables',fmtN(receivables));setText('d-attention-overdue',overdue);
   renderRecentDashboardActivity();
   renderPulse();
 }
@@ -1048,7 +1048,7 @@ function renderRecentDashboardActivity(){
   items.sort((a,b)=>(b.time||0)-(a.time||0));
   el.innerHTML=items.slice(0,7).map(item=>{
     const date=item.time?new Date(item.time).toLocaleString(getBusinessLocale(),{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
-    return '<div class="activity-item"><span class="activity-icon"><i class="ti '+item.icon+'"></i></span><span class="activity-copy"><b>'+escapeHtml(item.type)+' · '+escapeHtml(item.detail)+'</b><small>'+escapeHtml(date)+'</small></span><strong class="'+(item.type==='Expense'?'activity-negative':'')+'">'+(item.type==='Expense'?'−':'+')+'₦'+fmtN(item.amount)+'</strong></div>';
+    return '<div class="activity-item"><span class="activity-icon"><i class="ti '+item.icon+'"></i></span><span class="activity-copy"><b>'+escapeHtml(item.type)+' · '+escapeHtml(item.detail)+'</b><small>'+escapeHtml(date)+'</small></span><strong class="'+(item.type==='Expense'?'activity-negative':'')+'">'+(item.type==='Expense'?'−':'+')+fmtN(item.amount)+'</strong></div>';
   }).join('')||'<div class="empty-state">No business activity has been recorded yet.</div>';
 }
 
