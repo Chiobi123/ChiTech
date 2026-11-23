@@ -1355,7 +1355,7 @@
             <div class="field"><label for="biz-number-format">Number format</label><select id="biz-number-format"><option value="default">Country default</option><option value="comma">1,234,567.89</option><option value="decimal-comma">1.234.567,89</option></select></div>
             <div class="field"><label for="biz-financial-year">Financial year starts</label><select id="biz-financial-year"><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
           </div>
-          <div class="settings-warning">Changing country updates regional display defaults. It does not automatically change tax rates, historical transactions or previously recorded currencies. Review tax rules separately before using them for filings.</div>
+          <div class="settings-warning">Changing country updates regional defaults. Changing currency only changes display formatting; it does NOT perform foreign-exchange conversion or rewrite historical transactions. Review tax rates, tax IDs and local filing rules separately before relying on tax calculations.</div>
           <div class="settings-actions"><button class="btn btn-primary" type="button" onclick="saveBusinessSettings()">Save business settings</button><span id="business-settings-status" class="text-muted" role="status"></span></div>
         </section>
         <section class="card settings-card">
