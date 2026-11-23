@@ -463,6 +463,7 @@
     <div class="nav-link" data-nav="auditoraccess" data-target="auditoraccess"><span class="nav-icon"><i class="ti ti-user-search"></i></span>Auditor access</div>
     <div class="nav-link" data-nav="imports" data-target="imports"><span class="nav-icon"><i class="ti ti-file-import"></i></span>Import &amp; analysis</div>
     <div class="nav-link" data-nav="auditor" data-target="auditor"><span class="nav-icon"><i class="ti ti-shield-lock"></i></span>Auditor Command Center</div>
+    <div class="nav-link" data-nav="settings" data-target="settings"><span class="nav-icon"><i class="ti ti-settings"></i></span>Settings</div>
 
     <div class="sidebar-foot">
       <span id="sidebar-plan">—</span><br>
@@ -1330,6 +1331,41 @@
     </section>
 
     <!-- ---------- AUDITOR COMMAND CENTER (auditor role only, read-only) ---------- -->
+    <section id="sec-settings" class="section">
+      <div class="topbar"><div><div class="page-title">Settings</div><div class="page-sub">Personal preferences and your business configuration</div></div></div>
+      <div class="settings-layout">
+        <section class="card settings-card">
+          <div class="card-head"><div><h3>Personal preferences</h3><p class="text-muted">These preferences apply to your account on this device.</p></div></div>
+          <div class="settings-grid">
+            <div class="field"><label for="pref-theme">Appearance</label><select id="pref-theme" onchange="savePersonalPreferences()"><option value="system">Use device setting</option><option value="dark">Dark</option><option value="light">Light</option></select></div>
+            <div class="field"><label for="pref-language">Display language</label><select id="pref-language" onchange="savePersonalPreferences()"><option value="en">English</option></select><small class="text-muted">Additional languages will appear as translations are completed.</small></div>
+            <div class="field"><label for="pref-notifications">In-app notifications</label><select id="pref-notifications" onchange="savePersonalPreferences()"><option value="all">All notifications</option><option value="important">Important only</option><option value="off">Off</option></select></div>
+          </div>
+          <p class="text-muted settings-note" id="personal-settings-status" role="status">Your appearance preference is saved on this device.</p>
+        </section>
+        <section class="card settings-card" id="business-regional-settings">
+          <div class="card-head"><div><h3>Business region and formats</h3><p class="text-muted">These settings affect how amounts, dates and times are displayed throughout your workspace.</p></div></div>
+          <div class="settings-grid">
+            <div class="field"><label for="biz-country">Business country</label><select id="biz-country" onchange="applyCountryDefaults()">
+              <option value="NG">Nigeria</option><option value="GH">Ghana</option><option value="KE">Kenya</option><option value="ZA">South Africa</option><option value="US">United States</option><option value="GB">United Kingdom</option><option value="CA">Canada</option><option value="IN">India</option><option value="AE">United Arab Emirates</option><option value="AU">Australia</option><option value="DE">Germany</option><option value="FR">France</option><option value="SG">Singapore</option>
+            </select></div>
+            <div class="field"><label for="biz-currency">Business currency</label><select id="biz-currency"><option value="NGN">NGN — Nigerian naira</option><option value="GHS">GHS — Ghanaian cedi</option><option value="KES">KES — Kenyan shilling</option><option value="ZAR">ZAR — South African rand</option><option value="USD">USD — US dollar</option><option value="GBP">GBP — Pound sterling</option><option value="CAD">CAD — Canadian dollar</option><option value="INR">INR — Indian rupee</option><option value="AED">AED — UAE dirham</option><option value="AUD">AUD — Australian dollar</option><option value="EUR">EUR — Euro</option><option value="SGD">SGD — Singapore dollar</option></select></div>
+            <div class="field"><label for="biz-timezone">Business timezone</label><select id="biz-timezone"><option>Africa/Lagos</option><option>Africa/Accra</option><option>Africa/Nairobi</option><option>Africa/Johannesburg</option><option>America/New_York</option><option>America/Toronto</option><option>Europe/London</option><option>Europe/Berlin</option><option>Asia/Kolkata</option><option>Asia/Dubai</option><option>Asia/Singapore</option><option>Australia/Sydney</option><option>UTC</option></select></div>
+            <div class="field"><label for="biz-date-format">Date format</label><select id="biz-date-format"><option value="default">Country default</option><option value="DMY">DD/MM/YYYY</option><option value="MDY">MM/DD/YYYY</option><option value="YMD">YYYY-MM-DD</option></select></div>
+            <div class="field"><label for="biz-number-format">Number format</label><select id="biz-number-format"><option value="default">Country default</option><option value="comma">1,234,567.89</option><option value="decimal-comma">1.234.567,89</option></select></div>
+            <div class="field"><label for="biz-financial-year">Financial year starts</label><select id="biz-financial-year"><option value="1">January</option><option value="2">February</option><option value="3">March</option><option value="4">April</option><option value="5">May</option><option value="6">June</option><option value="7">July</option><option value="8">August</option><option value="9">September</option><option value="10">October</option><option value="11">November</option><option value="12">December</option></select></div>
+          </div>
+          <div class="settings-warning">Changing country updates regional display defaults. It does not automatically change tax rates, historical transactions or previously recorded currencies. Review tax rules separately before using them for filings.</div>
+          <div class="settings-actions"><button class="btn btn-primary" type="button" onclick="saveBusinessSettings()">Save business settings</button><span id="business-settings-status" class="text-muted" role="status"></span></div>
+        </section>
+        <section class="card settings-card">
+          <div class="card-head"><div><h3>Account and security</h3><p class="text-muted">Manage access to your account.</p></div></div>
+          <div class="settings-actions"><button class="btn btn-secondary" type="button" onclick="showAccountSecurityInfo()">Security guidance</button><button class="btn btn-secondary" type="button" onclick="logout()">Sign out</button></div>
+          <p class="text-muted settings-note">Password reset and Google account management remain available through the sign-in and account recovery flows. Session/device management requires a dedicated backend workflow.</p>
+        </section>
+      </div>
+    </section>
+
     <section id="sec-auditor" class="section">
       <div class="topbar">
         <div><div class="page-title"><span class="live-dot" aria-hidden="true"></span>Auditor Command Center</div><div class="page-sub">Read-only view — nothing on this page can be edited</div></div>
