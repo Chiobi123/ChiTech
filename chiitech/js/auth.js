@@ -865,6 +865,7 @@ const SECTION_ACCESS = {
   auditoraccess: 'admin',
   imports: 'admin',
   ai: null,
+  settings: null,
   auditor: 'auditor_only',
 };
 
