@@ -267,6 +267,7 @@ async function bootApp(opts){
       session = live;
     }
     saveSession(session);
+    applyPersonalTheme();
     platform = await loadPlatform();
     document.querySelectorAll('.nav-link, .mobile-nav .nav-item').forEach(el=>el.classList.add('hidden'));
     document.getElementById('imp-banner').classList.add('hidden');
@@ -1198,7 +1199,7 @@ const CHIITECH_REGION_DEFAULTS = {
   SG:{currency:'SGD',locale:'en-SG',timezone:'Asia/Singapore'}
 };
 function getPersonalPreferences(){
-  try{return Object.assign({theme:'system',language:'en',notifications:'all'},JSON.parse(localStorage.getItem('chiitech.preferences.v1')||'{}'));}
+  try{return Object.assign({theme:'system',language:'en',notifications:'all'},JSON.parse(localStorage.getItem('chiitech.preferences.v1.'+encodeURIComponent((session&&session.email||'local').toLowerCase()))||'{}'));}
   catch(e){return {theme:'system',language:'en',notifications:'all'};}
 }
 function applyPersonalTheme(){
@@ -1209,7 +1210,7 @@ function applyPersonalTheme(){
 }
 function savePersonalPreferences(){
   const pref={theme:document.getElementById('pref-theme').value,language:document.getElementById('pref-language').value,notifications:document.getElementById('pref-notifications').value};
-  try{localStorage.setItem('chiitech.preferences.v1',JSON.stringify(pref));applyPersonalTheme();document.getElementById('personal-settings-status').textContent='Preferences saved on this device.';}
+  try{localStorage.setItem('chiitech.preferences.v1.'+encodeURIComponent((session&&session.email||'local').toLowerCase()),JSON.stringify(pref));applyPersonalTheme();document.getElementById('personal-settings-status').textContent='Preferences saved on this device.';}
   catch(e){document.getElementById('personal-settings-status').textContent='Could not save preferences on this device.';}
 }
 function renderSettings(){
