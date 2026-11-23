@@ -1867,6 +1867,6 @@ html[data-theme="light"] .auth-hero{background:linear-gradient(145deg,rgba(239,2
 @media(max-width:700px){.settings-grid{grid-template-columns:1fr}.settings-card{padding:15px}.settings-actions .btn{width:100%}}
 
 .password-toggle{position:absolute;right:9px;top:30px;border:1px solid var(--border);border-radius:7px;background:var(--surface-2);color:var(--muted);font-size:11px;font-weight:700;padding:5px 8px;cursor:pointer;min-width:42px}
-.field:has(>input[type="password"]),.field:has(>.password-toggle){position:relative}
-.field input[type="password"],.field input[type="text"]:has(+.password-toggle){padding-right:62px}
+.field{position:relative}
+.field input[type="password"],.field input[type="text"]{padding-right:62px}
 .password-toggle:focus-visible{outline:2px solid var(--neon);outline-offset:2px}
