@@ -1182,6 +1182,30 @@ async function submitReceipt(input){
 
 /* ================= TAX ANALYSIS ================= */
 
+
+// Accessible show/hide controls for every password field, including auth flows.
+function installPasswordVisibilityToggles(){
+  document.querySelectorAll('input[type="password"]').forEach(input=>{
+    if(input.dataset.visibilityControl==='installed')return;
+    input.dataset.visibilityControl='installed';
+    const toggle=document.createElement('button');
+    toggle.type='button';toggle.className='password-toggle';toggle.textContent='Show';
+    toggle.setAttribute('aria-label','Show password');
+    toggle.setAttribute('aria-pressed','false');
+    toggle.addEventListener('click',()=>{
+      const visible=input.type==='password';
+      input.type=visible?'text':'password';
+      toggle.textContent=visible?'Hide':'Show';
+      toggle.setAttribute('aria-label',visible?'Hide password':'Show password');
+      toggle.setAttribute('aria-pressed',visible?'true':'false');
+      input.focus();
+    });
+    input.insertAdjacentElement('afterend',toggle);
+  });
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installPasswordVisibilityToggles);
+else installPasswordVisibilityToggles();
+
 // ---------- SETTINGS: personal preferences and business region ----------
 const CHIITECH_REGION_DEFAULTS = {
   NG:{currency:'NGN',locale:'en-NG',timezone:'Africa/Lagos'},
