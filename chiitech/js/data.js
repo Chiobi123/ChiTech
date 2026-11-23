@@ -58,7 +58,7 @@ function seedEmptyBusiness(){
     taxSettings: { vatRate: 7.5, whtRate: 5, whtThreshold: 50000 },
     growth: { mode:'automated', chartStyle:'bar', dashboardChartType:'bar' },
     sop: [], billingHistory: [], payoutConfig: { paystackConnected:false, bankTransfer:null },
-    materialityThreshold: 5000, findings: [],
+    materialityThreshold: 5000, regionalSettings:{country:'NG',currency:'NGN',locale:'en-NG',timezone:'Africa/Lagos',dateFormat:'default',numberFormat:'default',financialYearStart:1}, findings: [],
     team: [],
     debts: [], budgets: [], receipts: [], periods: [],
     plans: [], subscription: { planId:'free', status:'active', renewsAt:null },
@@ -197,6 +197,7 @@ async function loadBusiness(companyId){
     biz.payoutConfig = s.payout_config || biz.payoutConfig;
     biz.billingHistory = s.billing_history || biz.billingHistory;
     biz.materialityThreshold = s.materiality_threshold!=null ? Number(s.materiality_threshold) : biz.materialityThreshold;
+    biz.regionalSettings = s.regional_settings || biz.regionalSettings;
   }
 
   // Snapshot of exactly what's in the database right now, so saveState()
@@ -206,7 +207,7 @@ async function loadBusiness(companyId){
     products: biz.products, customers: biz.customers, sales: biz.sales, expenses: biz.expenses,
     orders: biz.orders, sop: biz.sop, findings: biz.findings,
     expenseCategories: biz.expenseCategories, taxSettings: biz.taxSettings, growth: biz.growth,
-    payoutConfig: biz.payoutConfig, billingHistory: biz.billingHistory, materialityThreshold: biz.materialityThreshold,
+    payoutConfig: biz.payoutConfig, billingHistory: biz.billingHistory, materialityThreshold: biz.materialityThreshold, regionalSettings:biz.regionalSettings,
   }));
   biz.__syncedAuditLogIds = new Set(biz.auditLog.map(a=>a.id));
   biz.__syncedTeam = JSON.parse(JSON.stringify(biz.team));
@@ -342,11 +343,11 @@ async function syncInsertOnlyTable(def, localArr, syncedIds, companyId){
 async function syncCompanySettings(state, companyId){
   const current = { expense_categories:state.expenseCategories, tax_settings:state.taxSettings,
     growth:state.growth, payout_config:state.payoutConfig, billing_history:state.billingHistory,
-    materiality_threshold:state.materialityThreshold };
+    materiality_threshold:state.materialityThreshold, regional_settings:state.regionalSettings };
   const synced = state.__synced;
   const prev = { expense_categories:synced.expenseCategories, tax_settings:synced.taxSettings,
     growth:synced.growth, payout_config:synced.payoutConfig, billing_history:synced.billingHistory,
-    materiality_threshold:synced.materialityThreshold };
+    materiality_threshold:synced.materialityThreshold, regional_settings:synced.regionalSettings };
   if(JSON.stringify(current)===JSON.stringify(prev)) return;
   const {error} = await sb.from('company_settings').update(current).eq('company_id', companyId);
   if(error) throw error;
@@ -382,7 +383,7 @@ async function saveBusiness(companyId, state){
       products:state.products, customers:state.customers, sales:state.sales, expenses:state.expenses,
       orders:state.orders, sop:state.sop, findings:state.findings,
       expenseCategories:state.expenseCategories, taxSettings:state.taxSettings, growth:state.growth,
-      payoutConfig:state.payoutConfig, billingHistory:state.billingHistory, materialityThreshold:state.materialityThreshold,
+      payoutConfig:state.payoutConfig, billingHistory:state.billingHistory, materialityThreshold:state.materialityThreshold, regionalSettings:state.regionalSettings,
     }));
   }catch(err){
     console.error('saveBusiness:', err);
