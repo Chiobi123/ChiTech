@@ -789,7 +789,7 @@ tbody tr:hover{background:var(--surface-2);}
 }
 .chip-opt{padding:6px 12px;font-size:11.5px;border-radius:7px;color:var(--muted);cursor:pointer;}
 .chip-opt.active{background:var(--neon-deep);color:#FFFFFF;font-weight:700;}
-.chart-canvas-wrap{height:220px;position:relative;}
+.chart-canvas-wrap{height:clamp(180px, 22vw, 280px);position:relative;width:100%;}
 .chart-canvas-wrap--auto{height:auto !important;display:block;}
 .chi-canvas-box{position:relative;width:100%;}
 
@@ -1502,9 +1502,9 @@ pre{max-width:100%;overflow:auto;background:#0B120E;color:#DCE8E0;border-radius:
 .dashboard-chart-summary{display:flex;align-items:baseline;gap:9px;margin:5px 0 0;}
 .dashboard-chart-summary strong{font-size:19px;letter-spacing:-.025em;color:#F6FAF7;}
 .dashboard-chart-summary span{font-size:10px;color:#819087;}
-.dashboard-primary-chart{height:250px!important;margin-top:7px;}
-.dashboard-secondary-chart{height:292px!important;}
-.dashboard-payment-chart{height:225px!important;}
+.dashboard-primary-chart{height:clamp(200px, 25vw, 300px);margin-top:7px;}
+.dashboard-secondary-chart{height:clamp(200px, 25vw, 300px);}   
+.dashboard-payment-chart{height:clamp(180px, 22vw, 260px);}
 .dashboard-secondary-grid{margin-bottom:14px;}
 .dashboard-attention-card{min-width:0;}
 .attention-list{display:flex;flex-direction:column;}
@@ -1574,8 +1574,8 @@ pre{max-width:100%;overflow:auto;background:#0B120E;color:#DCE8E0;border-radius:
 #sec-dashboard .card-title,#sec-auditor .card-title,#sec-superadmin .card-title{font-size:14px;letter-spacing:-.015em;}
 #sec-dashboard .card-sub,#sec-auditor .card-sub,#sec-superadmin .card-sub{font-size:11.5px;line-height:1.55;}
 #sec-dashboard .chart-canvas-wrap,#sec-auditor .chart-canvas-wrap,#sec-superadmin .chart-canvas-wrap{border-radius:15px;background:radial-gradient(ellipse at 50% 100%,rgba(32,201,151,.045),transparent 70%);}
-#sec-dashboard .dashboard-primary-chart,#sec-dashboard .dashboard-secondary-chart{height:252px;}
-#sec-dashboard .dashboard-payment-chart{height:224px;}
+#sec-dashboard .dashboard-primary-chart,#sec-dashboard .dashboard-secondary-chart{height:clamp(200px, 25vw, 300px);}
+#sec-dashboard .dashboard-payment-chart{height:clamp(180px, 22vw, 260px);}
 #sec-dashboard .dashboard-chart-card{overflow:hidden;}
 #sec-dashboard .dashboard-main-grid,#sec-dashboard .dashboard-secondary-grid{gap:18px;}
 #sec-dashboard .dashboard-toolbar{padding:3px 2px;}
@@ -1586,7 +1586,7 @@ pre{max-width:100%;overflow:auto;background:#0B120E;color:#DCE8E0;border-radius:
 #sec-superadmin .sa-account-inner p{max-width:620px;}
 #sec-superadmin .grid{gap:16px;}
 #sec-auditor .chart-canvas-wrap{min-height:190px;}
-@media(max-width:700px){#sec-dashboard .dashboard-primary-chart,#sec-dashboard .dashboard-secondary-chart{height:220px;}#sec-dashboard .dashboard-payment-chart{height:210px;}#sec-superadmin .sa-account-inner{align-items:flex-start;flex-direction:column;}}
+@media(max-width:700px){#sec-dashboard .dashboard-primary-chart,#sec-dashboard .dashboard-secondary-chart{height:clamp(180px,22vw,260px);}#sec-dashboard .dashboard-payment-chart{height:clamp(160px,20vw,220px);}#sec-superadmin .sa-account-inner{align-items:flex-start;flex-direction:column;}}
 @media(prefers-reduced-motion:reduce){#sec-dashboard .card,#sec-auditor .card,#sec-superadmin .card,#sec-dashboard .stat,#sec-auditor .stat,#sec-superadmin .stat{transition:none;}}
 
 #sec-auditor .auditor-kpis{margin:0 0 2px!important;}
@@ -1654,7 +1654,9 @@ main .section canvas{display:block;max-width:100%;}
   .section .topbar .btn,.section .topbar button{width:100%;}
   .section .card-head{gap:10px;}
   .section .card-head input,.section .card-head select{width:100%;max-width:100%!important;}
-  .section .chart-canvas-wrap{max-width:100%;overflow:hidden;}
+  /* Chart canvas wrap: allow spreading on desktop, compact on mobile.
+   The ResizeObserver in charts.js redraws on container size changes. */
+.section .chart-canvas-wrap{max-width:100%;overflow:hidden;@media(min-width:901px){max-width:1200px;}}
   .oauth-role-card{padding:12px;}
   .auth-consent{font-size:11.5px;}
 }
